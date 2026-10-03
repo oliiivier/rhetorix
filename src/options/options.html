@@ -49,6 +49,16 @@
           </select>
         </label>
 
+        <label>
+          <span id="lbl-display-mode">Mode d'affichage</span>
+          <select name="displayMode">
+            <option value="both" id="opt-mode-both">Combiné (panneau et bulles)</option>
+            <option value="inline" id="opt-mode-inline">Bulles au survol uniquement</option>
+            <option value="sidepanel" id="opt-mode-sidepanel">Panneau latéral uniquement</option>
+          </select>
+          <span class="hint" id="display-mode-hint">Choisissez si les annotations s'affichent sous forme de bulles au survol du texte, dans le panneau latéral, ou les deux.</span>
+        </label>
+
         <label class="checkbox">
           <input type="checkbox" name="webSearch" />
           <span id="lbl-web-search">Vérifier les faits par recherche web</span>

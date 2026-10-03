@@ -87,16 +87,25 @@ Readability travaille sur un clone et produit du texte normalisé. Les citations
 
 **Un `Highlight` par style.** Un nom de highlight correspond à une seule règle `::highlight()`. Le nom unique `rhetorix-highlight` du PRD ne permet pas de distinguer les couleurs par catégorie. Il faut prévoir `rhetorix-sophism`, `rhetorix-bias`, `rhetorix-factual`, ainsi qu'un `rhetorix-active` pour la citation sélectionnée.
 
-**Les highlights ne reçoivent pas d'événements.** Ils ne créent pas d'éléments DOM, donc un clic sur une citation surlignée ne peut pas être capté directement. Il faut :
+**Les highlights ne reçoivent pas d'événements.** Ils ne créent pas d'éléments DOM, donc un clic ou un survol sur une citation surlignée ne peut pas être capté directement. Il faut :
 
-1. écouter `click` sur `document` (phase de capture) ;
-2. obtenir la position du caret au point cliqué (`document.caretPositionFromPoint`, ou `caretRangeFromPoint` en repli) ;
-3. tester l'appartenance de ce point aux `Range` connus (`range.comparePoint` / `isPointInRange`) ;
-4. envoyer `{type: "annotation-clicked", id}` au panneau.
+1. écouter `click` sur `document` (phase de capture) pour activer la carte dans le panneau latéral ;
+2. écouter `pointermove` sur `document` (throttlé via `requestAnimationFrame`) pour détecter le survol des zones surlignées (`caretAt` / `isPointInRange`) ;
+3. dans l'autre sens, un clic sur une carte envoie `{type: "focus", id}` : le content script appelle `scrollIntoView` sur l'élément parent du `Range` et active le highlight.
 
-Dans l'autre sens, un clic sur une carte envoie `{type: "focus", id}` : le content script appelle `scrollIntoView` sur l'élément parent du `Range` (ou utilise `range.getBoundingClientRect()` avec `window.scrollTo`), puis place le `Range` dans `rhetorix-active`.
+**Modes d'affichage : panneau latéral, bulles en ligne (inline) ou combiné.**
+L'utilisateur peut choisir son mode d'affichage (`displayMode: "sidepanel" | "inline" | "both"`) dans les options ou via un sélecteur direct dans la barre d'outils du panneau :
+- **Mode panneau latéral (`sidepanel`)** : les cartes d'annotations s'affichent uniquement dans le panneau latéral ;
+- **Mode bulles en ligne (`inline`)** : au survol d'un passage surligné, une bulle flottante colorée apparaît à proximité immédiate de la citation dans la page ;
+- **Mode combiné (`both`, par défaut)** : le panneau latéral et les bulles au survol sont tous les deux actifs simultanément.
 
-La CSS des highlights est injectée par le content script. `::highlight()` n'accepte qu'un sous-ensemble de propriétés : couleur, fond et décoration de texte.
+**Isolation des bulles flottantes en Shadow DOM.**
+Afin d'éviter tout conflit de styles avec la page hôte (ex. Wikipedia, Le Monde, NYTimes), la bulle est encapsulée dans un hôte `<div id="rhetorix-popover-host">` rattaché avec un Shadow Root ouvert (`attachShadow({ mode: "open" })`).
+- Le style CSS est strictement isolé ;
+- Le positionnement est calculé dynamiquement (`position: fixed`) au-dessus ou en-dessous du `Range`, sans débordement de l'écran ;
+- La bordure gauche et le badge reprennent la couleur de la catégorie (rouge sophisme, orange biais, bleu allégation) ;
+- La bulle reste accessible au survol (permettant la sélection de texte ou le clic sur les liens de sources factuelles) ;
+- Sécurité stricte : zéro `innerHTML`, manipulation exclusive via l'API DOM (`createElement`, `textContent`, `setAttribute`).
 
 ## 6. Messages
 
@@ -104,7 +113,8 @@ La CSS des highlights est injectée par le content script. `::highlight()` n'acc
 |---|---|---|
 | `extract` | panneau → content | — |
 | `extract:result` | content → panneau (réponse) | `{ok: true, article: {title, paragraphs, lang}}` ou `{ok: false, error, errorCode}` |
-| `highlight` | panneau → content | `{annotations: [{id, exact_quote, category}]}` |
+| `highlight` | panneau → content | `{annotations: HighlightItem[], displayMode?: DisplayMode, lang?: string}` |
+| `set-display-mode` | panneau → content | `{displayMode: DisplayMode}` |
 | `highlight:result` | content → panneau (réponse) | `{unlocated: string[]}` |
 | `focus` | panneau → content | `{id}` |
 | `annotation-clicked` | content → panneau | `{id}` |

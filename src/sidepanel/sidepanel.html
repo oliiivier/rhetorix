@@ -10,6 +10,11 @@
     <header class="toolbar">
       <h1>Rhetorix</h1>
       <div class="actions">
+        <select id="display-mode" class="mode-select" aria-label="Mode d'affichage">
+          <option value="both" id="opt-both">Combiné</option>
+          <option value="inline" id="opt-inline">Bulles</option>
+          <option value="sidepanel" id="opt-sidepanel">Panneau</option>
+        </select>
         <button id="analyze" class="primary" type="button">Analyser la page</button>
         <button id="cancel" type="button" hidden>Annuler</button>
         <button id="options" class="icon" type="button" title="Options" aria-label="Options">⚙</button>
@@ -23,6 +28,7 @@
 
       <section id="result" hidden>
         <p id="cache-note" class="note" hidden></p>
+        <p id="inline-notice" class="note inline-notice" hidden></p>
         <h2 id="summary-heading">Posture argumentative</h2>
         <p id="summary" class="summary"></p>
         <div class="legend" id="filters" role="group" aria-label="Filtrer les annotations par catégorie">

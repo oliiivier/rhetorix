@@ -41,6 +41,14 @@ describe("i18n module", () => {
       expect(strings.factStatuses.supported).toBeTruthy();
       expect(strings.factStatuses.misleading).toBeTruthy();
       expect(strings.factStatuses.unverified).toBeTruthy();
+
+      // Vérification des modes d'affichage
+      expect(strings.displayModeLabel).toBeTruthy();
+      expect(strings.displayModeHint).toBeTruthy();
+      expect(strings.displayModes.both).toBeTruthy();
+      expect(strings.displayModes.inline).toBeTruthy();
+      expect(strings.displayModes.sidepanel).toBeTruthy();
+      expect(strings.inlineModeNotice).toBeTruthy();
     }
   });
 

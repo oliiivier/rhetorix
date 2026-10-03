@@ -3,9 +3,12 @@
 Extension de navigateur (Manifest V3) pour **Chromium** (Chrome, Brave, Edge) et **Firefox**, qui analyse un article de presse ou une interview avec un LLM :
 
 - **dans la page**, les sophismes, biais et allégations factuelles sont surlignés (CSS Custom Highlight API, sans modifier le DOM) ;
-- **dans le panneau latéral**, affichage progressif (streaming) : le résumé et les cartes d'annotations apparaissent au fil de l'eau avec filtres interactifs par catégorie ;
-- chaque carte détaille la critique rhétorique, une vérification factuelle et ses sources vérifiées (politique stricte D3) ;
-- un clic sur une carte fait défiler la page jusqu'à la citation, et un clic sur une citation met la carte en avant ;
+- **deux modes d'affichage au choix** :
+  - **bulles en ligne (inline)** : bulles flottantes colorées et isolées (Shadow DOM) apparaissant au survol des passages surlignés directement dans l'article ;
+  - **panneau latéral (sidepanel)** : affichage progressif (streaming) avec cartes détaillées et filtres interactifs par catégorie ;
+  - **mode combiné (par défaut)** : active à la fois le panneau latéral et les bulles au survol ;
+- chaque carte ou bulle détaille la critique rhétorique, une vérification factuelle et ses sources vérifiées (politique stricte D3) ;
+- synchronisation bidirectionnelle : un clic sur une carte fait défiler la page jusqu'à la citation, et un clic sur une citation met la carte en avant ;
 - internationalisation complète : disponible en français, anglais, espagnol, allemand et italien.
 
 Fournisseurs LLM pris en charge : Anthropic (avec recherche web pour la vérification des faits), endpoints compatibles OpenAI (OpenAI, Mistral, OpenRouter, Ollama…) et Google Gemini.

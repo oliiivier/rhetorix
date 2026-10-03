@@ -1,7 +1,7 @@
 // Internationalisation de Rhetorix (décision D5).
 // Prise en charge du français (fr), anglais (en), espagnol (es), allemand (de) et italien (it).
 
-import type { Config } from "./config";
+import type { Config, DisplayMode } from "./config";
 import { ext } from "./ext";
 import type { ProviderErrorCode } from "./providers/types";
 import type { FactStatus, Severity } from "./schema";
@@ -36,6 +36,8 @@ export interface UiStrings {
   sourcesLabel: string;
   privacyNotice: string;
   filterAll: string;
+  displayModes: Record<DisplayMode, string>;
+  inlineModeNotice: string;
   categories: Record<Category, string>;
   categoriesPlural: Record<Category, string>;
   severities: Record<Severity, string>;
@@ -43,6 +45,8 @@ export interface UiStrings {
 
   // Options
   optionsTitle: string;
+  displayModeLabel: string;
+  displayModeHint: string;
   providerLabel: string;
   endpointLabel: string;
   endpointHint: string;
@@ -100,6 +104,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     sourcesLabel: "Sources :",
     privacyNotice: "Le texte de l'article est envoyé au fournisseur LLM configuré.",
     filterAll: "Tous",
+    displayModes: {
+      both: "Combiné (panneau et bulles)",
+      inline: "Bulles au survol uniquement",
+      sidepanel: "Panneau latéral uniquement",
+    },
+    inlineModeNotice: "Mode bulles au survol actif. Survolez les passages surlignés dans la page pour consulter les analyses.",
     categories: {
       sophism: "Sophisme",
       bias: "Biais",
@@ -123,6 +133,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     },
 
     optionsTitle: "Rhetorix — Options",
+    displayModeLabel: "Mode d'affichage",
+    displayModeHint: "Choisissez si les annotations s'affichent sous forme de bulles au survol du texte, dans le panneau latéral, ou les deux.",
     providerLabel: "Fournisseur",
     endpointLabel: "Endpoint",
     endpointHint: "URL de base de l'API ; <code>/chat/completions</code> y est ajouté.",
@@ -190,6 +202,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     sourcesLabel: "Sources:",
     privacyNotice: "Article text is sent to the configured LLM provider.",
     filterAll: "All",
+    displayModes: {
+      both: "Combined (panel & hover bubbles)",
+      inline: "Hover bubbles only",
+      sidepanel: "Side panel only",
+    },
+    inlineModeNotice: "Hover bubbles mode active. Hover over highlighted text in the page to view analyses.",
     categories: {
       sophism: "Fallacy",
       bias: "Bias",
@@ -213,6 +231,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     },
 
     optionsTitle: "Rhetorix — Options",
+    displayModeLabel: "Display mode",
+    displayModeHint: "Choose whether annotations appear as hover bubbles over the text, in the side panel, or both.",
     providerLabel: "Provider",
     endpointLabel: "Endpoint",
     endpointHint: "API base URL; <code>/chat/completions</code> is appended.",
@@ -280,6 +300,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     sourcesLabel: "Fuentes:",
     privacyNotice: "El texto del artículo se envía al proveedor LLM configurado.",
     filterAll: "Todos",
+    displayModes: {
+      both: "Combinado (panel y burbujas)",
+      inline: "Solo burbujas al pasar el cursor",
+      sidepanel: "Solo panel lateral",
+    },
+    inlineModeNotice: "Modo burbujas activo. Pase el cursor sobre el texto resaltado en la página para ver los análisis.",
     categories: {
       sophism: "Falacia",
       bias: "Sesgo",
@@ -303,6 +329,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     },
 
     optionsTitle: "Rhetorix — Opciones",
+    displayModeLabel: "Modo de visualización",
+    displayModeHint: "Elija si las anotaciones se muestran como burbujas al pasar el cursor sobre el texto, en el panel lateral o ambos.",
     providerLabel: "Proveedor",
     endpointLabel: "Endpoint",
     endpointHint: "URL base de la API; se añade <code>/chat/completions</code>.",
@@ -370,6 +398,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     sourcesLabel: "Quellen:",
     privacyNotice: "Der Artikeltext wird an den konfigurierten LLM-Anbieter gesendet.",
     filterAll: "Alle",
+    displayModes: {
+      both: "Kombiniert (Panel & Hover-Blasen)",
+      inline: "Nur Hover-Blasen",
+      sidepanel: "Nur Seitenleiste",
+    },
+    inlineModeNotice: "Hover-Blasen-Modus aktiv. Bewegen Sie den Mauszeiger über hervorgehobenen Text auf der Seite, um Analysen anzuzeigen.",
     categories: {
       sophism: "Trugschluss",
       bias: "Verzerrung",
@@ -393,6 +427,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     },
 
     optionsTitle: "Rhetorix — Optionen",
+    displayModeLabel: "Anzeigemodus",
+    displayModeHint: "Wählen Sie, ob Anmerkungen als Hover-Blasen über dem Text, in der Seitenleiste oder in beiden angezeigt werden.",
     providerLabel: "Anbieter",
     endpointLabel: "Endpunkt",
     endpointHint: "Basis-URL der API; <code>/chat/completions</code> wird angehängt.",
@@ -460,6 +496,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     sourcesLabel: "Fonti:",
     privacyNotice: "Il testo dell'articolo viene inviato al fornitore LLM configurato.",
     filterAll: "Tutti",
+    displayModes: {
+      both: "Combinato (pannello e fumetti)",
+      inline: "Solo fumetti al passaggio del mouse",
+      sidepanel: "Solo pannello laterale",
+    },
+    inlineModeNotice: "Modalità fumetti attiva. Passa il cursore sul testo evidenziato nella pagina per visualizzare le analisi.",
     categories: {
       sophism: "Fallacia",
       bias: "Bias",
@@ -483,6 +525,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     },
 
     optionsTitle: "Rhetorix — Opzioni",
+    displayModeLabel: "Modalità di visualizzazione",
+    displayModeHint: "Scegli se visualizzare le annotazioni come fumetti al passaggio del mouse sul testo, nel pannello laterale o entrambi.",
     providerLabel: "Fornitore",
     endpointLabel: "Endpoint",
     endpointHint: "URL base dell'API; <code>/chat/completions</code> viene aggiunto automaticamente.",

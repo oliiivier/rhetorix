@@ -1,16 +1,27 @@
 // Messages entre le panneau latéral et le content script (architecture §6).
 
+import type { DisplayMode } from "./config";
+import type { FactStatus, Severity, Source } from "./schema";
 import type { Category } from "./taxonomy";
 
 export interface HighlightItem {
   id: string;
   exact_quote: string;
   category: Category;
+  label?: string;
+  severity?: Severity;
+  rhetoric_critique?: string;
+  fact_check?: {
+    status: FactStatus;
+    context: string;
+    sources: Source[];
+  };
 }
 
 export type PanelToContent =
   | { type: "extract" }
-  | { type: "highlight"; annotations: HighlightItem[] }
+  | { type: "highlight"; annotations: HighlightItem[]; displayMode?: DisplayMode; lang?: string }
+  | { type: "set-display-mode"; displayMode: DisplayMode }
   | { type: "focus"; id: string }
   | { type: "clear" };
 

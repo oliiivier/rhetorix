@@ -79,6 +79,23 @@ a { color: var(--accent); }
 .status { color: var(--muted); }
 .status.error { color: var(--danger); }
 .note { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+.inline-notice {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  color: var(--text);
+}
+.mode-select {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
 .summary { margin: 0 0 12px; }
 
 .legend { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }

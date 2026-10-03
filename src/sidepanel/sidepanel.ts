@@ -4,7 +4,7 @@
 
 import { analyzeArticle } from "../analyze";
 import { getCached, putCached, sha256 } from "../cache";
-import { isConfigured, loadConfig, providerOrigin, resolveLanguage, type Config } from "../config";
+import { isConfigured, loadConfig, providerOrigin, resolveLanguage, saveConfig, type Config, type DisplayMode } from "../config";
 import { ext } from "../ext";
 import { formatErrorMessage, getUiStrings } from "../i18n";
 import type { ContentToPanel, ExtractResult, HighlightResult, PanelToContent } from "../messages";
@@ -21,6 +21,7 @@ interface TabState {
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const analyzeBtn = $<HTMLButtonElement>("analyze");
 const cancelBtn = $<HTMLButtonElement>("cancel");
+const modeSelect = $<HTMLSelectElement>("display-mode");
 const statusEl = $<HTMLParagraphElement>("status");
 const resultEl = $<HTMLElement>("result");
 const cardsEl = $<HTMLOListElement>("cards");
@@ -42,6 +43,18 @@ function currentLang(): string {
   return config ? resolveLanguage(config) : "fr";
 }
 
+function updateDisplayModeBanner(): void {
+  const t = strings();
+  const notice = $("inline-notice");
+  if (!notice) return;
+  if (config?.displayMode === "inline") {
+    notice.textContent = t.inlineModeNotice;
+    notice.hidden = false;
+  } else {
+    notice.hidden = true;
+  }
+}
+
 function applyI18n(): void {
   const t = strings();
   const hasAnalysis = currentTabId !== undefined && states.has(currentTabId);
@@ -50,10 +63,17 @@ function applyI18n(): void {
   const optBtn = $("options");
   optBtn.title = t.optionsBtnTitle;
   optBtn.setAttribute("aria-label", t.optionsBtnTitle);
+  const optBoth = $("opt-both");
+  if (optBoth) optBoth.textContent = t.displayModes.both;
+  const optInline = $("opt-inline");
+  if (optInline) optInline.textContent = t.displayModes.inline;
+  const optSidepanel = $("opt-sidepanel");
+  if (optSidepanel) optSidepanel.textContent = t.displayModes.sidepanel;
   const heading = $("summary-heading");
   if (heading) heading.textContent = t.summaryTitle;
   const privacy = $("privacy-footer");
   if (privacy) privacy.textContent = t.privacyNotice;
+  updateDisplayModeBanner();
 }
 
 // ---------- Rendu ----------
@@ -175,6 +195,7 @@ function render(state: TabState): void {
   }
   cardsEl.replaceChildren(...state.analysis.annotations.map((a) => renderCard(a, state.unlocated.has(a.id))));
   applyCategoryFilter(activeCategoryFilter);
+  updateDisplayModeBanner();
 }
 
 function selectCard(id: string, scroll: boolean): void {
@@ -281,7 +302,9 @@ async function analyze(force: boolean): Promise<void> {
 
     const { unlocated } = await send<HighlightResult>(tabId, {
       type: "highlight",
-      annotations: analysis.annotations.map(({ id, exact_quote, category }) => ({ id, exact_quote, category })),
+      annotations: analysis.annotations,
+      displayMode: config.displayMode,
+      lang: resolveLanguage(config),
     });
     const state: TabState = { url: tab.url, analysis, unlocated: new Set(unlocated), cachedAt: cached?.createdAt };
     states.set(tabId, state);
@@ -306,6 +329,16 @@ analyzeBtn.addEventListener("click", () => {
   void analyze(hasAnalysis);
 });
 cancelBtn.addEventListener("click", () => running?.abort());
+modeSelect.addEventListener("change", async () => {
+  if (!config) return;
+  const newMode = modeSelect.value as DisplayMode;
+  config = { ...config, displayMode: newMode };
+  await saveConfig(config);
+  if (currentTabId !== undefined) {
+    void send(currentTabId, { type: "set-display-mode", displayMode: newMode });
+  }
+  updateDisplayModeBanner();
+});
 filtersEl.addEventListener("click", (e) => {
   const btn = (e.target as Element).closest<HTMLButtonElement>(".filter-btn");
   if (btn?.dataset.category) applyCategoryFilter(btn.dataset.category);
@@ -335,6 +368,7 @@ ext.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.config) {
     void loadConfig().then((c) => {
       config = c;
+      modeSelect.value = c.displayMode ?? "both";
       applyI18n();
       if (currentTabId) {
         const state = states.get(currentTabId);
@@ -346,6 +380,7 @@ ext.storage.onChanged.addListener((changes, area) => {
 
 void (async () => {
   config = await loadConfig();
+  modeSelect.value = config.displayMode ?? "both";
   applyI18n();
   windowId = (await ext.windows.getCurrent()).id;
   const [tab] = await ext.tabs.query({ active: true, currentWindow: true });

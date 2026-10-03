@@ -29,10 +29,10 @@ Après une modification, lancer `typecheck`, `test` et `build`.
 - Les labels proviennent exclusivement de `src/taxonomy.ts`. Toute nouvelle étiquette ajoutée dans `src/taxonomy.ts` doit obligatoirement être traduite et documentée dans les 5 langues (`fr`, `en`, `es`, `de`, `it` dans `TAXONOMY_TRANSLATIONS` ; la suite de tests unitaires l'impose).
 - **Internationalisation (D5)** : tout texte d'interface (panneau latéral, options, messages de statut et d'erreur d'extraction ou de provider) passe impérativement par `src/i18n.ts` (`UiStrings`) et doit être décliné dans les 5 langues supportées.
 - **Sources (D3)** : aucune URL n'est affichée si elle ne provient pas de l'outil de recherche web du provider (`enforceSourcePolicy` et `enforceAnnotationSourcePolicy`).
-- **Sécurité du panneau** : le contenu issu du LLM ou de la page est inséré avec `textContent`, jamais avec `innerHTML`.
+- **Sécurité et Shadow DOM** : le contenu issu du LLM ou de la page (panneau et bulles en ligne dans leur Shadow Root) est inséré avec `textContent` et les nœuds DOM, jamais avec `innerHTML`.
 - MV3 interdit le code distant : les dépendances sont embarquées par esbuild. Ne pas minifier, car la revue Firefox exige un code lisible.
 - La clé API va dans `storage.local`, jamais dans `sync`, et ne doit pas être journalisée.
-- Le surlignage passe uniquement par la CSS Custom Highlight API : ne pas modifier le DOM de la page hôte.
+- Le surlignage passe par la CSS Custom Highlight API sans modifier le texte du DOM hôte ; les bulles en ligne sont encapsulées dans un hôte Shadow DOM.
 
 ## Tester manuellement
 

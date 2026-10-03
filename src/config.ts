@@ -3,6 +3,7 @@
 import { ext } from "./ext";
 
 export type ProviderId = "anthropic" | "openai-compatible" | "gemini";
+export type DisplayMode = "sidepanel" | "inline" | "both";
 
 export interface Config {
   provider: ProviderId;
@@ -16,6 +17,8 @@ export interface Config {
   webSearch: boolean;
   /** Taille maximale d'un morceau envoyé au LLM (décision D6). */
   maxChunkTokens: number;
+  /** Mode d'affichage : panneau latéral, bulles au survol ou les deux. */
+  displayMode: DisplayMode;
 }
 
 export const DEFAULT_MODELS: Record<ProviderId, string> = {
@@ -32,6 +35,7 @@ export const DEFAULT_CONFIG: Config = {
   language: "auto",
   webSearch: true,
   maxChunkTokens: 12_000,
+  displayMode: "both",
 };
 
 const KEY = "config";

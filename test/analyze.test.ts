@@ -32,6 +32,7 @@ describe("analyzeArticle", () => {
     language: "fr",
     webSearch: false,
     maxChunkTokens: 50, // petit seuil pour forcer le découpage si nécessaire
+    displayMode: "both",
   };
 
   it("analyse un article court en un seul morceau", async () => {

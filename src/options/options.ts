@@ -1,5 +1,5 @@
 import { clearCache } from "../cache";
-import { DEFAULT_MODELS, loadConfig, providerOrigin, saveConfig, type Config, type ProviderId } from "../config";
+import { DEFAULT_MODELS, loadConfig, providerOrigin, saveConfig, type Config, type DisplayMode, type ProviderId } from "../config";
 import { ext } from "../ext";
 import { getUiStrings } from "../i18n";
 
@@ -40,6 +40,11 @@ function applyOptionsI18n(lang: string): void {
   setTxt("api-key-hint", t.apiKeyHint);
   setTxt("lbl-model", t.modelLabel);
   setTxt("lbl-language", t.languageLabel);
+  setTxt("lbl-display-mode", t.displayModeLabel);
+  setTxt("display-mode-hint", t.displayModeHint);
+  setTxt("opt-mode-both", t.displayModes.both);
+  setTxt("opt-mode-inline", t.displayModes.inline);
+  setTxt("opt-mode-sidepanel", t.displayModes.sidepanel);
   setTxt("lbl-web-search", t.webSearchLabel);
   setTxt("lbl-max-chunk", t.maxChunkLabel);
   setTxt("max-chunk-hint", t.maxChunkHint);
@@ -58,6 +63,7 @@ function readForm(): Config {
     apiKey: field<HTMLInputElement>("apiKey").value.trim(),
     model: field<HTMLInputElement>("model").value.trim(),
     language: field<HTMLSelectElement>("language").value,
+    displayMode: field<HTMLSelectElement>("displayMode").value as DisplayMode,
     webSearch: field<HTMLInputElement>("webSearch").checked,
     maxChunkTokens: Math.max(2000, Number(field<HTMLInputElement>("maxChunkTokens").value) || 12_000),
   };
@@ -69,6 +75,7 @@ function fillForm(c: Config): void {
   field<HTMLInputElement>("apiKey").value = c.apiKey;
   field<HTMLInputElement>("model").value = c.model;
   field<HTMLSelectElement>("language").value = c.language;
+  field<HTMLSelectElement>("displayMode").value = c.displayMode ?? "both";
   field<HTMLInputElement>("webSearch").checked = c.webSearch;
   field<HTMLInputElement>("maxChunkTokens").value = String(c.maxChunkTokens);
   applyOptionsI18n(c.language);
