@@ -63,7 +63,11 @@ export const anthropicProvider: LlmProvider = {
         let submitBlockIndex: number | null = null;
         stream.on("streamEvent", (event) => {
           if (event.type === "content_block_start") {
-            if (event.content_block.type === "tool_use" && event.content_block.name === SUBMIT_TOOL) {
+            const b = event.content_block;
+            if (b.type === "web_search_tool_result" && Array.isArray(b.content)) {
+              for (const r of b.content) if (r.type === "web_search_result") searched.add(normalizeSourceUrl(r.url));
+            }
+            if (b.type === "tool_use" && b.name === SUBMIT_TOOL) {
               submitBlockIndex = event.index;
             }
           } else if (event.type === "content_block_delta") {
@@ -97,14 +101,14 @@ export const anthropicProvider: LlmProvider = {
           messages.push({ role: "assistant", content: message.content as Anthropic.Beta.Messages.BetaContentBlockParam[] });
           continue;
         case "refusal":
-          throw new ProviderError("Le modèle a refusé d'analyser ce contenu.");
+          throw new ProviderError("Le modèle a refusé d'analyser ce contenu.", "refusal");
         case "max_tokens":
-          throw new ProviderError("Réponse tronquée (max_tokens atteint). Réduire la taille des morceaux dans les options.");
+          throw new ProviderError("Réponse tronquée (max_tokens atteint). Réduire la taille des morceaux dans les options.", "max_tokens");
         default:
-          throw new ProviderError("Le modèle n'a pas renvoyé d'analyse structurée.");
+          throw new ProviderError("Le modèle n'a pas renvoyé d'analyse structurée.", "no_structured_output");
       }
     }
-    throw new ProviderError("Trop de reprises de la recherche web.");
+    throw new ProviderError("Trop de reprises de la recherche web.", "too_many_turns");
   },
 
   async consolidateSummary(title, summaries, language, config, signal, onProgressText) {
@@ -130,7 +134,7 @@ export const anthropicProvider: LlmProvider = {
       .map((b) => b.text)
       .join("")
       .trim();
-    if (!text) throw new ProviderError("Résumé consolidé vide.");
+    if (!text) throw new ProviderError("Résumé consolidé vide.", "empty_consolidated");
     return text;
   },
 };

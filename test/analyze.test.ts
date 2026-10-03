@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Extracted } from "../src/messages";
 import type { Config } from "../src/config";
+import type { Extracted } from "../src/messages";
+import type { Annotation } from "../src/schema";
 
 const mockAnalyze = vi.fn();
 const mockConsolidate = vi.fn();
@@ -60,8 +61,10 @@ describe("analyzeArticle", () => {
     const progressCalls: Array<{ phase?: string; done: number; total: number }> = [];
     const controller = new AbortController();
 
-    const result = await analyzeArticle(article, baseConfig, controller.signal, (p) => {
-      progressCalls.push(p);
+    const result = await analyzeArticle(article, baseConfig, controller.signal, {
+      onProgress: (p) => {
+        progressCalls.push(p);
+      },
     });
 
     expect(mockAnalyze).toHaveBeenCalledTimes(1);
@@ -122,8 +125,10 @@ describe("analyzeArticle", () => {
     const progressCalls: Array<{ phase?: string; done: number; total: number }> = [];
     const controller = new AbortController();
 
-    const result = await analyzeArticle(article, baseConfig, controller.signal, (p) => {
-      progressCalls.push(p);
+    const result = await analyzeArticle(article, baseConfig, controller.signal, {
+      onProgress: (p) => {
+        progressCalls.push(p);
+      },
     });
 
     expect(mockAnalyze).toHaveBeenCalledTimes(2);
@@ -134,6 +139,7 @@ describe("analyzeArticle", () => {
       "fr",
       baseConfig,
       controller.signal,
+      undefined,
     );
     expect(result.summary).toBe("Résumé consolidé global.");
     expect(result.annotations).toHaveLength(2);
@@ -167,7 +173,7 @@ describe("analyzeArticle", () => {
     };
 
     const controller = new AbortController();
-    const result = await analyzeArticle(article, baseConfig, controller.signal, () => {});
+    const result = await analyzeArticle(article, baseConfig, controller.signal);
 
     // Repli gracieux : les résumés sont concaténés sans planter
     expect(result.summary).toBe("Résumé partie 1\n\nRésumé partie 2");
@@ -223,5 +229,139 @@ describe("analyzeArticle", () => {
     expect(summaries).toContain("Résumé final");
     expect(annotations).toEqual(["stream-1"]);
     expect(result.annotations).toHaveLength(1);
+  });
+
+  it("préfixe les identifiants d'annotations par morceau en cas de découpage", async () => {
+    mockAnalyze
+      .mockImplementationOnce(async (input) => {
+        input.onStream?.onAnnotation?.({
+          id: "ann-1",
+          exact_quote: "citation part 1",
+          category: "sophism",
+          label: "ad_hominem",
+          severity: "low",
+          rhetoric_critique: "critique 1",
+          fact_check: { status: "unverified", context: "", sources: [] },
+        });
+        return {
+          raw: {
+            summary: "s1",
+            annotations: [
+              {
+                id: "ann-1",
+                exact_quote: "citation part 1",
+                category: "sophism",
+                label: "ad_hominem",
+                severity: "low",
+                rhetoric_critique: "critique 1",
+                fact_check: { status: "unverified", context: "", sources: [] },
+              },
+            ],
+          },
+        };
+      })
+      .mockImplementationOnce(async (input) => {
+        input.onStream?.onAnnotation?.({
+          id: "ann-1",
+          exact_quote: "citation part 2",
+          category: "bias",
+          label: "cadrage",
+          severity: "high",
+          rhetoric_critique: "critique 2",
+          fact_check: { status: "unverified", context: "", sources: [] },
+        });
+        return {
+          raw: {
+            summary: "s2",
+            annotations: [
+              {
+                id: "ann-1",
+                exact_quote: "citation part 2",
+                category: "bias",
+                label: "cadrage",
+                severity: "high",
+                rhetoric_critique: "critique 2",
+                fact_check: { status: "unverified", context: "", sources: [] },
+              },
+            ],
+          },
+        };
+      });
+
+    const article: Extracted = {
+      title: "Article long",
+      lang: "fr",
+      paragraphs: ["A".repeat(300), "B".repeat(300)],
+    };
+
+    const streamedIds: string[] = [];
+    const controller = new AbortController();
+    await analyzeArticle(article, baseConfig, controller.signal, {
+      onAnnotation: (a) => streamedIds.push(a.id),
+    });
+
+    // Pendant le flux, les identifiants ont été préfixés par le morceau (p1-ann-1, p2-ann-1)
+    expect(streamedIds).toEqual(["p1-ann-1", "p2-ann-1"]);
+  });
+
+  it("garantit qu'aucune URL n'apparaît dans les annotations sans recherche web (D3)", async () => {
+    mockAnalyze.mockImplementation(async (input) => {
+      // Modèle qui tenterait de renvoyer une URL hallucinée alors que webSearch est désactivé
+      input.onStream?.onAnnotation?.({
+        id: "a1",
+        exact_quote: "fausse citation",
+        category: "factual_claim",
+        label: "statistique",
+        severity: "high",
+        rhetoric_critique: "allégation",
+        fact_check: {
+          status: "supported",
+          context: "contexte inventé",
+          sources: [{ title: "Fausse source", url: "https://fake.news/claim" }],
+        },
+      });
+      return {
+        raw: {
+          summary: "Résumé",
+          annotations: [
+            {
+              id: "a1",
+              exact_quote: "fausse citation",
+              category: "factual_claim",
+              label: "statistique",
+              severity: "high",
+              rhetoric_critique: "allégation",
+              fact_check: {
+                status: "supported",
+                context: "contexte inventé",
+                sources: [{ title: "Fausse source", url: "https://fake.news/claim" }],
+              },
+            },
+          ],
+        },
+      };
+    });
+
+    const article: Extracted = {
+      title: "Test D3",
+      lang: "fr",
+      paragraphs: ["Un court texte."],
+    };
+
+    let streamedAnnotation: Annotation | undefined;
+    const controller = new AbortController();
+    const result = await analyzeArticle(article, { ...baseConfig, webSearch: false }, controller.signal, {
+      onAnnotation: (a) => {
+        streamedAnnotation = a;
+      },
+    });
+
+    // En flux : status unverified et 0 sources (D3)
+    expect(streamedAnnotation?.fact_check.status).toBe("unverified");
+    expect(streamedAnnotation?.fact_check.sources).toEqual([]);
+
+    // En résultat final : pareillement nettoyé
+    expect(result.annotations[0]!.fact_check.status).toBe("unverified");
+    expect(result.annotations[0]!.fact_check.sources).toEqual([]);
   });
 });

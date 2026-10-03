@@ -26,8 +26,9 @@ Après une modification, lancer `typecheck`, `test` et `build`.
 - **API d'extension** : toujours passer par `ext` (`src/ext.ts`), jamais par `chrome.*` directement. Une API propre à un navigateur doit être détectée à l'exécution. Le manifest est généré par cible dans `build.mjs` : ne pas créer de `manifest.json` à la main.
 - **`permissions.request`** doit être appelé avant tout `await` dans le gestionnaire d'événement, sinon Firefox refuse la demande.
 - Le schéma JSON du LLM (`src/schema.ts`, spec §3) est un contrat. Toute modification se reporte dans la spec, dans la validation et dans le prompt (`src/prompt.ts`).
-- Les labels proviennent exclusivement de `src/taxonomy.ts`.
-- **Sources (D3)** : aucune URL n'est affichée si elle ne provient pas de l'outil de recherche web du provider (`enforceSourcePolicy`).
+- Les labels proviennent exclusivement de `src/taxonomy.ts`. Toute nouvelle étiquette ajoutée dans `src/taxonomy.ts` doit obligatoirement être traduite et documentée dans les 5 langues (`fr`, `en`, `es`, `de`, `it` dans `TAXONOMY_TRANSLATIONS` ; la suite de tests unitaires l'impose).
+- **Internationalisation (D5)** : tout texte d'interface (panneau latéral, options, messages de statut et d'erreur d'extraction ou de provider) passe impérativement par `src/i18n.ts` (`UiStrings`) et doit être décliné dans les 5 langues supportées.
+- **Sources (D3)** : aucune URL n'est affichée si elle ne provient pas de l'outil de recherche web du provider (`enforceSourcePolicy` et `enforceAnnotationSourcePolicy`).
 - **Sécurité du panneau** : le contenu issu du LLM ou de la page est inséré avec `textContent`, jamais avec `innerHTML`.
 - MV3 interdit le code distant : les dépendances sont embarquées par esbuild. Ne pas minifier, car la revue Firefox exige un code lisible.
 - La clé API va dans `storage.local`, jamais dans `sync`, et ne doit pas être journalisée.

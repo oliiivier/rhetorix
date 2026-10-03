@@ -8,7 +8,13 @@ import { anthropicProvider } from "./providers/anthropic";
 import { geminiProvider } from "./providers/gemini";
 import { openAiCompatibleProvider } from "./providers/openai-compatible";
 import type { LlmProvider, StreamCallbacks } from "./providers/types";
-import { enforceSourcePolicy, validateAnalysis, type Analysis, type Annotation } from "./schema";
+import {
+  enforceAnnotationSourcePolicy,
+  enforceSourcePolicy,
+  validateAnalysis,
+  type Analysis,
+  type Annotation,
+} from "./schema";
 
 const PROVIDERS: Record<ProviderId, LlmProvider> = {
   anthropic: anthropicProvider,
@@ -34,17 +40,15 @@ export async function analyzeArticle(
   article: Extracted,
   config: Config,
   signal: AbortSignal,
-  callbacks?: ((p: Progress) => void) | AnalyzeCallbacks,
+  callbacks?: AnalyzeCallbacks,
 ): Promise<Analysis> {
-  const cb: AnalyzeCallbacks = typeof callbacks === "function" ? { onProgress: callbacks } : (callbacks ?? {});
-  const notifyProgress = (p: Progress) => cb.onProgress?.(p);
-
+  const cb = callbacks ?? {};
   const provider = PROVIDERS[config.provider];
   const webSearch = config.webSearch && provider.supportsWebSearch(config);
   const language = resolveLanguage(config);
   const chunks = chunkParagraphs(article.paragraphs, config.maxChunkTokens);
   let done = 0;
-  notifyProgress({ phase: "analyzing", done, total: chunks.length });
+  cb.onProgress?.({ phase: "analyzing", done, total: chunks.length });
 
   const parts = await mapLimit(chunks, CONCURRENCY, async (text, index) => {
     const onStream: StreamCallbacks | undefined =
@@ -56,7 +60,9 @@ export async function analyzeArticle(
               }
             },
             onAnnotation: (a) => {
-              cb.onAnnotation?.(a);
+              const id = chunks.length > 1 ? `p${index + 1}-${a.id}` : a.id;
+              const safe = !webSearch ? enforceAnnotationSourcePolicy(a, undefined) : a;
+              cb.onAnnotation?.({ ...safe, id });
             },
           }
         : undefined;
@@ -67,20 +73,24 @@ export async function analyzeArticle(
       signal,
     );
     const analysis = enforceSourcePolicy(validateAnalysis(result.raw), webSearch ? result.searchedUrls : undefined);
-    notifyProgress({ phase: "analyzing", done: ++done, total: chunks.length });
+    cb.onProgress?.({ phase: "analyzing", done: ++done, total: chunks.length });
     return analysis;
   });
 
   const merged = mergeAnalyses(parts);
   if (parts.length > 1 && provider.consolidateSummary) {
-    notifyProgress({ phase: "consolidating", done: parts.length, total: parts.length });
+    cb.onProgress?.({ phase: "consolidating", done: parts.length, total: parts.length });
     try {
       const partialSummaries = parts.map((p) => p.summary.trim()).filter(Boolean);
       if (partialSummaries.length > 1) {
-        const onProgressText = cb.onSummary ? (text: string) => cb.onSummary?.(text, false) : undefined;
-        merged.summary = onProgressText
-          ? await provider.consolidateSummary(article.title, partialSummaries, language, config, signal, onProgressText)
-          : await provider.consolidateSummary(article.title, partialSummaries, language, config, signal);
+        merged.summary = await provider.consolidateSummary(
+          article.title,
+          partialSummaries,
+          language,
+          config,
+          signal,
+          cb.onSummary ? (text) => cb.onSummary?.(text, false) : undefined,
+        );
         cb.onSummary?.(merged.summary, true);
       }
     } catch {

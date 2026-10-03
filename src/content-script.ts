@@ -29,7 +29,7 @@ const LEAF_BLOCKS = "p, li, blockquote, h1, h2, h3, h4, h5, h6, pre, figcaption,
 
 function extract(): ExtractResult {
   const article = new Readability(document.cloneNode(true) as Document).parse();
-  if (!article?.content) return { ok: false, error: "Aucun contenu d'article détecté sur cette page." };
+  if (!article?.content) return { ok: false, error: "Aucun contenu d'article détecté sur cette page.", errorCode: "no_article" };
 
   // DOMParser produit un document inerte : aucun script de la page n'est exécuté.
   const doc = new DOMParser().parseFromString(article.content, "text/html");
@@ -40,7 +40,7 @@ function extract(): ExtractResult {
   if (paragraphs.length === 0) {
     paragraphs = (article.textContent ?? "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
   }
-  if (paragraphs.length === 0) return { ok: false, error: "L'article extrait est vide." };
+  if (paragraphs.length === 0) return { ok: false, error: "L'article extrait est vide.", errorCode: "empty_article" };
 
   return {
     ok: true,

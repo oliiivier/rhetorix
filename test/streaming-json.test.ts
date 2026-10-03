@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Annotation } from "../src/schema";
 import {
+  parseSseJson,
   ProgressiveJsonParser,
   stripCodeFence,
   unescapeJsonString,
@@ -54,6 +55,27 @@ describe("streaming-json", () => {
         lines.push(line);
       }
       expect(lines).toEqual(['data: {"a": 1}', "", 'data: {"b": 2}', ""]);
+    });
+  });
+
+  describe("parseSseJson", () => {
+    it("parse et filtre les frames data SSE", async () => {
+      const encoder = new TextEncoder();
+      const chunks = [
+        encoder.encode(': heartbeat\n\ndata: {"val": 10}\n\ndata: invalid-json\n\ndata: [DONE]\n\n'),
+      ];
+      const stream = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          if (chunks.length) controller.enqueue(chunks.shift()!);
+          else controller.close();
+        },
+      });
+      const response = new Response(stream);
+      const results: unknown[] = [];
+      for await (const obj of parseSseJson(response)) {
+        results.push(obj);
+      }
+      expect(results).toEqual([{ val: 10 }]);
     });
   });
 

@@ -23,7 +23,10 @@ export interface Extracted {
   paragraphs: string[];
 }
 
-export type ExtractResult = { ok: true; article: Extracted } | { ok: false; error: string };
+export type ExtractErrorCode = "no_article" | "empty_article";
+export type ExtractResult =
+  | { ok: true; article: Extracted }
+  | { ok: false; error: string; errorCode?: ExtractErrorCode };
 export interface HighlightResult {
   unlocated: string[];
 }

@@ -38,4 +38,24 @@ export interface LlmProvider {
   ): Promise<string>;
 }
 
-export class ProviderError extends Error {}
+export type ProviderErrorCode =
+  | "refusal"
+  | "max_tokens"
+  | "no_structured_output"
+  | "too_many_turns"
+  | "empty_response"
+  | "invalid_json"
+  | "empty_consolidated"
+  | "blocked"
+  | "http_error";
+
+export class ProviderError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: ProviderErrorCode,
+    public readonly detail?: string,
+  ) {
+    super(message);
+    this.name = "ProviderError";
+  }
+}

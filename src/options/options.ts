@@ -12,14 +12,30 @@ function setTxt(id: string, text: string): void {
   if (el) el.textContent = text;
 }
 
+function setHintWithCode(id: string, text: string): void {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.replaceChildren();
+  const parts = text.split(/(<code>.*?<\/code>)/g);
+  for (const part of parts) {
+    if (part.startsWith("<code>") && part.endsWith("</code>")) {
+      const code = document.createElement("code");
+      code.textContent = part.slice(6, -7);
+      el.append(code);
+    } else if (part) {
+      el.append(document.createTextNode(part));
+    }
+  }
+}
+
 function applyOptionsI18n(lang: string): void {
   const t = getUiStrings(lang);
   document.title = t.optionsTitle;
   setTxt("title", t.optionsTitle);
   setTxt("lbl-provider", t.providerLabel);
   setTxt("lbl-endpoint", t.endpointLabel);
-  setTxt("endpoint-hint", t.endpointHint);
-  setTxt("endpoint-ollama-hint", t.endpointOllamaHint);
+  setHintWithCode("endpoint-hint", t.endpointHint);
+  setHintWithCode("endpoint-ollama-hint", t.endpointOllamaHint);
   setTxt("lbl-api-key", t.apiKeyLabel);
   setTxt("api-key-hint", t.apiKeyHint);
   setTxt("lbl-model", t.modelLabel);
@@ -95,7 +111,7 @@ form.addEventListener("submit", (event) => {
   const origin = providerOrigin(config);
   formStatus.className = "";
   if (!origin) {
-    formStatus.textContent = "Endpoint invalide.";
+    formStatus.textContent = t.invalidEndpoint;
     formStatus.className = "error";
     return;
   }
@@ -108,7 +124,7 @@ form.addEventListener("submit", (event) => {
       formStatus.className = granted ? "saved" : "error";
     })
     .catch((err: unknown) => {
-      formStatus.textContent = `Erreur : ${err instanceof Error ? err.message : String(err)}`;
+      formStatus.textContent = t.errorPrefix(err instanceof Error ? err.message : String(err));
       formStatus.className = "error";
     });
 });

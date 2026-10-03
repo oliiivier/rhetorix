@@ -3,6 +3,7 @@
 
 import type { Config } from "./config";
 import { ext } from "./ext";
+import type { ProviderErrorCode } from "./providers/types";
 import type { FactStatus, Severity } from "./schema";
 import type { Category } from "./taxonomy";
 
@@ -25,6 +26,8 @@ export interface UiStrings {
   accessErrorStatus: string;
   needConfigStatus: string;
   apiPermissionError: string;
+  extractNoArticleError: string;
+  extractEmptyArticleError: string;
   summaryTitle: string;
   cacheNote: (date: string) => string;
   emptyResults: string;
@@ -57,11 +60,16 @@ export interface UiStrings {
   saveBtn: string;
   savedSuccess: string;
   savedPermissionDenied: string;
+  invalidEndpoint: string;
+  errorPrefix: (msg: string) => string;
   cacheSectionTitle: string;
   clearCacheBtn: string;
   cacheCleared: string;
   privacySectionTitle: string;
   privacyText: string;
+
+  // Erreurs providers
+  providerErrors: Record<ProviderErrorCode, (detail?: string) => string>;
 }
 
 export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
@@ -82,6 +90,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "sinon, cliquez sur l'icône de Rhetorix depuis cet onglet pour autoriser l'accès.",
     needConfigStatus: "Configurez un fournisseur LLM dans les options (⚙) pour commencer.",
     apiPermissionError: "Accès à l'API du fournisseur refusé. Vérifiez l'endpoint dans les options.",
+    extractNoArticleError: "Aucun contenu d'article détecté sur cette page.",
+    extractEmptyArticleError: "L'article extrait est vide.",
     summaryTitle: "Posture argumentative",
     cacheNote: (date) => `Analyse du ${date} (cache).`,
     emptyResults: "Aucun procédé rhétorique notable relevé.",
@@ -112,31 +122,45 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       unverified: "Non vérifié",
     },
 
-    optionsTitle: "Rhetorix — options",
+    optionsTitle: "Rhetorix — Options",
     providerLabel: "Fournisseur",
     endpointLabel: "Endpoint",
-    endpointHint: "URL de base de l'API ; /chat/completions y est ajouté.",
+    endpointHint: "URL de base de l'API ; <code>/chat/completions</code> y est ajouté.",
     endpointOllamaHint:
-      'Pour Ollama en local (ex. http://localhost:11434/v1), lancez le serveur avec OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*" pour autoriser l\'accès.',
+      'Pour Ollama en local (ex. <code>http://localhost:11434/v1</code>), lancez le serveur avec <code>OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*"</code> pour autoriser l\'accès.',
     apiKeyLabel: "Clé API",
     apiKeyHint: "Stockée uniquement dans ce navigateur (stockage local, non synchronisé).",
     modelLabel: "Modèle",
     languageLabel: "Langue de l'analyse",
     webSearchLabel: "Vérifier les faits par recherche web",
-    webSearchHintAnthropic: "Utilise l'outil de recherche web d'Anthropic (à activer pour votre organisation dans la console).",
-    webSearchHintUnavailable: "Non disponible pour ce fournisseur : les vérifications seront marquées « non vérifié ».",
-    webSearchHintGemini: "Pas encore disponible pour Gemini : les vérifications seront marquées « non vérifié ».",
+    webSearchHintAnthropic: "Utilise l'outil de recherche web d'Anthropic.",
+    webSearchHintUnavailable: "Indisponible pour ce fournisseur : les vérifications restent en « non vérifié ».",
+    webSearchHintGemini: "Pas encore disponible pour Gemini : les vérifications restent en « non vérifié ».",
     maxChunkLabel: "Taille maximale d'un morceau (tokens)",
-    maxChunkHint: "Au-delà, l'article est découpé par paragraphes et analysé en plusieurs appels.",
+    maxChunkHint: "Au-delà de cette taille, l'article est découpé par paragraphes et analysé en plusieurs appels.",
     saveBtn: "Enregistrer",
-    savedSuccess: "Enregistré.",
-    savedPermissionDenied: "Enregistré, mais l'accès à l'API a été refusé.",
+    savedSuccess: "Configuration enregistrée.",
+    savedPermissionDenied: "Configuration enregistrée, mais la permission d'accès à l'API a été refusée.",
+    invalidEndpoint: "Endpoint invalide.",
+    errorPrefix: (msg) => `Erreur : ${msg}`,
     cacheSectionTitle: "Cache des analyses",
     clearCacheBtn: "Vider le cache",
     cacheCleared: "Cache vidé.",
-    privacySectionTitle: "Confidentialité",
+    privacySectionTitle: "Vie privée",
     privacyText:
-      "Le texte des articles analysés est envoyé au fournisseur configuré ci-dessus, et à lui seul. Rhetorix ne dispose d'aucun serveur.",
+      "Le texte des articles analysés est envoyé uniquement au fournisseur que vous avez configuré. Rhetorix ne dispose d'aucun serveur central.",
+
+    providerErrors: {
+      refusal: (detail) => (detail ? `Refus du modèle : ${detail}` : "Le modèle a refusé d'analyser ce contenu."),
+      max_tokens: () => "Réponse tronquée (max_tokens atteint). Réduire la taille des morceaux dans les options.",
+      no_structured_output: () => "Le modèle n'a pas renvoyé d'analyse structurée.",
+      too_many_turns: () => "Trop de reprises de la recherche web.",
+      empty_response: () => "Réponse vide du fournisseur.",
+      invalid_json: () => "La réponse du fournisseur n'est pas un JSON valide.",
+      empty_consolidated: () => "Résumé consolidé vide.",
+      blocked: (detail) => (detail ? `Requête bloquée (${detail}).` : "Requête bloquée par les filtres de sécurité."),
+      http_error: (detail) => (detail ? `Erreur du fournisseur : ${detail}` : "Erreur de communication avec le fournisseur."),
+    },
   },
 
   en: {
@@ -145,7 +169,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reanalyzeBtn: "Re-analyze",
     cancelBtn: "Cancel",
     optionsBtnTitle: "Options",
-    idleStatus: "Open an article then start analysis.",
+    idleStatus: "Open an article and start the analysis.",
     extractingStatus: "Extracting article…",
     analyzingStatus: "Analyzing…",
     analyzingPartStatus: (done, total) => `Analyzing… (${done}/${total} parts)`,
@@ -155,24 +179,26 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "Cannot access this page. Browser internal pages cannot be analyzed; " +
       "otherwise, click the Rhetorix icon on this tab to grant access.",
     needConfigStatus: "Configure an LLM provider in options (⚙) to get started.",
-    apiPermissionError: "Access to provider API denied. Check endpoint in options.",
+    apiPermissionError: "Provider API access denied. Check the endpoint in options.",
+    extractNoArticleError: "No article content detected on this page.",
+    extractEmptyArticleError: "The extracted article is empty.",
     summaryTitle: "Argumentative stance",
-    cacheNote: (date) => `Analysis from ${date} (cache).`,
-    emptyResults: "No notable rhetorical device found.",
-    unlocatedQuote: "Quote not found on page.",
-    factCheckLabel: "Fact check:",
+    cacheNote: (date) => `Analysis from ${date} (cached).`,
+    emptyResults: "No significant rhetorical devices found.",
+    unlocatedQuote: "Quote could not be located in the page.",
+    factCheckLabel: "Fact-check:",
     sourcesLabel: "Sources:",
-    privacyNotice: "Article text is sent directly to the configured LLM provider.",
+    privacyNotice: "Article text is sent to the configured LLM provider.",
     filterAll: "All",
     categories: {
       sophism: "Fallacy",
       bias: "Bias",
-      factual_claim: "Factual claim",
+      factual_claim: "Claim",
     },
     categoriesPlural: {
       sophism: "Fallacies",
       bias: "Biases",
-      factual_claim: "Factual claims",
+      factual_claim: "Claims",
     },
     severities: {
       high: "High",
@@ -189,50 +215,66 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     optionsTitle: "Rhetorix — Options",
     providerLabel: "Provider",
     endpointLabel: "Endpoint",
-    endpointHint: "Base API URL; /chat/completions is appended to it.",
+    endpointHint: "API base URL; <code>/chat/completions</code> is appended.",
     endpointOllamaHint:
-      'For local Ollama (e.g. http://localhost:11434/v1), start with OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*" to allow extension requests.',
+      'For local Ollama (e.g. <code>http://localhost:11434/v1</code>), start server with <code>OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*"</code> to allow requests.',
     apiKeyLabel: "API Key",
-    apiKeyHint: "Stored only in this browser (local storage, never synced).",
+    apiKeyHint: "Stored exclusively in this browser (local storage, not synced).",
     modelLabel: "Model",
     languageLabel: "Analysis language",
     webSearchLabel: "Verify facts via web search",
-    webSearchHintAnthropic: "Uses Anthropic web search tool (enable for your organization in console).",
-    webSearchHintUnavailable: "Not available for this provider: fact checks will be marked as unverified.",
-    webSearchHintGemini: "Not yet available for Gemini: fact checks will be marked as unverified.",
-    maxChunkLabel: "Maximum chunk size (tokens)",
-    maxChunkHint: "Beyond this limit, long articles are split by paragraphs and analyzed in batches.",
+    webSearchHintAnthropic: "Uses Anthropic web search tool.",
+    webSearchHintUnavailable: "Unavailable for this provider: fact-checks will remain 'unverified'.",
+    webSearchHintGemini: "Not yet available for Gemini: fact-checks will remain 'unverified'.",
+    maxChunkLabel: "Max chunk size (tokens)",
+    maxChunkHint: "Beyond this limit, the article is split by paragraphs and analyzed across multiple calls.",
     saveBtn: "Save",
-    savedSuccess: "Saved.",
-    savedPermissionDenied: "Saved, but API access permission was denied.",
-    cacheSectionTitle: "Analysis Cache",
+    savedSuccess: "Configuration saved.",
+    savedPermissionDenied: "Configuration saved, but API access permission was denied.",
+    invalidEndpoint: "Invalid endpoint.",
+    errorPrefix: (msg) => `Error: ${msg}`,
+    cacheSectionTitle: "Analysis cache",
     clearCacheBtn: "Clear cache",
     cacheCleared: "Cache cleared.",
     privacySectionTitle: "Privacy",
     privacyText:
-      "Analyzed article text is sent strictly to your chosen LLM provider. Rhetorix has no central server.",
+      "The text of analyzed articles is sent exclusively to the provider you configured. Rhetorix does not run any central server.",
+
+    providerErrors: {
+      refusal: (detail) => (detail ? `Model refusal: ${detail}` : "The model refused to analyze this content."),
+      max_tokens: () => "Response truncated (max_tokens reached). Reduce chunk size in options.",
+      no_structured_output: () => "The model did not return a structured analysis.",
+      too_many_turns: () => "Too many web search retry turns.",
+      empty_response: () => "Empty response from provider.",
+      invalid_json: () => "Provider response is not valid JSON.",
+      empty_consolidated: () => "Consolidated summary is empty.",
+      blocked: (detail) => (detail ? `Request blocked (${detail}).` : "Request blocked by safety filters."),
+      http_error: (detail) => (detail ? `Provider error: ${detail}` : "Communication error with provider."),
+    },
   },
 
   es: {
     panelTitle: "Rhetorix",
-    analyzeBtn: "Analizar página",
+    analyzeBtn: "Analizar la página",
     reanalyzeBtn: "Reanalizar",
     cancelBtn: "Cancelar",
     optionsBtnTitle: "Opciones",
     idleStatus: "Abra un artículo e inicie el análisis.",
-    extractingStatus: "Extrayendo artículo…",
+    extractingStatus: "Extrayendo el artículo…",
     analyzingStatus: "Analizando…",
     analyzingPartStatus: (done, total) => `Analizando… (${done}/${total} partes)`,
-    consolidatingStatus: "Sintetizando resumen global…",
+    consolidatingStatus: "Sintetizando el resumen global…",
     cancelledStatus: "Análisis cancelado.",
     accessErrorStatus:
       "No se puede acceder a esta página. Las páginas internas del navegador no son analizables; " +
       "de lo contrario, haga clic en el icono de Rhetorix en esta pestaña para conceder acceso.",
     needConfigStatus: "Configure un proveedor LLM en las opciones (⚙) para comenzar.",
     apiPermissionError: "Acceso a la API del proveedor denegado. Compruebe el endpoint en las opciones.",
+    extractNoArticleError: "No se detectó contenido de artículo en esta página.",
+    extractEmptyArticleError: "El artículo extraído está vacío.",
     summaryTitle: "Postura argumentativa",
     cacheNote: (date) => `Análisis del ${date} (caché).`,
-    emptyResults: "No se encontró ningún recurso retórico destacable.",
+    emptyResults: "No se detectaron recursos retóricos relevantes.",
     unlocatedQuote: "Cita no encontrada en la página.",
     factCheckLabel: "Verificación:",
     sourcesLabel: "Fuentes:",
@@ -263,28 +305,42 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     optionsTitle: "Rhetorix — Opciones",
     providerLabel: "Proveedor",
     endpointLabel: "Endpoint",
-    endpointHint: "URL base de la API; se añade /chat/completions.",
+    endpointHint: "URL base de la API; se añade <code>/chat/completions</code>.",
     endpointOllamaHint:
-      'Para Ollama en local (ej. http://localhost:11434/v1), ejecute con OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*" para permitir el acceso.',
+      'Para Ollama en local (ej. <code>http://localhost:11434/v1</code>), inicie el servidor con <code>OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*"</code> para autorizar solicitudes.',
     apiKeyLabel: "Clave API",
-    apiKeyHint: "Almacenada únicamente en este navegador (almacenamiento local, sin sincronizar).",
+    apiKeyHint: "Almacenada exclusivamente en este navegador (almacenamiento local, no sincronizado).",
     modelLabel: "Modelo",
     languageLabel: "Idioma del análisis",
     webSearchLabel: "Verificar hechos mediante búsqueda web",
     webSearchHintAnthropic: "Utiliza la herramienta de búsqueda web de Anthropic.",
-    webSearchHintUnavailable: "No disponible para este proveedor: las verificaciones se marcarán como «no verificado».",
-    webSearchHintGemini: "Aún no disponible para Gemini: las verificaciones se marcarán como «no verificado».",
+    webSearchHintUnavailable: "No disponible para este proveedor: las verificaciones permanecerán como 'no verificado'.",
+    webSearchHintGemini: "Aún no disponible para Gemini: las verificaciones permanecerán como 'no verificado'.",
     maxChunkLabel: "Tamaño máximo de fragmento (tokens)",
-    maxChunkHint: "A partir de este límite, el artículo se divide por párrafos y se analiza en varias llamadas.",
+    maxChunkHint: "Más allá de este límite, el artículo se divide por párrafos y se analiza en varias llamadas.",
     saveBtn: "Guardar",
-    savedSuccess: "Guardado.",
-    savedPermissionDenied: "Guardado, pero el permiso de acceso a la API fue denegado.",
+    savedSuccess: "Configuración guardada.",
+    savedPermissionDenied: "Configuración guardada, pero se denegó el permiso de acceso a la API.",
+    invalidEndpoint: "Endpoint no válido.",
+    errorPrefix: (msg) => `Error: ${msg}`,
     cacheSectionTitle: "Caché de análisis",
     clearCacheBtn: "Vaciar caché",
     cacheCleared: "Caché vaciada.",
     privacySectionTitle: "Privacidad",
     privacyText:
-      "El texto de los artículos analizados se envía únicamente al proveedor configurado. Rhetorix no dispone de servidor central.",
+      "El texto de los artículos analizados se envía únicamente al proveedor que haya configurado. Rhetorix no dispone de ningún servidor central.",
+
+    providerErrors: {
+      refusal: (detail) => (detail ? `Rechazo del modelo: ${detail}` : "El modelo rechazó analizar este contenido."),
+      max_tokens: () => "Respuesta truncada (límite de tokens alcanzado). Reduzca el tamaño de los fragmentos en las opciones.",
+      no_structured_output: () => "El modelo no devolvió un análisis estructurado.",
+      too_many_turns: () => "Demasiados intentos de búsqueda web.",
+      empty_response: () => "Respuesta vacía del proveedor.",
+      invalid_json: () => "La respuesta del proveedor no es un JSON válido.",
+      empty_consolidated: () => "El resumen consolidado está vacío.",
+      blocked: (detail) => (detail ? `Solicitud bloqueada (${detail}).` : "Solicitud bloqueada por filtros de seguridad."),
+      http_error: (detail) => (detail ? `Error del proveedor: ${detail}` : "Error de comunicación con el proveedor."),
+    },
   },
 
   de: {
@@ -296,31 +352,33 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     idleStatus: "Öffnen Sie einen Artikel und starten Sie die Analyse.",
     extractingStatus: "Artikel wird extrahiert…",
     analyzingStatus: "Analyse läuft…",
-    analyzingPartStatus: (done, total) => `Analyse läuft… (${done}/${total} Teile)`,
+    analyzingPartStatus: (done, total) => `Analyse läuft… (${done}/${total} Abschnitte)`,
     consolidatingStatus: "Gesamtzusammenfassung wird erstellt…",
     cancelledStatus: "Analyse abgebrochen.",
     accessErrorStatus:
-      "Zugriff auf diese Seite nicht möglich. Interne Browserseiten können nicht analysiert werden; " +
+      "Auf diese Seite kann nicht zugegriffen werden. Interne Browserseiten können nicht analysiert werden; " +
       "klicken Sie andernfalls auf das Rhetorix-Symbol auf diesem Tab, um den Zugriff zu erlauben.",
     needConfigStatus: "Konfigurieren Sie einen LLM-Anbieter in den Optionen (⚙), um zu beginnen.",
-    apiPermissionError: "Zugriff auf Anbieter-API verweigert. Prüfen Sie den Endpunkt in den Optionen.",
+    apiPermissionError: "Zugriff auf die Anbieter-API verweigert. Überprüfen Sie den Endpunkt in den Optionen.",
+    extractNoArticleError: "Kein Artikelinhalt auf dieser Seite erkannt.",
+    extractEmptyArticleError: "Der extrahierte Artikel ist leer.",
     summaryTitle: "Argumentative Haltung",
     cacheNote: (date) => `Analyse vom ${date} (Cache).`,
     emptyResults: "Keine auffälligen rhetorischen Mittel festgestellt.",
     unlocatedQuote: "Zitat auf der Seite nicht gefunden.",
     factCheckLabel: "Faktencheck:",
     sourcesLabel: "Quellen:",
-    privacyNotice: "Der Text des Artikels wird an den konfigurierten LLM-Anbieter gesendet.",
+    privacyNotice: "Der Artikeltext wird an den konfigurierten LLM-Anbieter gesendet.",
     filterAll: "Alle",
     categories: {
-      sophism: "Fehlschluss",
+      sophism: "Trugschluss",
       bias: "Verzerrung",
-      factual_claim: "Faktenbehauptung",
+      factual_claim: "Behauptung",
     },
     categoriesPlural: {
-      sophism: "Fehlschlüsse",
+      sophism: "Trugschlüsse",
       bias: "Verzerrungen",
-      factual_claim: "Faktenbehauptungen",
+      factual_claim: "Behauptungen",
     },
     severities: {
       high: "Hoch",
@@ -331,39 +389,53 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       refuted: "Widerlegt",
       supported: "Bestätigt",
       misleading: "Irreführend",
-      unverified: "Ungeprüft",
+      unverified: "Nicht überprüft",
     },
 
     optionsTitle: "Rhetorix — Optionen",
     providerLabel: "Anbieter",
     endpointLabel: "Endpunkt",
-    endpointHint: "Basis-URL der API; /chat/completions wird angehängt.",
+    endpointHint: "Basis-URL der API; <code>/chat/completions</code> wird angehängt.",
     endpointOllamaHint:
-      'Für lokales Ollama (z. B. http://localhost:11434/v1) mit OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*" starten, um Anfragen zu erlauben.',
+      'Für lokales Ollama (z. B. <code>http://localhost:11434/v1</code>), starten Sie den Server mit <code>OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*"</code>, um Anfragen zu erlauben.',
     apiKeyLabel: "API-Schlüssel",
-    apiKeyHint: "Nur lokal in diesem Browser gespeichert (keine Cloud-Synchronisierung).",
+    apiKeyHint: "Wird ausschließlich in diesem Browser gespeichert (lokaler Speicher, nicht synchronisiert).",
     modelLabel: "Modell",
-    languageLabel: "Sprache der Analyse",
-    webSearchLabel: "Fakten per Websuche überprüfen",
-    webSearchHintAnthropic: "Verwendet das Websuche-Tool von Anthropic.",
-    webSearchHintUnavailable: "Für diesen Anbieter nicht verfügbar: Prüfungen werden als «ungeprüft» markiert.",
-    webSearchHintGemini: "Für Gemini noch nicht verfügbar: Prüfungen werden als «ungeprüft» markiert.",
-    maxChunkLabel: "Maximale Stückgröße (Tokens)",
-    maxChunkHint: "Darüber hinaus wird der Artikel nach Absätzen geteilt und in mehreren Anfragen analysiert.",
+    languageLabel: "Analysesprache",
+    webSearchLabel: "Fakten per Websuche prüfen",
+    webSearchHintAnthropic: "Nutzt das Websuche-Tool von Anthropic.",
+    webSearchHintUnavailable: "Für diesen Anbieter nicht verfügbar: Überprüfungen bleiben 'nicht überprüft'.",
+    webSearchHintGemini: "Für Gemini noch nicht verfügbar: Überprüfungen bleiben 'nicht überprüft'.",
+    maxChunkLabel: "Maximale Blockgröße (Tokens)",
+    maxChunkHint: "Jenseits dieser Grenze wird der Artikel in Absätze unterteilt und über mehrere Aufrufe analysiert.",
     saveBtn: "Speichern",
-    savedSuccess: "Gespeichert.",
-    savedPermissionDenied: "Gespeichert, aber der Zugriff auf die API wurde verweigert.",
+    savedSuccess: "Konfiguration gespeichert.",
+    savedPermissionDenied: "Konfiguration gespeichert, aber die Zugriffsberechtigung für die API wurde verweigert.",
+    invalidEndpoint: "Ungültiger Endpunkt.",
+    errorPrefix: (msg) => `Fehler: ${msg}`,
     cacheSectionTitle: "Analyse-Cache",
     clearCacheBtn: "Cache leeren",
     cacheCleared: "Cache geleert.",
     privacySectionTitle: "Datenschutz",
     privacyText:
-      "Der Text analysierter Artikel wird ausschließlich an den gewählten Anbieter gesendet. Rhetorix betreibt keinen eigenen Server.",
+      "Der Text analysierter Artikel wird ausschließlich an den von Ihnen konfigurierten Anbieter gesendet. Rhetorix betreibt keinen zentralen Server.",
+
+    providerErrors: {
+      refusal: (detail) => (detail ? `Ablehnung durch das Modell: ${detail}` : "Das Modell hat die Analyse dieses Inhalts abgelehnt."),
+      max_tokens: () => "Antwort abgeschnitten (max_tokens erreicht). Reduzieren Sie die Blockgröße in den Optionen.",
+      no_structured_output: () => "Das Modell hat keine strukturierte Analyse zurückgegeben.",
+      too_many_turns: () => "Zu viele Versuche bei der Websuche.",
+      empty_response: () => "Leere Antwort vom Anbieter.",
+      invalid_json: () => "Die Antwort des Anbieters ist kein gültiges JSON.",
+      empty_consolidated: () => "Zusammenfassung ist leer.",
+      blocked: (detail) => (detail ? `Anfrage blockiert (${detail}).` : "Anfrage durch Sicherheitsfilter blockiert."),
+      http_error: (detail) => (detail ? `Anbieterfehler: ${detail}` : "Kommunikationsfehler mit dem Anbieter."),
+    },
   },
 
   it: {
     panelTitle: "Rhetorix",
-    analyzeBtn: "Analizza pagina",
+    analyzeBtn: "Analizza la pagina",
     reanalyzeBtn: "Rianalizza",
     cancelBtn: "Annulla",
     optionsBtnTitle: "Opzioni",
@@ -371,13 +443,15 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     extractingStatus: "Estrazione dell'articolo…",
     analyzingStatus: "Analisi in corso…",
     analyzingPartStatus: (done, total) => `Analisi in corso… (${done}/${total} parti)`,
-    consolidatingStatus: "Sintesi del riassunto globale…",
+    consolidatingStatus: "Sintesi del riassunto generale…",
     cancelledStatus: "Analisi annullata.",
     accessErrorStatus:
       "Impossibile accedere a questa pagina. Le pagine interne del browser non sono analizzabili; " +
-      "altrimenti fai clic sull'icona Rhetorix in questa scheda per concedere l'accesso.",
+      "in alternativa, fai clic sull'icona di Rhetorix da questa scheda per concedere l'accesso.",
     needConfigStatus: "Configura un fornitore LLM nelle opzioni (⚙) per iniziare.",
     apiPermissionError: "Accesso all'API del fornitore negato. Verifica l'endpoint nelle opzioni.",
+    extractNoArticleError: "Nessun contenuto di articolo rilevato su questa pagina.",
+    extractEmptyArticleError: "L'articolo estratto è vuoto.",
     summaryTitle: "Postura argomentativa",
     cacheNote: (date) => `Analisi del ${date} (cache).`,
     emptyResults: "Nessun artificio retorico rilevante individuato.",
@@ -411,9 +485,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     optionsTitle: "Rhetorix — Opzioni",
     providerLabel: "Fornitore",
     endpointLabel: "Endpoint",
-    endpointHint: "URL base dell'API; /chat/completions viene aggiunto automaticamente.",
+    endpointHint: "URL base dell'API; <code>/chat/completions</code> viene aggiunto automaticamente.",
     endpointOllamaHint:
-      'Per Ollama in locale (es. http://localhost:11434/v1), avvia con OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*" per autorizzare le richieste.',
+      'Per Ollama in locale (es. <code>http://localhost:11434/v1</code>), avvia con <code>OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*"</code> per autorizzare le richieste.',
     apiKeyLabel: "Chiave API",
     apiKeyHint: "Memorizzata esclusivamente in questo browser (storage locale, non sincronizzato).",
     modelLabel: "Modello",
@@ -425,16 +499,41 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     maxChunkLabel: "Dimensione massima porzione (token)",
     maxChunkHint: "Oltre questo limite, l'articolo viene suddiviso in paragrafi e analizzato in più chiamate.",
     saveBtn: "Salva",
-    savedSuccess: "Salvato.",
+    savedSuccess: "Configurazione salvata.",
     savedPermissionDenied: "Salvato, ma l'autorizzazione di accesso all'API è stata negata.",
+    invalidEndpoint: "Endpoint non valido.",
+    errorPrefix: (msg) => `Errore: ${msg}`,
     cacheSectionTitle: "Cache delle analisi",
     clearCacheBtn: "Svuota cache",
     cacheCleared: "Cache svuotata.",
     privacySectionTitle: "Privacy",
     privacyText:
       "Il testo degli articoli analizzati viene inviato esclusivamente al fornitore configurato. Rhetorix non dispone di alcun server centrale.",
+
+    providerErrors: {
+      refusal: (detail) => (detail ? `Rifiuto del modello: ${detail}` : "Il modello ha rifiutato di analizzare questo contenuto."),
+      max_tokens: () => "Risposta troncata (max_tokens raggiunto). Riduci la dimensione delle parti nelle opzioni.",
+      no_structured_output: () => "Il modello non ha restituito un'analisi strutturata.",
+      too_many_turns: () => "Troppi tentativi di ricerca web.",
+      empty_response: () => "Risposta vuota dal provider.",
+      invalid_json: () => "La risposta del provider non è un JSON valido.",
+      empty_consolidated: () => "Il riassunto consolidato è vuoto.",
+      blocked: (detail) => (detail ? `Richiesta bloccata (${detail}).` : "Richiesta bloccata dai filtri di sicurezza."),
+      http_error: (detail) => (detail ? `Errore del provider: ${detail}` : "Errore di comunicazione con il provider."),
+    },
   },
 };
+
+export function formatErrorMessage(err: unknown, t: UiStrings): string {
+  if (err && typeof err === "object" && "code" in err) {
+    const code = (err as { code?: ProviderErrorCode }).code;
+    const detail = (err as { detail?: string }).detail;
+    if (code && t.providerErrors[code]) {
+      return t.providerErrors[code](detail);
+    }
+  }
+  return err instanceof Error ? err.message : String(err);
+}
 
 export function normalizeLanguage(lang: string | undefined): Language {
   if (!lang || lang === "auto") {

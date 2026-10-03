@@ -83,7 +83,7 @@ const targets = {
         gecko: {
           // Identifiant provisoire : à remplacer avant publication sur addons.mozilla.org.
           id: "rhetorix@rhetorix.local",
-          // 142 : compatibilité CSS Custom Highlight API + data_collection_permissions.
+          // 142 : requis par data_collection_permissions (la CSS Custom Highlight API est supportée dès 140).
           strict_min_version: "142.0",
           data_collection_permissions: { required: ["websiteContent"] },
         },

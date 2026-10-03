@@ -20,7 +20,7 @@ export interface Config {
 
 export const DEFAULT_MODELS: Record<ProviderId, string> = {
   anthropic: "claude-opus-5-5",
-  "openai-compatible": "gpt-4o",
+  "openai-compatible": "",
   gemini: "gemini-2.5-flash",
 };
 

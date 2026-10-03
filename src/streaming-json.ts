@@ -66,6 +66,24 @@ export async function* readSseLines(response: Response): AsyncGenerator<string> 
 }
 
 /**
+ * Lit un flux SSE et émet chaque payload JSON des lignes "data: ...".
+ * Ignore les lignes vides et le marqueur [DONE].
+ */
+export async function* parseSseJson<T>(response: Response): AsyncGenerator<T> {
+  for await (const line of readSseLines(response)) {
+    const trimmed = line.trim();
+    if (!trimmed || !trimmed.startsWith("data:")) continue;
+    const data = trimmed.slice(5).trim();
+    if (data === "[DONE]") break;
+    try {
+      yield JSON.parse(data) as T;
+    } catch {
+      // Ignorer un fragment SSE non parseable
+    }
+  }
+}
+
+/**
  * Analyseur de flux JSON progressif.
  * Détecte l'arrivée de la clé "summary" et transmet le texte partiel ou complet.
  * Détecte le tableau "annotations" et extrait chaque objet JSON dès que ses

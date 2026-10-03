@@ -46,10 +46,32 @@ describe("i18n module", () => {
 
   it("getUiStrings s'adapte au paramètre chaîne ou objet Config", () => {
     expect(getUiStrings("en").analyzeBtn).toBe("Analyze page");
-    expect(getUiStrings({ language: "es" } as never).analyzeBtn).toBe("Analizar página");
+    expect(getUiStrings({ language: "es" } as never).analyzeBtn).toBe("Analizar la página");
     expect(getUiStrings({ language: "de" } as never).analyzeBtn).toBe("Seite analysieren");
-    expect(getUiStrings({ language: "it" } as never).analyzeBtn).toBe("Analizza pagina");
+    expect(getUiStrings({ language: "it" } as never).analyzeBtn).toBe("Analizza la pagina");
     expect(getUiStrings({ language: "fr" } as never).analyzeBtn).toBe("Analyser la page");
+  });
+
+  it("traduit les erreurs des providers et d'extraction dans toutes les langues", async () => {
+    const { formatErrorMessage } = await import("../src/i18n");
+    const { ProviderError } = await import("../src/providers/types");
+
+    for (const lang of SUPPORTED_LANGUAGES) {
+      const strings = UI_TRANSLATIONS[lang];
+      expect(strings.extractNoArticleError).toBeTruthy();
+      expect(strings.extractEmptyArticleError).toBeTruthy();
+      expect(strings.invalidEndpoint).toBeTruthy();
+      expect(strings.errorPrefix("test")).toContain("test");
+
+      const errRefusal = new ProviderError("Refus", "refusal", "contenu haineux");
+      expect(formatErrorMessage(errRefusal, strings)).toBeTruthy();
+
+      const errTokens = new ProviderError("Tokens", "max_tokens");
+      expect(formatErrorMessage(errTokens, strings)).toBeTruthy();
+
+      const errHttp = new ProviderError("HTTP", "http_error", "500 Internal Error");
+      expect(formatErrorMessage(errHttp, strings)).toContain("500 Internal Error");
+    }
   });
 });
 

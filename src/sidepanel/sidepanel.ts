@@ -6,7 +6,7 @@ import { analyzeArticle } from "../analyze";
 import { getCached, putCached, sha256 } from "../cache";
 import { isConfigured, loadConfig, providerOrigin, resolveLanguage, type Config } from "../config";
 import { ext } from "../ext";
-import { getUiStrings } from "../i18n";
+import { formatErrorMessage, getUiStrings } from "../i18n";
 import type { ContentToPanel, ExtractResult, HighlightResult, PanelToContent } from "../messages";
 import type { Analysis, Annotation } from "../schema";
 import { labelDef, type Category } from "../taxonomy";
@@ -229,7 +229,11 @@ async function analyze(force: boolean): Promise<void> {
     setStatus(t.extractingStatus);
     await inject(tabId);
     const extracted = await send<ExtractResult>(tabId, { type: "extract" });
-    if (!extracted.ok) throw new Error(extracted.error);
+    if (!extracted.ok) {
+      if (extracted.errorCode === "no_article") throw new Error(t.extractNoArticleError);
+      if (extracted.errorCode === "empty_article") throw new Error(t.extractEmptyArticleError);
+      throw new Error(extracted.error);
+    }
     const article = extracted.article;
 
     const fingerprint = {
@@ -283,8 +287,11 @@ async function analyze(force: boolean): Promise<void> {
     states.set(tabId, state);
     if (currentTabId === tabId) render(state);
   } catch (err) {
+    cardsEl.replaceChildren();
+    resultEl.hidden = true;
+    updateFilterCounts([]);
     if (running.signal.aborted) setStatus(t.cancelledStatus);
-    else setStatus(err instanceof Error ? err.message : String(err), true);
+    else setStatus(formatErrorMessage(err, t), true);
   } finally {
     running = null;
     analyzeBtn.disabled = false;
@@ -294,7 +301,10 @@ async function analyze(force: boolean): Promise<void> {
 
 // ---------- Événements ----------
 
-analyzeBtn.addEventListener("click", () => void analyze(analyzeBtn.textContent === strings().reanalyzeBtn));
+analyzeBtn.addEventListener("click", () => {
+  const hasAnalysis = currentTabId !== undefined && states.has(currentTabId);
+  void analyze(hasAnalysis);
+});
 cancelBtn.addEventListener("click", () => running?.abort());
 filtersEl.addEventListener("click", (e) => {
   const btn = (e.target as Element).closest<HTMLButtonElement>(".filter-btn");
