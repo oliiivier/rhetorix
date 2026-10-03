@@ -1,0 +1,17 @@
+/* Injecté dans la page par scripting.insertCSS. ::highlight() n'accepte que
+   couleur, fond et décoration de texte. */
+::highlight(rhetorix-sophism) {
+  background-color: rgb(220 38 38 / 0.22);
+  text-decoration: underline 2px rgb(220 38 38);
+}
+::highlight(rhetorix-bias) {
+  background-color: rgb(234 88 12 / 0.22);
+  text-decoration: underline 2px rgb(234 88 12);
+}
+::highlight(rhetorix-factual) {
+  background-color: rgb(37 99 235 / 0.18);
+  text-decoration: underline 2px rgb(37 99 235);
+}
+::highlight(rhetorix-active) {
+  background-color: rgb(250 204 21 / 0.55);
+}

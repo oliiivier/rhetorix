@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rhetorix</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="panel">
+    <header class="toolbar">
+      <h1>Rhetorix</h1>
+      <div class="actions">
+        <button id="analyze" class="primary" type="button">Analyser la page</button>
+        <button id="cancel" type="button" hidden>Annuler</button>
+        <button id="options" class="icon" type="button" title="Options" aria-label="Options">⚙</button>
+      </div>
+    </header>
+
+    <main>
+      <p id="status" class="status" role="status" aria-live="polite">
+        Ouvrez un article puis lancez l'analyse.
+      </p>
+
+      <section id="result" hidden>
+        <p id="cache-note" class="note" hidden></p>
+        <h2>Posture argumentative</h2>
+        <p id="summary" class="summary"></p>
+        <div class="legend" aria-hidden="true">
+          <span class="badge sophism">Sophisme</span>
+          <span class="badge bias">Biais</span>
+          <span class="badge factual_claim">Allégation factuelle</span>
+        </div>
+        <ol id="cards" class="cards"></ol>
+      </section>
+    </main>
+
+    <footer class="privacy">Le texte de l'article est envoyé au fournisseur LLM configuré.</footer>
+
+    <template id="card-template">
+      <li class="card" tabindex="0">
+        <div class="card-head">
+          <span class="badge"></span>
+          <span class="label"></span>
+          <span class="severity"></span>
+        </div>
+        <blockquote class="quote"></blockquote>
+        <p class="unlocated" hidden>Citation introuvable dans la page.</p>
+        <p class="critique"></p>
+        <details class="fact-check">
+          <summary><span class="fact-status"></span></summary>
+          <p class="fact-context"></p>
+          <ul class="sources"></ul>
+        </details>
+      </li>
+    </template>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

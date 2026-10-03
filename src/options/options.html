@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Options Rhetorix</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="options">
+    <main>
+      <h1>Rhetorix — options</h1>
+      <form id="form">
+        <label>
+          Fournisseur
+          <select name="provider">
+            <option value="anthropic">Anthropic</option>
+            <option value="openai-compatible">Compatible OpenAI (OpenAI, Mistral, OpenRouter, Ollama…)</option>
+            <option value="gemini">Google Gemini</option>
+          </select>
+        </label>
+
+        <label id="endpoint-field">
+          Endpoint
+          <input type="url" name="endpoint" placeholder="https://api.openai.com/v1" />
+          <span class="hint">URL de base de l'API ; <code>/chat/completions</code> y est ajouté.</span>
+        </label>
+
+        <label>
+          Clé API
+          <input type="password" name="apiKey" autocomplete="off" />
+          <span class="hint">Stockée uniquement dans ce navigateur (stockage local, non synchronisé).</span>
+        </label>
+
+        <label>
+          Modèle
+          <input type="text" name="model" required />
+        </label>
+
+        <label>
+          Langue de l'analyse
+          <select name="language">
+            <option value="auto">Langue du navigateur</option>
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+            <option value="it">Italiano</option>
+          </select>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" name="webSearch" />
+          Vérifier les faits par recherche web
+        </label>
+        <span class="hint" id="websearch-hint"></span>
+
+        <label>
+          Taille maximale d'un morceau (tokens)
+          <input type="number" name="maxChunkTokens" min="2000" step="1000" />
+          <span class="hint">Au-delà, l'article est découpé par paragraphes et analysé en plusieurs appels.</span>
+        </label>
+
+        <div class="row">
+          <button class="primary" type="submit">Enregistrer</button>
+          <span id="form-status" role="status"></span>
+        </div>
+      </form>
+
+      <section>
+        <h2>Cache des analyses</h2>
+        <div class="row">
+          <button id="clear-cache" type="button">Vider le cache</button>
+          <span id="cache-status" role="status"></span>
+        </div>
+      </section>
+
+      <section>
+        <h2>Confidentialité</h2>
+        <p>
+          Le texte des articles analysés est envoyé au fournisseur configuré ci-dessus, et à lui seul.
+          Rhetorix ne dispose d'aucun serveur.
+        </p>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

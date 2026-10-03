@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD) — Rhetorix (Extension Manifest V3)
 
 ## 1. Vision du produit
-Extension de navigateur pour Chromium (Chrome, Brave, Edge) permettant d'analyser en temps réel un article de presse ou une interview. L'extension surligne les sophismes et biais dans le texte à gauche, et affiche un panneau latéral interactif à droite détaillant l'analyse rhétorique et les sources de vérification.
+Extension de navigateur pour Chromium (Chrome, Brave, Edge) et Firefox permettant d'analyser en temps réel un article de presse ou une interview. L'extension surligne les sophismes et biais dans le texte à gauche, et affiche un panneau latéral interactif à droite détaillant l'analyse rhétorique et les sources de vérification.
 
 ## 2. Architecture & Composants MV3
 - `manifest.json` : Manifest V3 avec permissions `sidePanel`, `activeTab`, `scripting`, `storage`.
@@ -26,7 +26,7 @@ Le modèle doit obligatoirement retourner un objet JSON conforme à cette struct
       "id": "ann-1",
       "exact_quote": "Citation exacte présente au mot près dans le texte",
       "category": "sophism" | "bias" | "factual_claim",
-      "label": "Argument d'autorité" | "Homme de paille" | "Faux dilemme" | etc.,
+      "label": "argument_autorite" | "homme_de_paille" | "faux_dilemme" | … | "autre",
       "severity": "high" | "medium" | "low",
       "rhetoric_critique": "Explication de la faille de logique ou du procédé rhétorique.",
       "fact_check": {
@@ -39,6 +39,8 @@ Le modèle doit obligatoirement retourner un objet JSON conforme à cette struct
     }
   ]
 }
+
+`label` est un identifiant de la taxonomie fermée définie dans `src/taxonomy.ts` (décision D4) ; le nom affiché et la définition en sont dérivés.
 
 ## 4. Parcours utilisateur
 1. L'utilisateur navigue sur un article et clique sur l'icône de l'extension.
