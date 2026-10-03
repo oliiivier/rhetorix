@@ -25,10 +25,11 @@
         <p id="cache-note" class="note" hidden></p>
         <h2>Posture argumentative</h2>
         <p id="summary" class="summary"></p>
-        <div class="legend" aria-hidden="true">
-          <span class="badge sophism">Sophisme</span>
-          <span class="badge bias">Biais</span>
-          <span class="badge factual_claim">Allégation factuelle</span>
+        <div class="legend" id="filters" role="group" aria-label="Filtrer les annotations par catégorie">
+          <button type="button" class="filter-btn active" data-category="all">Tous</button>
+          <button type="button" class="filter-btn badge sophism" data-category="sophism">Sophisme</button>
+          <button type="button" class="filter-btn badge bias" data-category="bias">Biais</button>
+          <button type="button" class="filter-btn badge factual_claim" data-category="factual_claim">Allégation</button>
         </div>
         <ol id="cards" class="cards"></ol>
       </section>

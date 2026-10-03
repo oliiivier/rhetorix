@@ -21,11 +21,16 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 - **Recherche web et sortie structurée** : vérifier pour chaque provider qu'on peut combiner l'outil de recherche web et la sortie JSON contrainte. Selon les modèles, Gemini restreint la combinaison du grounding Google Search avec un `responseSchema`. Si c'est impossible, prévoir deux passes : une analyse structurée, puis une vérification avec recherche.
 - **Compatible OpenAI et recherche web** : la plupart des endpoints compatibles n'ont pas d'outil de recherche web. Ils sont donc en mode `unverified` par défaut.
 - **Limite de découpage (D6)** : la valeur par défaut est de 12 000 tokens. À ajuster selon les coûts constatés.
-- **Résumé consolidé (D6)** : pour un article découpé, les résumés partiels sont aujourd'hui concaténés. Il faudra un appel court pour produire un résumé unique.
 - **Streaming** : l'adaptateur Anthropic reçoit la réponse en flux, mais rien ne s'affiche avant la fin de l'analyse. Les deux autres adaptateurs ne sont pas en flux. L'affichage progressif des cartes reste à faire.
-- **Icônes** de l'extension : à créer.
-- **Identifiant Firefox** : `rhetorix@rhetorix.local` est provisoire. Il faudra le remplacer avant publication sur addons.mozilla.org, et vérifier la déclaration `data_collection_permissions` (`websiteContent`).
-- **Ollama et serveurs locaux** : ils peuvent rejeter l'origine de l'extension. Il faut autoriser `chrome-extension://*` / `moz-extension://*` (variable `OLLAMA_ORIGINS`). C'est à documenter pour l'utilisateur.
+- **Identifiant Firefox** : `rhetorix@rhetorix.local` est provisoire. Il faudra le remplacer avant publication sur addons.mozilla.org.
+
+## Éléments traités
+
+- **Icônes de l'extension** : créées en SVG (`src/icons/icon.svg`) et déclinées en PNG (16, 32, 48, 128 px), déclarées dans les manifests Chromium et Firefox.
+- **Résumé consolidé (D6)** : implémenté via `consolidateSummary` sur les 3 providers (Anthropic, Gemini, OpenAI-compatible) avec repli gracieux sur les résumés partiels concaténés en cas d'erreur.
+- **Filtrage des cartes par catégorie** : filtres interactifs par catégorie avec compteurs ajoutés dans le panneau latéral (`sidepanel.html` / `sidepanel.ts`).
+- **Ollama et serveurs locaux** : consigne `OLLAMA_ORIGINS` intégrée directement dans la page d'options sous le champ endpoint.
+- **Compatibilité Firefox / AMO** : `strict_min_version` fixée à 142.0 pour la compatibilité avec `data_collection_permissions`, avertissement `web-ext lint` résolu.
 
 ## Écarts entre le PRD et la plateforme
 

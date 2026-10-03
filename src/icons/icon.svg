@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e222a"/>
+      <stop offset="100%" stop-color="#111317"/>
+    </linearGradient>
+    <linearGradient id="letter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fond arrondi sombre -->
+  <rect width="128" height="128" rx="26" ry="26" fill="url(#bg)"/>
+  <rect x="1" y="1" width="126" height="126" rx="25" ry="25" fill="none" stroke="#2e3440" stroke-width="2"/>
+
+  <!-- Trois barres de surlignage représentant Sophisme, Biais, Allégation -->
+  <rect x="74" y="24" width="34" height="7" rx="3.5" fill="#e03131" opacity="0.9"/>
+  <rect x="70" y="36" width="38" height="7" rx="3.5" fill="#f76707" opacity="0.9"/>
+  <rect x="78" y="48" width="30" height="7" rx="3.5" fill="#339af0" opacity="0.9"/>
+
+  <!-- Lettre R stylisée (Rhétorique) -->
+  <path d="M 32 24 L 62 24 C 76 24 84 31 84 43 C 84 53 77 59 66 61 L 86 98 L 68 98 L 51 64 L 46 64 L 46 98 L 32 98 Z M 46 37 L 46 52 L 60 52 C 67 52 70 48 70 44.5 C 70 40 67 37 60 37 Z" fill="url(#letter)"/>
+
+  <!-- Ligne de surlignage active sous le logo -->
+  <rect x="32" y="106" width="64" height="5" rx="2.5" fill="#fab005"/>
+</svg>

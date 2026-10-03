@@ -2,7 +2,7 @@
 // OpenRouter, Ollama, LM Studio…). Pas de recherche web : mode "unverified" (D3).
 
 import type { Config } from "../config";
-import { systemPrompt, userPrompt } from "../prompt";
+import { consolidatePrompt, systemPrompt, userPrompt } from "../prompt";
 import { ANALYSIS_JSON_SCHEMA } from "../schema";
 import { ProviderError, type LlmProvider } from "./types";
 
@@ -43,5 +43,31 @@ export const openAiCompatibleProvider: LlmProvider = {
     } catch {
       throw new ProviderError("La réponse n'est pas un JSON valide.");
     }
+  },
+
+  async consolidateSummary(title, summaries, language, config, signal) {
+    const { system, user } = consolidatePrompt(title, summaries, language);
+    const url = `${config.endpoint.replace(/\/+$/, "")}/chat/completions`;
+    const res = await fetch(url, {
+      method: "POST",
+      signal,
+      headers: {
+        "content-type": "application/json",
+        ...(config.apiKey ? { authorization: `Bearer ${config.apiKey}` } : {}),
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      }),
+    });
+    if (!res.ok) throw new ProviderError(`Erreur ${res.status} de l'endpoint : ${(await res.text()).slice(0, 300)}`);
+
+    const choice = ((await res.json()) as ChatCompletion).choices?.[0];
+    const text = choice?.message?.content?.trim();
+    if (!text) throw new ProviderError("Résumé consolidé vide.");
+    return text;
   },
 };

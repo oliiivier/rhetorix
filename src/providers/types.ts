@@ -21,6 +21,13 @@ export interface ProviderResult {
 export interface LlmProvider {
   supportsWebSearch(config: Config): boolean;
   analyze(input: AnalyzeInput, config: Config, signal: AbortSignal): Promise<ProviderResult>;
+  consolidateSummary?(
+    title: string,
+    summaries: string[],
+    language: string,
+    config: Config,
+    signal: AbortSignal,
+  ): Promise<string>;
 }
 
 export class ProviderError extends Error {}

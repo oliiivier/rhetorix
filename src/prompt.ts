@@ -40,3 +40,15 @@ export function userPrompt(article: { title: string; text: string; part?: { inde
 ${article.text}
 </article>`;
 }
+
+export function consolidatePrompt(
+  title: string,
+  summaries: string[],
+  language: string,
+): { system: string; user: string } {
+  return {
+    system: `You are an expert editorial analyst. Synthesize the provided partial section summaries of the article into a single, cohesive, objective summary (2 to 3 sentences) in this language: ${language}. Do not include commentary, labels, bullet points or preamble, just the consolidated summary text.`,
+    user: `Article title: ${title}\n\nSection summaries:\n${summaries.map((s, i) => `Section ${i + 1}:\n${s}`).join("\n\n")}`,
+  };
+}
+

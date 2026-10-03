@@ -4,7 +4,7 @@
 // valider (docs/fonctionnelles/points-ouverts.md). En attendant : mode "unverified".
 
 import type { Config } from "../config";
-import { systemPrompt, userPrompt } from "../prompt";
+import { consolidatePrompt, systemPrompt, userPrompt } from "../prompt";
 import { ANALYSIS_JSON_SCHEMA } from "../schema";
 import { ProviderError, type LlmProvider } from "./types";
 
@@ -41,5 +41,25 @@ export const geminiProvider: LlmProvider = {
     } catch {
       throw new ProviderError("La réponse n'est pas un JSON valide.");
     }
+  },
+
+  async consolidateSummary(title, summaries, language, config, signal) {
+    const { system, user } = consolidatePrompt(title, summaries, language);
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:generateContent`;
+    const res = await fetch(url, {
+      method: "POST",
+      signal,
+      headers: { "content-type": "application/json", "x-goog-api-key": config.apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: user }] }],
+      }),
+    });
+    if (!res.ok) throw new ProviderError(`Erreur ${res.status} de Gemini : ${(await res.text()).slice(0, 300)}`);
+
+    const data = (await res.json()) as GenerateContentResponse;
+    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("").trim();
+    if (!text) throw new ProviderError("Résumé consolidé vide.");
+    return text;
   },
 };

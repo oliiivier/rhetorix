@@ -96,6 +96,35 @@ a { color: var(--accent); }
 .badge.bias { background: var(--bias); }
 .badge.factual_claim { background: var(--factual); }
 
+button.filter-btn {
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.15s, outline 0.15s;
+}
+button.filter-btn:hover {
+  opacity: 1;
+}
+button.filter-btn.active {
+  opacity: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+button.filter-btn.badge {
+  color: var(--bg);
+  border-color: transparent;
+}
+button.filter-btn.badge.active {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
 .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .cards .empty { color: var(--muted); }
 

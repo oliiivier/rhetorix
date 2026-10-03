@@ -3,7 +3,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { Config } from "../config";
-import { systemPrompt, userPrompt } from "../prompt";
+import { consolidatePrompt, systemPrompt, userPrompt } from "../prompt";
 import { ANALYSIS_JSON_SCHEMA, normalizeSourceUrl } from "../schema";
 import { ProviderError, type LlmProvider } from "./types";
 
@@ -74,5 +74,26 @@ export const anthropicProvider: LlmProvider = {
       }
     }
     throw new ProviderError("Trop de reprises de la recherche web.");
+  },
+
+  async consolidateSummary(title, summaries, language, config, signal) {
+    const client = new Anthropic({ apiKey: config.apiKey, dangerouslyAllowBrowser: true });
+    const { system, user } = consolidatePrompt(title, summaries, language);
+    const message = await client.messages.create(
+      {
+        model: config.model,
+        max_tokens: 1000,
+        system,
+        messages: [{ role: "user", content: user }],
+      },
+      { signal },
+    );
+    const text = message.content
+      .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("")
+      .trim();
+    if (!text) throw new ProviderError("Résumé consolidé vide.");
+    return text;
   },
 };

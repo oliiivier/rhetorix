@@ -8,7 +8,7 @@ import { isConfigured, loadConfig, providerOrigin, resolveLanguage, type Config 
 import { ext } from "../ext";
 import type { ContentToPanel, ExtractResult, HighlightResult, PanelToContent } from "../messages";
 import type { Analysis, Annotation, FactStatus, Severity } from "../schema";
-import { labelDef } from "../taxonomy";
+import { labelDef, type Category } from "../taxonomy";
 
 interface TabState {
   url: string | undefined;
@@ -23,6 +23,7 @@ const cancelBtn = $<HTMLButtonElement>("cancel");
 const statusEl = $<HTMLParagraphElement>("status");
 const resultEl = $<HTMLElement>("result");
 const cardsEl = $<HTMLOListElement>("cards");
+const filtersEl = $<HTMLElement>("filters");
 const template = $<HTMLTemplateElement>("card-template");
 
 const states = new Map<number, TabState>();
@@ -30,6 +31,7 @@ let config: Config | null = null;
 let currentTabId: number | undefined;
 let windowId: number | undefined;
 let running: AbortController | null = null;
+let activeCategoryFilter: "all" | Category = "all";
 
 const SEVERITY_TEXT: Record<Severity, string> = { high: "Élevée", medium: "Moyenne", low: "Faible" };
 const STATUS_TEXT: Record<FactStatus, string> = {
@@ -106,6 +108,17 @@ function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
   return li;
 }
 
+function applyCategoryFilter(cat: string): void {
+  activeCategoryFilter = cat as "all" | Category;
+  for (const btn of filtersEl.querySelectorAll<HTMLButtonElement>(".filter-btn")) {
+    btn.classList.toggle("active", btn.dataset.category === cat);
+  }
+  for (const card of cardsEl.querySelectorAll<HTMLElement>(".card")) {
+    if (card.classList.contains("empty")) continue;
+    card.hidden = cat !== "all" && !card.classList.contains(cat);
+  }
+}
+
 function render(state: TabState): void {
   setStatus("");
   resultEl.hidden = false;
@@ -116,21 +129,39 @@ function render(state: TabState): void {
   analyzeBtn.textContent = "Ré-analyser";
 
   const { annotations } = state.analysis;
+  const counts = {
+    all: annotations.length,
+    sophism: annotations.filter((a) => a.category === "sophism").length,
+    bias: annotations.filter((a) => a.category === "bias").length,
+    factual_claim: annotations.filter((a) => a.category === "factual_claim").length,
+  };
+  for (const btn of filtersEl.querySelectorAll<HTMLButtonElement>(".filter-btn")) {
+    const cat = btn.dataset.category as keyof typeof counts;
+    if (cat === "all") btn.textContent = `Tous (${counts.all})`;
+    else if (cat === "sophism") btn.textContent = `Sophismes (${counts.sophism})`;
+    else if (cat === "bias") btn.textContent = `Biais (${counts.bias})`;
+    else if (cat === "factual_claim") btn.textContent = `Allégations (${counts.factual_claim})`;
+  }
+
   if (annotations.length === 0) {
     const empty = document.createElement("li");
-    empty.className = "empty";
+    empty.className = "empty card";
     empty.textContent = "Aucun procédé rhétorique notable relevé.";
     cardsEl.replaceChildren(empty);
     return;
   }
   cardsEl.replaceChildren(...annotations.map((a) => renderCard(a, state.unlocated.has(a.id))));
+  applyCategoryFilter(activeCategoryFilter);
 }
 
 function selectCard(id: string, scroll: boolean): void {
   for (const card of cardsEl.querySelectorAll<HTMLElement>(".card")) {
     const active = card.dataset.id === id;
     card.classList.toggle("active", active);
-    if (active && scroll) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (active) {
+      if (card.hidden) applyCategoryFilter("all");
+      if (scroll) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
   }
 }
 
@@ -191,8 +222,12 @@ async function analyze(force: boolean): Promise<void> {
     if (cached) {
       analysis = cached.analysis;
     } else {
-      analysis = await analyzeArticle(article, config, running.signal, ({ done, total }) => {
-        setStatus(total > 1 ? `Analyse en cours… (${done}/${total} parties)` : "Analyse en cours…");
+      analysis = await analyzeArticle(article, config, running.signal, ({ phase, done, total }) => {
+        if (phase === "consolidating") {
+          setStatus("Synthèse du résumé global…");
+        } else {
+          setStatus(total > 1 ? `Analyse en cours… (${done}/${total} parties)` : "Analyse en cours…");
+        }
       });
       if (tab.url) await putCached(tab.url, { ...fingerprint, analysis, createdAt: Date.now() });
     }
@@ -218,6 +253,10 @@ async function analyze(force: boolean): Promise<void> {
 
 analyzeBtn.addEventListener("click", () => void analyze(analyzeBtn.textContent === "Ré-analyser"));
 cancelBtn.addEventListener("click", () => running?.abort());
+filtersEl.addEventListener("click", (e) => {
+  const btn = (e.target as Element).closest<HTMLButtonElement>(".filter-btn");
+  if (btn?.dataset.category) applyCategoryFilter(btn.dataset.category);
+});
 $("options").addEventListener("click", () => void ext.runtime.openOptionsPage());
 
 ext.runtime.onMessage.addListener((msg: ContentToPanel, sender) => {

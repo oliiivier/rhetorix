@@ -19,6 +19,18 @@ const staticFiles = {
   "options.html": "src/options/options.html",
   "ui.css": "src/ui.css",
   "highlights.css": "src/highlights.css",
+  "icons/icon-16.png": "src/icons/icon-16.png",
+  "icons/icon-32.png": "src/icons/icon-32.png",
+  "icons/icon-48.png": "src/icons/icon-48.png",
+  "icons/icon-128.png": "src/icons/icon-128.png",
+  "icons/icon.svg": "src/icons/icon.svg",
+};
+
+const iconPaths = {
+  "16": "icons/icon-16.png",
+  "32": "icons/icon-32.png",
+  "48": "icons/icon-48.png",
+  "128": "icons/icon-128.png",
 };
 
 const baseManifest = {
@@ -26,10 +38,18 @@ const baseManifest = {
   name: "Rhetorix",
   version: pkg.version,
   description: "Surligne sophismes, biais et allégations factuelles d'un article et les détaille dans un panneau latéral.",
+  icons: iconPaths,
   permissions: ["activeTab", "scripting", "storage"],
   // Accès à l'API du fournisseur LLM, demandé depuis les options selon l'endpoint choisi.
   optional_host_permissions: ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
-  action: { default_title: "Rhetorix" },
+  action: {
+    default_title: "Rhetorix",
+    default_icon: {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+    },
+  },
   options_ui: { page: "options.html", open_in_tab: true },
 };
 
@@ -48,14 +68,23 @@ const targets = {
     esbuildTarget: "firefox140",
     manifest: {
       ...baseManifest,
-      sidebar_action: { default_panel: "sidepanel.html", default_title: "Rhetorix", open_at_install: false },
+      sidebar_action: {
+        default_panel: "sidepanel.html",
+        default_title: "Rhetorix",
+        default_icon: {
+          "16": "icons/icon-16.png",
+          "32": "icons/icon-32.png",
+          "48": "icons/icon-48.png",
+        },
+        open_at_install: false,
+      },
       background: { scripts: ["background.js"] },
       browser_specific_settings: {
         gecko: {
           // Identifiant provisoire : à remplacer avant publication sur addons.mozilla.org.
           id: "rhetorix@rhetorix.local",
-          // 140 : première version avec la CSS Custom Highlight API.
-          strict_min_version: "140.0",
+          // 142 : compatibilité CSS Custom Highlight API + data_collection_permissions.
+          strict_min_version: "142.0",
           data_collection_permissions: { required: ["websiteContent"] },
         },
       },
@@ -66,6 +95,7 @@ const targets = {
 async function writeStatic(name, target) {
   const outdir = `dist/${name}`;
   await mkdir(outdir, { recursive: true });
+  await mkdir(`${outdir}/icons`, { recursive: true });
   await Promise.all(Object.entries(staticFiles).map(([dest, src]) => copyFile(src, `${outdir}/${dest}`)));
   await writeFile(`${outdir}/manifest.json`, JSON.stringify(target.manifest, null, 2) + "\n");
 }

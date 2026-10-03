@@ -19,6 +19,7 @@ const PROVIDERS: Record<ProviderId, LlmProvider> = {
 const CONCURRENCY = 2;
 
 export interface Progress {
+  phase?: "analyzing" | "consolidating";
   done: number;
   total: number;
 }
@@ -34,7 +35,7 @@ export async function analyzeArticle(
   const language = resolveLanguage(config);
   const chunks = chunkParagraphs(article.paragraphs, config.maxChunkTokens);
   let done = 0;
-  onProgress({ done, total: chunks.length });
+  onProgress({ phase: "analyzing", done, total: chunks.length });
 
   const parts = await mapLimit(chunks, CONCURRENCY, async (text, index) => {
     const result = await provider.analyze(
@@ -43,8 +44,21 @@ export async function analyzeArticle(
       signal,
     );
     const analysis = enforceSourcePolicy(validateAnalysis(result.raw), webSearch ? result.searchedUrls : undefined);
-    onProgress({ done: ++done, total: chunks.length });
+    onProgress({ phase: "analyzing", done: ++done, total: chunks.length });
     return analysis;
   });
-  return mergeAnalyses(parts);
+
+  const merged = mergeAnalyses(parts);
+  if (parts.length > 1 && provider.consolidateSummary) {
+    onProgress({ phase: "consolidating", done: parts.length, total: parts.length });
+    try {
+      const partialSummaries = parts.map((p) => p.summary.trim()).filter(Boolean);
+      if (partialSummaries.length > 1) {
+        merged.summary = await provider.consolidateSummary(article.title, partialSummaries, language, config, signal);
+      }
+    } catch {
+      // Repli gracieux sur le résumé concaténé de mergeAnalyses en cas d'erreur
+    }
+  }
+  return merged;
 }
