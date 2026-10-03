@@ -40,8 +40,8 @@ const baseManifest = {
   description: "Surligne sophismes, biais et allégations factuelles d'un article et les détaille dans un panneau latéral.",
   icons: iconPaths,
   permissions: ["activeTab", "scripting", "storage"],
-  // Accès à l'API du fournisseur LLM, demandé depuis les options selon l'endpoint choisi.
-  optional_host_permissions: ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  // Permissions d'hôte pour l'analyse des articles et l'accès aux API LLM et endpoints locaux
+  host_permissions: ["https://*/*", "http://*/*", "http://localhost/*", "http://127.0.0.1/*"],
   action: {
     default_title: "Rhetorix",
     default_icon: {

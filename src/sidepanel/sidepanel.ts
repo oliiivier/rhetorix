@@ -83,10 +83,22 @@ function setStatus(text: string, isError = false): void {
   statusEl.hidden = !text;
 }
 
-function showIdle(): void {
+let currentTabUrl: string | undefined;
+
+function isAnalyzableUrl(url?: string): boolean {
+  return Boolean(url && /^https?:\/\//i.test(url));
+}
+
+function showIdle(isWebPage = true): void {
   resultEl.hidden = true;
   cardsEl.replaceChildren();
-  setStatus(strings().idleStatus);
+  if (isWebPage) {
+    setStatus(strings().idleStatus);
+    analyzeBtn.disabled = false;
+  } else {
+    setStatus(strings().internalPageNotice);
+    analyzeBtn.disabled = true;
+  }
   analyzeBtn.textContent = strings().analyzeBtn;
 }
 
@@ -232,14 +244,26 @@ function analyze(force: boolean): void {
     void ext.runtime.openOptionsPage();
     return;
   }
+  const origins = ["https://*/*", "http://*/*"];
   const origin = providerOrigin(config);
+  if (origin && !origins.includes(origin)) {
+    origins.push(origin);
+  }
   // Appelé avant tout await : la demande de permission exige le geste utilisateur.
-  const permission = origin ? ext.permissions.request({ origins: [origin] }) : Promise.resolve(true);
+  const permission = ext.permissions.request({ origins }).catch(() => false);
 
   void (async () => {
     const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
     if (tab?.id === undefined) return;
     currentTabId = tab.id;
+    currentTabUrl = tab.url;
+
+    if (!isAnalyzableUrl(tab.url)) {
+      setStatus(t.internalPageNotice, true);
+      analyzeBtn.disabled = true;
+      return;
+    }
+
     if (!(await permission)) {
       setStatus(t.apiPermissionError, true);
       return;
@@ -311,6 +335,10 @@ function renderSnapshot(s: RunSnapshot): void {
 
 /** Onglet devenu courant : état mémorisé, sinon celui du script de fond, sinon repos. */
 async function showTab(tabId: number): Promise<void> {
+  const tab = await ext.tabs.get(tabId).catch(() => null);
+  currentTabUrl = tab?.url;
+  const isWebPage = isAnalyzableUrl(currentTabUrl);
+
   const state = states.get(tabId);
   if (state && !runningTabs.has(tabId)) {
     setRunningUi(false);
@@ -322,7 +350,7 @@ async function showTab(tabId: number): Promise<void> {
   if (snapshot) renderSnapshot(snapshot);
   else {
     setRunningUi(false);
-    showIdle();
+    showIdle(isWebPage);
   }
 }
 
@@ -369,13 +397,21 @@ ext.tabs.onActivated.addListener(({ tabId, windowId: w }) => {
   void showTab(tabId);
 });
 
-ext.tabs.onUpdated.addListener((tabId, info) => {
-  if (info.status !== "loading") return;
+ext.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (tabId === currentTabId && (info.url || tab?.url)) {
+    currentTabUrl = info.url || tab?.url;
+  }
+  if (info.status !== "loading") {
+    if (tabId === currentTabId && !states.has(tabId) && !runningTabs.has(tabId)) {
+      showIdle(isAnalyzableUrl(currentTabUrl));
+    }
+    return;
+  }
   states.delete(tabId);
   runningTabs.delete(tabId);
   if (tabId === currentTabId) {
     setRunningUi(false);
-    showIdle();
+    showIdle(isAnalyzableUrl(currentTabUrl));
   }
 });
 
@@ -400,6 +436,7 @@ void (async () => {
   windowId = (await ext.windows.getCurrent()).id;
   const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab?.id;
+  currentTabUrl = tab?.url;
   if (!isConfigured(config)) setStatus(strings().needConfigStatus);
   else if (currentTabId !== undefined) await showTab(currentTabId);
 })();

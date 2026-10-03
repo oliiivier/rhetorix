@@ -85,6 +85,7 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
   try {
     if (!isConfigured(config)) throw new Error(t.needConfigStatus);
     publish();
+    if (url && !/^https?:\/\//i.test(url)) throw new Error(t.accessErrorStatus);
     await inject(tabId, t.accessErrorStatus);
     const extracted = await sendToTab<ExtractResult>(tabId, { type: "extract" });
     if (!extracted.ok) {

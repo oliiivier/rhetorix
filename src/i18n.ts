@@ -24,6 +24,7 @@ export interface UiStrings {
   consolidatingStatus: string;
   cancelledStatus: string;
   accessErrorStatus: string;
+  internalPageNotice: string;
   needConfigStatus: string;
   apiPermissionError: string;
   extractNoArticleError: string;
@@ -113,8 +114,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     consolidatingStatus: "Synthèse du résumé global…",
     cancelledStatus: "Analyse annulée.",
     accessErrorStatus:
-      "Impossible d'accéder à cette page. Les pages internes du navigateur ne sont pas analysables ; " +
-      "sinon, cliquez sur l'icône de Rhetorix depuis cet onglet pour autoriser l'accès.",
+      "Impossible d'accéder au contenu de cette page. Les pages internes du navigateur et les boutiques d'extensions ne sont pas analysables.",
+    internalPageNotice:
+      "Ouvrez un article en ligne pour lancer l'analyse (les pages internes du navigateur ne sont pas analysables).",
     needConfigStatus: "Configurez un fournisseur LLM dans les options (⚙) pour commencer.",
     apiPermissionError: "Accès à l'API du fournisseur refusé. Vérifiez l'endpoint dans les options.",
     extractNoArticleError: "Aucun contenu d'article détecté sur cette page.",
@@ -238,8 +240,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     consolidatingStatus: "Synthesizing overall summary…",
     cancelledStatus: "Analysis cancelled.",
     accessErrorStatus:
-      "Cannot access this page. Browser internal pages cannot be analyzed; " +
-      "otherwise, click the Rhetorix icon on this tab to grant access.",
+      "Cannot access this page. Browser internal pages and extension stores cannot be analyzed.",
+    internalPageNotice:
+      "Open an online article to start analysis (browser internal pages cannot be analyzed).",
     needConfigStatus: "Configure an LLM provider in options (⚙) to get started.",
     apiPermissionError: "Provider API access denied. Check the endpoint in options.",
     extractNoArticleError: "No article content detected on this page.",
@@ -363,8 +366,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     consolidatingStatus: "Sintetizando el resumen global…",
     cancelledStatus: "Análisis cancelado.",
     accessErrorStatus:
-      "No se puede acceder a esta página. Las páginas internas del navegador no son analizables; " +
-      "de lo contrario, haga clic en el icono de Rhetorix en esta pestaña para conceder acceso.",
+      "No se puede acceder a esta página. Las páginas internas del navegador y las tiendas de extensiones no se pueden analizar.",
+    internalPageNotice:
+      "Abra un artículo en línea para iniciar el análisis (las páginas internas del navegador no son analizables).",
     needConfigStatus: "Configure un proveedor LLM en las opciones (⚙) para comenzar.",
     apiPermissionError: "Acceso a la API del proveedor denegado. Compruebe el endpoint en las opciones.",
     extractNoArticleError: "No se detectó contenido de artículo en esta página.",
@@ -488,8 +492,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     consolidatingStatus: "Gesamtzusammenfassung wird erstellt…",
     cancelledStatus: "Analyse abgebrochen.",
     accessErrorStatus:
-      "Auf diese Seite kann nicht zugegriffen werden. Interne Browserseiten können nicht analysiert werden; " +
-      "klicken Sie andernfalls auf das Rhetorix-Symbol auf diesem Tab, um den Zugriff zu erlauben.",
+      "Auf diese Seite kann nicht zugegriffen werden. Interne Browserseiten und Add-on-Stores können nicht analysiert werden.",
+    internalPageNotice:
+      "Öffnen Sie einen Online-Artikel, um die Analyse zu starten (interne Browserseiten können nicht analysiert werden).",
     needConfigStatus: "Konfigurieren Sie einen LLM-Anbieter in den Optionen (⚙), um zu beginnen.",
     apiPermissionError: "Zugriff auf die Anbieter-API verweigert. Überprüfen Sie den Endpunkt in den Optionen.",
     extractNoArticleError: "Kein Artikelinhalt auf dieser Seite erkannt.",
@@ -613,8 +618,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     consolidatingStatus: "Sintesi del riassunto generale…",
     cancelledStatus: "Analisi annullata.",
     accessErrorStatus:
-      "Impossibile accedere a questa pagina. Le pagine interne del browser non sono analizzabili; " +
-      "in alternativa, fai clic sull'icona di Rhetorix da questa scheda per concedere l'accesso.",
+      "Impossibile accedere al contenuto di questa pagina. Le pagine interne del browser e gli store di estensioni non sono analizzabili.",
+    internalPageNotice:
+      "Apri un articolo online per avviare l'analisi (le pagine interne del browser non sono analizzabili).",
     needConfigStatus: "Configura un fornitore LLM nelle opzioni (⚙) per iniziare.",
     apiPermissionError: "Accesso all'API del fornitore negato. Verifica l'endpoint nelle opzioni.",
     extractNoArticleError: "Nessun contenuto di articolo rilevato su questa pagina.",
