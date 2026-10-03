@@ -172,4 +172,56 @@ describe("analyzeArticle", () => {
     // Repli gracieux : les résumés sont concaténés sans planter
     expect(result.summary).toBe("Résumé partie 1\n\nRésumé partie 2");
   });
+
+  it("transmet les callbacks de streaming au provider", async () => {
+    mockAnalyze.mockImplementation(async (input) => {
+      // Simule un appel streaming émis par le provider
+      input.onStream?.onSummary?.("Résumé en cours...", false);
+      input.onStream?.onAnnotation?.({
+        id: "stream-1",
+        exact_quote: "citation stream",
+        category: "sophism",
+        label: "homme_de_paille",
+        severity: "medium",
+        rhetoric_critique: "critique",
+        fact_check: { status: "unverified", context: "", sources: [] },
+      });
+      return {
+        raw: {
+          summary: "Résumé final",
+          annotations: [
+            {
+              id: "stream-1",
+              exact_quote: "citation stream",
+              category: "sophism",
+              label: "homme_de_paille",
+              severity: "medium",
+              rhetoric_critique: "critique",
+              fact_check: { status: "unverified", context: "", sources: [] },
+            },
+          ],
+        },
+      };
+    });
+
+    const article: Extracted = {
+      title: "Article simple",
+      lang: "fr",
+      paragraphs: ["Un paragraphe unique."],
+    };
+
+    const summaries: string[] = [];
+    const annotations: string[] = [];
+
+    const controller = new AbortController();
+    const result = await analyzeArticle(article, baseConfig, controller.signal, {
+      onSummary: (s) => summaries.push(s),
+      onAnnotation: (a) => annotations.push(a.id),
+    });
+
+    expect(summaries).toContain("Résumé en cours...");
+    expect(summaries).toContain("Résumé final");
+    expect(annotations).toEqual(["stream-1"]);
+    expect(result.annotations).toHaveLength(1);
+  });
 });

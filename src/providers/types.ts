@@ -1,4 +1,10 @@
 import type { Config } from "../config";
+import type { Annotation } from "../schema";
+
+export interface StreamCallbacks {
+  onSummary?: (summary: string, isComplete: boolean) => void;
+  onAnnotation?: (annotation: Annotation) => void;
+}
 
 export interface AnalyzeInput {
   title: string;
@@ -6,6 +12,7 @@ export interface AnalyzeInput {
   part: { index: number; total: number };
   language: string;
   webSearch: boolean;
+  onStream?: StreamCallbacks;
 }
 
 export interface ProviderResult {
@@ -27,6 +34,7 @@ export interface LlmProvider {
     language: string,
     config: Config,
     signal: AbortSignal,
+    onProgressText?: (text: string) => void,
   ): Promise<string>;
 }
 

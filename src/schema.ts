@@ -114,6 +114,33 @@ function isHttpUrl(s: string): boolean {
   }
 }
 
+export function validateAnnotation(a: unknown, path = "$.annotation"): Annotation {
+  const o = obj(a, path);
+  const category = oneOf(o.category, CATEGORIES, `${path}.category`);
+  const rawLabel = str(o.label, `${path}.label`);
+  const fc = obj(o.fact_check, `${path}.fact_check`);
+  const exact_quote = str(o.exact_quote, `${path}.exact_quote`).trim();
+  if (!exact_quote) fail(`${path}.exact_quote`, "citation vide");
+  return {
+    id: str(o.id, `${path}.id`),
+    exact_quote,
+    category,
+    label: isLabelOf(category, rawLabel) ? rawLabel : "autre",
+    severity: oneOf(o.severity, SEVERITIES, `${path}.severity`),
+    rhetoric_critique: str(o.rhetoric_critique, `${path}.rhetoric_critique`),
+    fact_check: {
+      status: oneOf(fc.status, FACT_STATUSES, `${path}.fact_check.status`),
+      context: str(fc.context, `${path}.fact_check.context`),
+      sources: arr(fc.sources, `${path}.fact_check.sources`)
+        .map((s, j) => {
+          const so = obj(s, `${path}.fact_check.sources[${j}]`);
+          return { title: str(so.title, `${path}.fact_check.sources[${j}].title`), url: str(so.url, `${path}.fact_check.sources[${j}].url`) };
+        })
+        .filter((s) => isHttpUrl(s.url)),
+    },
+  };
+}
+
 /**
  * Valide la sortie brute du LLM. Les erreurs de structure lèvent une SchemaError ;
  * les défauts récupérables sont corrigés : label hors catégorie → "autre",
@@ -123,33 +150,21 @@ export function validateAnalysis(raw: unknown): Analysis {
   const root = obj(raw, "$");
   const summary = str(root.summary, "$.summary");
   const annotations = arr(root.annotations, "$.annotations").map((a, i): Annotation => {
-    const p = `$.annotations[${i}]`;
-    const o = obj(a, p);
-    const category = oneOf(o.category, CATEGORIES, `${p}.category`);
-    const rawLabel = str(o.label, `${p}.label`);
-    const fc = obj(o.fact_check, `${p}.fact_check`);
-    const exact_quote = str(o.exact_quote, `${p}.exact_quote`).trim();
-    if (!exact_quote) fail(`${p}.exact_quote`, "citation vide");
-    return {
-      id: str(o.id, `${p}.id`),
-      exact_quote,
-      category,
-      label: isLabelOf(category, rawLabel) ? rawLabel : "autre",
-      severity: oneOf(o.severity, SEVERITIES, `${p}.severity`),
-      rhetoric_critique: str(o.rhetoric_critique, `${p}.rhetoric_critique`),
-      fact_check: {
-        status: oneOf(fc.status, FACT_STATUSES, `${p}.fact_check.status`),
-        context: str(fc.context, `${p}.fact_check.context`),
-        sources: arr(fc.sources, `${p}.fact_check.sources`)
-          .map((s, j) => {
-            const so = obj(s, `${p}.fact_check.sources[${j}]`);
-            return { title: str(so.title, `${p}.fact_check.sources[${j}].title`), url: str(so.url, `${p}.fact_check.sources[${j}].url`) };
-          })
-          .filter((s) => isHttpUrl(s.url)),
-      },
-    };
+    return validateAnnotation(a, `$.annotations[${i}]`);
   });
   return { summary, annotations };
+}
+
+export function enforceAnnotationSourcePolicy(
+  a: Annotation,
+  searchedUrls: ReadonlySet<string> | undefined,
+): Annotation {
+  if (!searchedUrls) {
+    return { ...a, fact_check: { ...a.fact_check, status: "unverified", sources: [] } };
+  }
+  const sources = a.fact_check.sources.filter((s) => searchedUrls.has(normalizeSourceUrl(s.url)));
+  const status = sources.length === 0 && a.fact_check.status !== "unverified" ? "unverified" : a.fact_check.status;
+  return { ...a, fact_check: { ...a.fact_check, status, sources } };
 }
 
 /**
@@ -160,14 +175,7 @@ export function validateAnalysis(raw: unknown): Analysis {
 export function enforceSourcePolicy(analysis: Analysis, searchedUrls: ReadonlySet<string> | undefined): Analysis {
   return {
     ...analysis,
-    annotations: analysis.annotations.map((a) => {
-      if (!searchedUrls) {
-        return { ...a, fact_check: { ...a.fact_check, status: "unverified", sources: [] } };
-      }
-      const sources = a.fact_check.sources.filter((s) => searchedUrls.has(normalizeSourceUrl(s.url)));
-      const status = sources.length === 0 && a.fact_check.status !== "unverified" ? "unverified" : a.fact_check.status;
-      return { ...a, fact_check: { ...a.fact_check, status, sources } };
-    }),
+    annotations: analysis.annotations.map((a) => enforceAnnotationSourcePolicy(a, searchedUrls)),
   };
 }
 

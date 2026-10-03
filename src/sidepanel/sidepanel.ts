@@ -137,17 +137,8 @@ function applyCategoryFilter(cat: string): void {
   }
 }
 
-function render(state: TabState): void {
+function updateFilterCounts(annotations: Annotation[]): void {
   const t = strings();
-  setStatus("");
-  resultEl.hidden = false;
-  $("summary").textContent = state.analysis.summary;
-  const note = $("cache-note");
-  note.hidden = state.cachedAt === undefined;
-  if (state.cachedAt !== undefined) note.textContent = t.cacheNote(new Date(state.cachedAt).toLocaleString());
-  analyzeBtn.textContent = t.reanalyzeBtn;
-
-  const { annotations } = state.analysis;
   const counts = {
     all: annotations.length,
     sophism: annotations.filter((a) => a.category === "sophism").length,
@@ -161,15 +152,28 @@ function render(state: TabState): void {
     else if (cat === "bias") btn.textContent = `${t.categoriesPlural.bias} (${counts.bias})`;
     else if (cat === "factual_claim") btn.textContent = `${t.categoriesPlural.factual_claim} (${counts.factual_claim})`;
   }
+}
 
-  if (annotations.length === 0) {
+function render(state: TabState): void {
+  const t = strings();
+  setStatus("");
+  resultEl.hidden = false;
+  $("summary").textContent = state.analysis.summary;
+  const note = $("cache-note");
+  note.hidden = state.cachedAt === undefined;
+  if (state.cachedAt !== undefined) note.textContent = t.cacheNote(new Date(state.cachedAt).toLocaleString());
+  analyzeBtn.textContent = t.reanalyzeBtn;
+
+  updateFilterCounts(state.analysis.annotations);
+
+  if (state.analysis.annotations.length === 0) {
     const empty = document.createElement("li");
     empty.className = "empty card";
     empty.textContent = t.emptyResults;
     cardsEl.replaceChildren(empty);
     return;
   }
-  cardsEl.replaceChildren(...annotations.map((a) => renderCard(a, state.unlocated.has(a.id))));
+  cardsEl.replaceChildren(...state.analysis.annotations.map((a) => renderCard(a, state.unlocated.has(a.id))));
   applyCategoryFilter(activeCategoryFilter);
 }
 
@@ -239,12 +243,34 @@ async function analyze(force: boolean): Promise<void> {
     if (cached) {
       analysis = cached.analysis;
     } else {
-      analysis = await analyzeArticle(article, config, running.signal, ({ phase, done, total }) => {
-        if (phase === "consolidating") {
-          setStatus(t.consolidatingStatus);
-        } else {
-          setStatus(total > 1 ? t.analyzingPartStatus(done, total) : t.analyzingStatus);
-        }
+      const streamedAnnotations: Annotation[] = [];
+      cardsEl.replaceChildren();
+      $("summary").textContent = "";
+      $("cache-note").hidden = true;
+      updateFilterCounts([]);
+
+      analysis = await analyzeArticle(article, config, running.signal, {
+        onProgress: ({ phase, done, total }) => {
+          if (phase === "consolidating") {
+            setStatus(t.consolidatingStatus);
+          } else {
+            setStatus(total > 1 ? t.analyzingPartStatus(done, total) : t.analyzingStatus);
+          }
+        },
+        onSummary: (summary) => {
+          resultEl.hidden = false;
+          $("summary").textContent = summary;
+        },
+        onAnnotation: (a) => {
+          resultEl.hidden = false;
+          streamedAnnotations.push(a);
+          const emptyCard = cardsEl.querySelector(".empty");
+          if (emptyCard) emptyCard.remove();
+          const card = renderCard(a, false);
+          card.hidden = activeCategoryFilter !== "all" && !card.classList.contains(activeCategoryFilter);
+          cardsEl.append(card);
+          updateFilterCounts(streamedAnnotations);
+        },
       });
       if (tab.url) await putCached(tab.url, { ...fingerprint, analysis, createdAt: Date.now() });
     }
