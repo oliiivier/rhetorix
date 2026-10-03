@@ -17,7 +17,6 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 
 ## Reste à préciser
 
-- **Taxonomie des labels (D4)** : une première version est dans `src/taxonomy.ts`. Elle est à relire et à compléter si besoin. Les noms sont en français uniquement : il faudra les traduire pour l'interface (D5).
 - **Recherche web et sortie structurée** : vérifier pour chaque provider qu'on peut combiner l'outil de recherche web et la sortie JSON contrainte. Selon les modèles, Gemini restreint la combinaison du grounding Google Search avec un `responseSchema`. Si c'est impossible, prévoir deux passes : une analyse structurée, puis une vérification avec recherche.
 - **Compatible OpenAI et recherche web** : la plupart des endpoints compatibles n'ont pas d'outil de recherche web. Ils sont donc en mode `unverified` par défaut.
 - **Limite de découpage (D6)** : la valeur par défaut est de 12 000 tokens. À ajuster selon les coûts constatés.
@@ -26,6 +25,7 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 
 ## Éléments traités
 
+- **Internationalisation & Traduction de la taxonomie (D4 / D5)** : module `src/i18n.ts` et traductions complètes de la taxonomie (`src/taxonomy.ts`) pour les 5 langues supportées (fr, en, es, de, it). L'interface du panneau latéral et de la page d'options s'adapte dynamiquement en temps réel, et le prompt système injecte les définitions dans la langue cible.
 - **Icônes de l'extension** : créées en SVG (`src/icons/icon.svg`) et déclinées en PNG (16, 32, 48, 128 px), déclarées dans les manifests Chromium et Firefox.
 - **Résumé consolidé (D6)** : implémenté via `consolidateSummary` sur les 3 providers (Anthropic, Gemini, OpenAI-compatible) avec repli gracieux sur les résumés partiels concaténés en cas d'erreur.
 - **Filtrage des cartes par catégorie** : filtres interactifs par catégorie avec compteurs ajoutés dans le panneau latéral (`sidepanel.html` / `sidepanel.ts`).

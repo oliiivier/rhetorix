@@ -6,8 +6,9 @@ import { analyzeArticle } from "../analyze";
 import { getCached, putCached, sha256 } from "../cache";
 import { isConfigured, loadConfig, providerOrigin, resolveLanguage, type Config } from "../config";
 import { ext } from "../ext";
+import { getUiStrings } from "../i18n";
 import type { ContentToPanel, ExtractResult, HighlightResult, PanelToContent } from "../messages";
-import type { Analysis, Annotation, FactStatus, Severity } from "../schema";
+import type { Analysis, Annotation } from "../schema";
 import { labelDef, type Category } from "../taxonomy";
 
 interface TabState {
@@ -33,14 +34,27 @@ let windowId: number | undefined;
 let running: AbortController | null = null;
 let activeCategoryFilter: "all" | Category = "all";
 
-const SEVERITY_TEXT: Record<Severity, string> = { high: "Élevée", medium: "Moyenne", low: "Faible" };
-const STATUS_TEXT: Record<FactStatus, string> = {
-  refuted: "Réfuté",
-  supported: "Confirmé",
-  misleading: "Trompeur",
-  unverified: "Non vérifié",
-};
-const CATEGORY_TEXT = { sophism: "Sophisme", bias: "Biais", factual_claim: "Allégation" } as const;
+function strings() {
+  return getUiStrings(config ?? undefined);
+}
+
+function currentLang(): string {
+  return config ? resolveLanguage(config) : "fr";
+}
+
+function applyI18n(): void {
+  const t = strings();
+  const hasAnalysis = currentTabId !== undefined && states.has(currentTabId);
+  analyzeBtn.textContent = hasAnalysis ? t.reanalyzeBtn : t.analyzeBtn;
+  cancelBtn.textContent = t.cancelBtn;
+  const optBtn = $("options");
+  optBtn.title = t.optionsBtnTitle;
+  optBtn.setAttribute("aria-label", t.optionsBtnTitle);
+  const heading = $("summary-heading");
+  if (heading) heading.textContent = t.summaryTitle;
+  const privacy = $("privacy-footer");
+  if (privacy) privacy.textContent = t.privacyNotice;
+}
 
 // ---------- Rendu ----------
 
@@ -53,23 +67,27 @@ function setStatus(text: string, isError = false): void {
 function showIdle(): void {
   resultEl.hidden = true;
   cardsEl.replaceChildren();
-  setStatus("Ouvrez un article puis lancez l'analyse.");
-  analyzeBtn.textContent = "Analyser la page";
+  setStatus(strings().idleStatus);
+  analyzeBtn.textContent = strings().analyzeBtn;
 }
 
 function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
+  const t = strings();
+  const lang = currentLang();
   const li = (template.content.firstElementChild as HTMLLIElement).cloneNode(true) as HTMLLIElement;
   const q = <T extends Element>(sel: string) => li.querySelector(sel) as T;
   li.dataset.id = a.id;
   li.classList.add(a.category, `severity-${a.severity}`);
-  q<HTMLElement>(".badge").textContent = CATEGORY_TEXT[a.category];
+  q<HTMLElement>(".badge").textContent = t.categories[a.category];
   q<HTMLElement>(".badge").classList.add(a.category);
-  const def = labelDef(a.category, a.label);
+  const def = labelDef(a.category, a.label, lang);
   q<HTMLElement>(".label").textContent = def?.name ?? a.label;
   if (def) q<HTMLElement>(".label").title = def.definition;
-  q<HTMLElement>(".severity").textContent = SEVERITY_TEXT[a.severity];
+  q<HTMLElement>(".severity").textContent = t.severities[a.severity];
   q<HTMLElement>(".quote").textContent = a.exact_quote;
-  q<HTMLElement>(".unlocated").hidden = !unlocated;
+  const unlocatedEl = q<HTMLElement>(".unlocated");
+  unlocatedEl.textContent = t.unlocatedQuote;
+  unlocatedEl.hidden = !unlocated;
   q<HTMLElement>(".critique").textContent = a.rhetoric_critique;
 
   const fc = a.fact_check;
@@ -78,7 +96,7 @@ function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
     details.remove();
   } else {
     const status = q<HTMLElement>(".fact-status");
-    status.textContent = `Vérification : ${STATUS_TEXT[fc.status]}`;
+    status.textContent = `${t.factCheckLabel} ${t.factStatuses[fc.status]}`;
     status.classList.add(`status-${fc.status}`);
     q<HTMLElement>(".fact-context").textContent = fc.context;
     const list = q<HTMLUListElement>(".sources");
@@ -120,13 +138,14 @@ function applyCategoryFilter(cat: string): void {
 }
 
 function render(state: TabState): void {
+  const t = strings();
   setStatus("");
   resultEl.hidden = false;
   $("summary").textContent = state.analysis.summary;
   const note = $("cache-note");
   note.hidden = state.cachedAt === undefined;
-  if (state.cachedAt !== undefined) note.textContent = `Analyse du ${new Date(state.cachedAt).toLocaleString()} (cache).`;
-  analyzeBtn.textContent = "Ré-analyser";
+  if (state.cachedAt !== undefined) note.textContent = t.cacheNote(new Date(state.cachedAt).toLocaleString());
+  analyzeBtn.textContent = t.reanalyzeBtn;
 
   const { annotations } = state.analysis;
   const counts = {
@@ -137,16 +156,16 @@ function render(state: TabState): void {
   };
   for (const btn of filtersEl.querySelectorAll<HTMLButtonElement>(".filter-btn")) {
     const cat = btn.dataset.category as keyof typeof counts;
-    if (cat === "all") btn.textContent = `Tous (${counts.all})`;
-    else if (cat === "sophism") btn.textContent = `Sophismes (${counts.sophism})`;
-    else if (cat === "bias") btn.textContent = `Biais (${counts.bias})`;
-    else if (cat === "factual_claim") btn.textContent = `Allégations (${counts.factual_claim})`;
+    if (cat === "all") btn.textContent = `${t.filterAll} (${counts.all})`;
+    else if (cat === "sophism") btn.textContent = `${t.categoriesPlural.sophism} (${counts.sophism})`;
+    else if (cat === "bias") btn.textContent = `${t.categoriesPlural.bias} (${counts.bias})`;
+    else if (cat === "factual_claim") btn.textContent = `${t.categoriesPlural.factual_claim} (${counts.factual_claim})`;
   }
 
   if (annotations.length === 0) {
     const empty = document.createElement("li");
     empty.className = "empty card";
-    empty.textContent = "Aucun procédé rhétorique notable relevé.";
+    empty.textContent = t.emptyResults;
     cardsEl.replaceChildren(empty);
     return;
   }
@@ -176,18 +195,16 @@ async function inject(tabId: number): Promise<void> {
     await ext.scripting.executeScript({ target: { tabId }, files: ["content-script.js"] });
     await ext.scripting.insertCSS({ target: { tabId }, files: ["highlights.css"] });
   } catch {
-    throw new Error(
-      "Impossible d'accéder à cette page. Les pages internes du navigateur ne sont pas analysables ; " +
-        "sinon, cliquez sur l'icône de Rhetorix depuis cet onglet pour autoriser l'accès.",
-    );
+    throw new Error(strings().accessErrorStatus);
   }
 }
 
 // ---------- Analyse ----------
 
 async function analyze(force: boolean): Promise<void> {
+  const t = strings();
   if (!config || !isConfigured(config)) {
-    setStatus("Configurez un fournisseur LLM dans les options.", true);
+    setStatus(t.needConfigStatus, true);
     void ext.runtime.openOptionsPage();
     return;
   }
@@ -204,8 +221,8 @@ async function analyze(force: boolean): Promise<void> {
   analyzeBtn.disabled = true;
   cancelBtn.hidden = false;
   try {
-    if (!(await permission)) throw new Error("Accès à l'API du fournisseur refusé. Vérifiez l'endpoint dans les options.");
-    setStatus("Extraction de l'article…");
+    if (!(await permission)) throw new Error(t.apiPermissionError);
+    setStatus(t.extractingStatus);
     await inject(tabId);
     const extracted = await send<ExtractResult>(tabId, { type: "extract" });
     if (!extracted.ok) throw new Error(extracted.error);
@@ -224,9 +241,9 @@ async function analyze(force: boolean): Promise<void> {
     } else {
       analysis = await analyzeArticle(article, config, running.signal, ({ phase, done, total }) => {
         if (phase === "consolidating") {
-          setStatus("Synthèse du résumé global…");
+          setStatus(t.consolidatingStatus);
         } else {
-          setStatus(total > 1 ? `Analyse en cours… (${done}/${total} parties)` : "Analyse en cours…");
+          setStatus(total > 1 ? t.analyzingPartStatus(done, total) : t.analyzingStatus);
         }
       });
       if (tab.url) await putCached(tab.url, { ...fingerprint, analysis, createdAt: Date.now() });
@@ -240,7 +257,7 @@ async function analyze(force: boolean): Promise<void> {
     states.set(tabId, state);
     if (currentTabId === tabId) render(state);
   } catch (err) {
-    if (running.signal.aborted) setStatus("Analyse annulée.");
+    if (running.signal.aborted) setStatus(t.cancelledStatus);
     else setStatus(err instanceof Error ? err.message : String(err), true);
   } finally {
     running = null;
@@ -251,7 +268,7 @@ async function analyze(force: boolean): Promise<void> {
 
 // ---------- Événements ----------
 
-analyzeBtn.addEventListener("click", () => void analyze(analyzeBtn.textContent === "Ré-analyser"));
+analyzeBtn.addEventListener("click", () => void analyze(analyzeBtn.textContent === strings().reanalyzeBtn));
 cancelBtn.addEventListener("click", () => running?.abort());
 filtersEl.addEventListener("click", (e) => {
   const btn = (e.target as Element).closest<HTMLButtonElement>(".filter-btn");
@@ -279,13 +296,23 @@ ext.tabs.onUpdated.addListener((tabId, info) => {
 });
 
 ext.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.config) void loadConfig().then((c) => (config = c));
+  if (area === "local" && changes.config) {
+    void loadConfig().then((c) => {
+      config = c;
+      applyI18n();
+      if (currentTabId) {
+        const state = states.get(currentTabId);
+        if (state) render(state);
+      }
+    });
+  }
 });
 
 void (async () => {
   config = await loadConfig();
+  applyI18n();
   windowId = (await ext.windows.getCurrent()).id;
   const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab?.id;
-  if (!isConfigured(config)) setStatus("Configurez un fournisseur LLM dans les options (⚙) pour commencer.");
+  if (!isConfigured(config)) setStatus(strings().needConfigStatus);
 })();

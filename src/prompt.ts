@@ -1,12 +1,15 @@
 // Prompt commun aux providers. La taxonomie (D4) et la langue de sortie (D5)
 // y sont injectées ; chaque adaptateur ajoute ses consignes propres.
 
-import { CATEGORIES, LABELS, type LabelDef } from "./taxonomy";
+import { CATEGORIES, LABELS, labelDef } from "./taxonomy";
 
-function taxonomyText(): string {
+function taxonomyText(language: string): string {
   return CATEGORIES.map((c) => {
-    const labels = Object.entries(LABELS[c] as Record<string, LabelDef>)
-      .map(([id, def]) => `  - ${id} (${def.name}) : ${def.definition}`)
+    const labels = Object.keys(LABELS[c])
+      .map((id) => {
+        const def = labelDef(c, id, language);
+        return `  - ${id} (${def?.name ?? id}) : ${def?.definition ?? ""}`;
+      })
       .join("\n");
     return `category "${c}":\n${labels}`;
   }).join("\n\n");
@@ -29,7 +32,7 @@ Rules:
 - Write summary, rhetoric_critique and fact_check.context in this language: ${opts.language}. ids are "ann-1", "ann-2", …
 
 Labels:
-${taxonomyText()}`;
+${taxonomyText(opts.language)}`;
 }
 
 export function userPrompt(article: { title: string; text: string; part?: { index: number; total: number } }): string {

@@ -1,16 +1,39 @@
 import { clearCache } from "../cache";
 import { DEFAULT_MODELS, loadConfig, providerOrigin, saveConfig, type Config, type ProviderId } from "../config";
 import { ext } from "../ext";
+import { getUiStrings } from "../i18n";
 
 const form = document.getElementById("form") as HTMLFormElement;
 const field = <T extends HTMLInputElement | HTMLSelectElement>(name: string) => form.elements.namedItem(name) as T;
 const formStatus = document.getElementById("form-status")!;
 
-const WEB_SEARCH_HINT: Record<ProviderId, string> = {
-  anthropic: "Utilise l'outil de recherche web d'Anthropic (à activer pour votre organisation dans la console).",
-  "openai-compatible": "Non disponible pour ce fournisseur : les vérifications seront marquées « non vérifié ».",
-  gemini: "Pas encore disponible pour Gemini : les vérifications seront marquées « non vérifié ».",
-};
+function setTxt(id: string, text: string): void {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function applyOptionsI18n(lang: string): void {
+  const t = getUiStrings(lang);
+  document.title = t.optionsTitle;
+  setTxt("title", t.optionsTitle);
+  setTxt("lbl-provider", t.providerLabel);
+  setTxt("lbl-endpoint", t.endpointLabel);
+  setTxt("endpoint-hint", t.endpointHint);
+  setTxt("endpoint-ollama-hint", t.endpointOllamaHint);
+  setTxt("lbl-api-key", t.apiKeyLabel);
+  setTxt("api-key-hint", t.apiKeyHint);
+  setTxt("lbl-model", t.modelLabel);
+  setTxt("lbl-language", t.languageLabel);
+  setTxt("lbl-web-search", t.webSearchLabel);
+  setTxt("lbl-max-chunk", t.maxChunkLabel);
+  setTxt("max-chunk-hint", t.maxChunkHint);
+  setTxt("btn-save", t.saveBtn);
+  setTxt("heading-cache", t.cacheSectionTitle);
+  setTxt("clear-cache", t.clearCacheBtn);
+  setTxt("heading-privacy", t.privacySectionTitle);
+  setTxt("privacy-text", t.privacyText);
+  syncProvider();
+}
 
 function readForm(): Config {
   return {
@@ -32,17 +55,25 @@ function fillForm(c: Config): void {
   field<HTMLSelectElement>("language").value = c.language;
   field<HTMLInputElement>("webSearch").checked = c.webSearch;
   field<HTMLInputElement>("maxChunkTokens").value = String(c.maxChunkTokens);
-  syncProvider();
+  applyOptionsI18n(c.language);
 }
 
 function syncProvider(): void {
   const provider = field<HTMLSelectElement>("provider").value as ProviderId;
+  const lang = field<HTMLSelectElement>("language")?.value || "auto";
+  const t = getUiStrings(lang);
   document.getElementById("endpoint-field")!.hidden = provider !== "openai-compatible";
   field<HTMLInputElement>("endpoint").required = provider === "openai-compatible";
   field<HTMLInputElement>("apiKey").required = provider !== "openai-compatible";
   field<HTMLInputElement>("webSearch").disabled = provider !== "anthropic";
-  document.getElementById("websearch-hint")!.textContent = WEB_SEARCH_HINT[provider];
-  field<HTMLInputElement>("model").placeholder = DEFAULT_MODELS[provider] || "nom du modèle";
+  if (provider === "anthropic") {
+    document.getElementById("websearch-hint")!.textContent = t.webSearchHintAnthropic;
+  } else if (provider === "gemini") {
+    document.getElementById("websearch-hint")!.textContent = t.webSearchHintGemini;
+  } else {
+    document.getElementById("websearch-hint")!.textContent = t.webSearchHintUnavailable;
+  }
+  field<HTMLInputElement>("model").placeholder = DEFAULT_MODELS[provider] || "model name";
 }
 
 field<HTMLSelectElement>("provider").addEventListener("change", () => {
@@ -53,9 +84,14 @@ field<HTMLSelectElement>("provider").addEventListener("change", () => {
   syncProvider();
 });
 
+field<HTMLSelectElement>("language").addEventListener("change", () => {
+  applyOptionsI18n(field<HTMLSelectElement>("language").value);
+});
+
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   const config = readForm();
+  const t = getUiStrings(config.language);
   const origin = providerOrigin(config);
   formStatus.className = "";
   if (!origin) {
@@ -68,7 +104,7 @@ form.addEventListener("submit", (event) => {
     .request({ origins: [origin] })
     .then(async (granted) => {
       await saveConfig(config);
-      formStatus.textContent = granted ? "Enregistré." : "Enregistré, mais l'accès à l'API a été refusé.";
+      formStatus.textContent = granted ? t.savedSuccess : t.savedPermissionDenied;
       formStatus.className = granted ? "saved" : "error";
     })
     .catch((err: unknown) => {
@@ -78,7 +114,9 @@ form.addEventListener("submit", (event) => {
 });
 
 document.getElementById("clear-cache")!.addEventListener("click", () => {
-  void clearCache().then(() => (document.getElementById("cache-status")!.textContent = "Cache vidé."));
+  const lang = field<HTMLSelectElement>("language")?.value || "auto";
+  const t = getUiStrings(lang);
+  void clearCache().then(() => (document.getElementById("cache-status")!.textContent = t.cacheCleared));
 });
 
 void loadConfig().then(fillForm);
