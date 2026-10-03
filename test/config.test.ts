@@ -49,11 +49,20 @@ describe("config module", () => {
       model: "gpt-4o-mini",
     };
     expect(isConfigured(openAiConfigured)).toBe(true);
+
+    const chromeAiConfigured: Config = {
+      ...DEFAULT_CONFIG,
+      provider: "chrome-ai",
+      apiKey: "",
+      model: "gemini-nano",
+    };
+    expect(isConfigured(chromeAiConfigured)).toBe(true);
   });
 
   it("retourne l'origine attendue pour providerOrigin", () => {
     expect(providerOrigin({ ...DEFAULT_CONFIG, provider: "anthropic" })).toBe("https://api.anthropic.com/*");
     expect(providerOrigin({ ...DEFAULT_CONFIG, provider: "gemini" })).toBe("https://generativelanguage.googleapis.com/*");
+    expect(providerOrigin({ ...DEFAULT_CONFIG, provider: "chrome-ai" })).toBeNull();
     expect(providerOrigin({ ...DEFAULT_CONFIG, provider: "openai-compatible", endpoint: "https://api.groq.com/openai/v1" })).toBe(
       "https://api.groq.com/*",
     );

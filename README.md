@@ -11,7 +11,11 @@ Extension de navigateur (Manifest V3) pour **Chromium** (Chrome, Brave, Edge) et
 - synchronisation bidirectionnelle : un clic sur une carte fait défiler la page jusqu'à la citation, et un clic sur une citation met la carte en avant ;
 - internationalisation complète : disponible en français, anglais, espagnol, allemand et italien.
 
-Fournisseurs LLM pris en charge : Anthropic (avec recherche web pour la vérification des faits), endpoints compatibles OpenAI (OpenAI, Mistral, OpenRouter, Ollama…) et Google Gemini.
+Fournisseurs LLM pris en charge :
+- **Chrome Built-in AI (Gemini Nano)** : 100% local, privé et gratuit (aucun compte ni clé requis sur Chromium 128+) ;
+- **Google Gemini** : avec grounding Google Search (clé gratuite disponible en 1 clic via Google AI Studio) ;
+- **Endpoints compatibles OpenAI** : Ollama en local (pré-remplissage en 1 clic, sans clé requise), Mistral, OpenRouter, Perplexity ;
+- **Anthropic** : Claude (Opus, Sonnet) avec outil de recherche web serveur.
 
 > **Statut : v0.1, en développement.** Voir les [points ouverts](docs/fonctionnelles/points-ouverts.md).
 

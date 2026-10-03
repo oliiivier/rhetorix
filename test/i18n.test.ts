@@ -54,6 +54,15 @@ describe("i18n module", () => {
       expect(strings.webSearchHintAnthropic).toBeTruthy();
       expect(strings.webSearchHintGemini).toBeTruthy();
       expect(strings.webSearchHintOpenAi).toBeTruthy();
+
+      // Vérification des boutons d'aide à la connexion (options B, C, D)
+      expect(strings.getGeminiKeyBtn).toBeTruthy();
+      expect(strings.getAnthropicKeyBtn).toBeTruthy();
+      expect(strings.presetOllamaBtn).toBeTruthy();
+      expect(strings.presetOllamaSuccess).toBeTruthy();
+      expect(strings.chromeAiOption).toBeTruthy();
+      expect(strings.chromeAiHint).toBeTruthy();
+      expect(strings.apiKeyPlaceholderOllama).toBeTruthy();
     }
   });
 

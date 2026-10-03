@@ -2,7 +2,7 @@
 
 import { ext } from "./ext";
 
-export type ProviderId = "anthropic" | "openai-compatible" | "gemini";
+export type ProviderId = "anthropic" | "openai-compatible" | "gemini" | "chrome-ai";
 export type DisplayMode = "sidepanel" | "inline" | "both";
 
 export interface Config {
@@ -25,6 +25,7 @@ export const DEFAULT_MODELS: Record<ProviderId, string> = {
   anthropic: "claude-opus-5-5",
   "openai-compatible": "",
   gemini: "gemini-2.5-flash",
+  "chrome-ai": "gemini-nano",
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -50,6 +51,7 @@ export async function saveConfig(config: Config): Promise<void> {
 }
 
 export function isConfigured(c: Config): boolean {
+  if (c.provider === "chrome-ai") return true;
   if (!c.model) return false;
   if (c.provider === "openai-compatible") return Boolean(c.endpoint);
   return Boolean(c.apiKey);
@@ -62,6 +64,8 @@ export function providerOrigin(c: Config): string | null {
       return "https://api.anthropic.com/*";
     case "gemini":
       return "https://generativelanguage.googleapis.com/*";
+    case "chrome-ai":
+      return null;
     case "openai-compatible":
       try {
         return `${new URL(c.endpoint).origin}/*`;

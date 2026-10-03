@@ -21,6 +21,10 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 
 ## Éléments traités
 
+- **Options d'onboarding sans clé et accès simplifié** :
+  - **Chrome Built-in AI (Gemini Nano)** : intégration de la Prompt API Chromium locale (`src/providers/chrome-ai.ts`), fonctionnant à 100% en local sur GPU/NPU sans clé API, sans coût et sans compte.
+  - **Ollama local en 1 clic** : bouton de pré-remplissage automatique des options pour Ollama local (`http://localhost:11434/v1`, modèle `mistral`, clé facultative).
+  - **Génération directe de clés gratuites** : bouton direct vers Google AI Studio pour obtenir une clé Gemini sans carte bancaire en un clic.
 - **Recherche web Gemini (Google Search grounding) & Compatible OpenAI (citations)** : l'outil `googleSearch` de Gemini est pleinement supporté et ses `groundingChunks` sont extraits du flux SSE pour valider les sources (D3). Pour les endpoints compatibles OpenAI (Perplexity `sonar`, OpenRouter `:online`), les citations `chunk.citations` sont capturées en streaming.
 - **Banc d'essai CLI (`scripts/test-live-provider.mjs`)** : script de test direct en ligne de commande (`npm run test:live`) permettant de vérifier le streaming, le fact-checking et la conformité D3 sur de vraies clés d'API sans passer par l'interface du navigateur.
 - **Ajustement de la limite de découpage (D6)** : valeur par défaut ramenée à 8 000 tokens (~6 000 mots) pour optimiser le temps de réponse et paralléliser l'analyse des longs articles par tranches traitées par 2 workers concurrents.

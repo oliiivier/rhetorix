@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Config } from "../src/config";
 import { geminiProvider } from "../src/providers/gemini";
 import { openAiCompatibleProvider } from "../src/providers/openai-compatible";
+import { chromeAiProvider } from "../src/providers/chrome-ai";
 
 describe("geminiProvider", () => {
   const baseConfig: Config = {
@@ -78,5 +79,74 @@ describe("openAiCompatibleProvider", () => {
     expect(result.raw).toEqual({ summary: "Analyse", annotations: [] });
     expect(result.searchedUrls).toBeDefined();
     expect(result.searchedUrls?.has("https://en.wikipedia.org/wiki/Test")).toBe(true);
+  });
+});
+
+describe("chromeAiProvider", () => {
+  const baseConfig: Config = {
+    provider: "chrome-ai",
+    apiKey: "",
+    model: "gemini-nano",
+    endpoint: "",
+    language: "fr",
+    webSearch: false,
+    maxChunkTokens: 8_000,
+    displayMode: "both",
+  };
+
+  it("indique supportsWebSearch = false", () => {
+    expect(chromeAiProvider.supportsWebSearch(baseConfig)).toBe(false);
+  });
+
+  it("échoue si Chrome AI n'est pas disponible", async () => {
+    vi.stubGlobal("ai", undefined);
+
+    await expect(
+      chromeAiProvider.analyze(
+        { title: "Test", text: "Article", language: "fr", part: { index: 0, total: 1 }, webSearch: false },
+        baseConfig,
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow("Chrome Built-in AI (Gemini Nano) n'est pas disponible");
+  });
+
+  it("analyse et extrait le JSON avec streaming quand Chrome AI est disponible", async () => {
+    const mockDestroy = vi.fn();
+    const mockSession = {
+      promptStreaming: vi.fn().mockImplementation(async function* () {
+        yield '{"summary":';
+        yield '{"summary":"Analyse locale",';
+        yield '{"summary":"Analyse locale","annotations":[]}';
+      }),
+      destroy: mockDestroy,
+    };
+
+    const mockAi = {
+      languageModel: {
+        capabilities: vi.fn().mockResolvedValue({ available: "readily" }),
+        create: vi.fn().mockResolvedValue(mockSession),
+      },
+    };
+    vi.stubGlobal("ai", mockAi);
+
+    const summaries: string[] = [];
+    const result = await chromeAiProvider.analyze(
+      {
+        title: "Test",
+        text: "Article",
+        language: "fr",
+        part: { index: 0, total: 1 },
+        webSearch: false,
+        onStream: {
+          onSummary: (s) => summaries.push(s),
+        },
+      },
+      baseConfig,
+      new AbortController().signal,
+    );
+
+    expect(result.raw).toEqual({ summary: "Analyse locale", annotations: [] });
+    expect(mockDestroy).toHaveBeenCalledTimes(1);
+    expect(summaries).toContain("Analyse locale");
   });
 });

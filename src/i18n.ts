@@ -72,6 +72,13 @@ export interface UiStrings {
   cacheCleared: string;
   privacySectionTitle: string;
   privacyText: string;
+  getGeminiKeyBtn: string;
+  getAnthropicKeyBtn: string;
+  presetOllamaBtn: string;
+  presetOllamaSuccess: string;
+  chromeAiOption: string;
+  chromeAiHint: string;
+  apiKeyPlaceholderOllama: string;
 
   // Erreurs providers
   providerErrors: Record<ProviderErrorCode, (detail?: string) => string>;
@@ -164,6 +171,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacySectionTitle: "Vie privée",
     privacyText:
       "Le texte des articles analysés est envoyé uniquement au fournisseur que vous avez configuré. Rhetorix ne dispose d'aucun serveur central.",
+    getGeminiKeyBtn: "✨ Obtenir une clé Gemini gratuite (Google AI Studio) ↗",
+    getAnthropicKeyBtn: "Obtenir une clé Anthropic ↗",
+    presetOllamaBtn: "🦙 Configurer pour Ollama local (zéro clé)",
+    presetOllamaSuccess: "Paramètres appliqués pour Ollama local (http://localhost:11434/v1, mistral).",
+    chromeAiOption: "Chrome Built-in AI (Gemini Nano local, sans clé)",
+    chromeAiHint: "Exécution 100% locale via Gemini Nano. Aucune clé API ni compte requis, gratuit et confidentiel.",
+    apiKeyPlaceholderOllama: "Facultatif pour Ollama / LM Studio local",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Refus du modèle : ${detail}` : "Le modèle a refusé d'analyser ce contenu."),
@@ -264,6 +278,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacySectionTitle: "Privacy",
     privacyText:
       "The text of analyzed articles is sent exclusively to the provider you configured. Rhetorix does not run any central server.",
+    getGeminiKeyBtn: "✨ Get a free Gemini API key (Google AI Studio) ↗",
+    getAnthropicKeyBtn: "Get an Anthropic API key ↗",
+    presetOllamaBtn: "🦙 Configure for local Ollama (no key)",
+    presetOllamaSuccess: "Settings applied for local Ollama (http://localhost:11434/v1, mistral).",
+    chromeAiOption: "Chrome Built-in AI (local Gemini Nano, no key)",
+    chromeAiHint: "Runs 100% locally with Gemini Nano. No API key or account required, free and private.",
+    apiKeyPlaceholderOllama: "Optional for local Ollama / LM Studio",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Model refusal: ${detail}` : "The model refused to analyze this content."),
@@ -364,6 +385,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacySectionTitle: "Privacidad",
     privacyText:
       "El texto de los artículos analizados se envía únicamente al proveedor que haya configurado. Rhetorix no dispone de ningún servidor central.",
+    getGeminiKeyBtn: "✨ Obtener una clave Gemini gratuita (Google AI Studio) ↗",
+    getAnthropicKeyBtn: "Obtener una clave Anthropic ↗",
+    presetOllamaBtn: "🦙 Configurar para Ollama local (sin clave)",
+    presetOllamaSuccess: "Ajustes aplicados para Ollama local (http://localhost:11434/v1, mistral).",
+    chromeAiOption: "Chrome Built-in AI (Gemini Nano local, sin clave)",
+    chromeAiHint: "Ejecución 100% local con Gemini Nano. Sin clave API ni cuenta, gratuito y privado.",
+    apiKeyPlaceholderOllama: "Opcional para Ollama / LM Studio local",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rechazo del modelo: ${detail}` : "El modelo rechazó analizar este contenido."),
@@ -464,6 +492,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacySectionTitle: "Datenschutz",
     privacyText:
       "Der Text analysierter Artikel wird ausschließlich an den von Ihnen konfigurierten Anbieter gesendet. Rhetorix betreibt keinen zentralen Server.",
+    getGeminiKeyBtn: "✨ Kostenlosen Gemini-API-Schlüssel holen (Google AI Studio) ↗",
+    getAnthropicKeyBtn: "Anthropic-API-Schlüssel holen ↗",
+    presetOllamaBtn: "🦙 Für lokales Ollama vorkonfigurieren (kein Schlüssel)",
+    presetOllamaSuccess: "Einstellungen für lokales Ollama angewendet (http://localhost:11434/v1, mistral).",
+    chromeAiOption: "Chrome Built-in AI (lokales Gemini Nano, ohne Schlüssel)",
+    chromeAiHint: "Läuft zu 100% lokal mit Gemini Nano. Kein API-Schlüssel oder Konto erforderlich, kostenlos und privat.",
+    apiKeyPlaceholderOllama: "Optional für lokales Ollama / LM Studio",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Ablehnung durch das Modell: ${detail}` : "Das Modell hat die Analyse dieses Inhalts abgelehnt."),
@@ -564,6 +599,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacySectionTitle: "Privacy",
     privacyText:
       "Il testo degli articoli analizzati viene inviato esclusivamente al fornitore configurato. Rhetorix non dispone di alcun server centrale.",
+    getGeminiKeyBtn: "✨ Ottieni una chiave Gemini gratuita (Google AI Studio) ↗",
+    getAnthropicKeyBtn: "Ottieni una chiave Anthropic ↗",
+    presetOllamaBtn: "🦙 Configura per Ollama locale (senza chiave)",
+    presetOllamaSuccess: "Impostazioni applicate per Ollama locale (http://localhost:11434/v1, mistral).",
+    chromeAiOption: "Chrome Built-in AI (Gemini Nano locale, senza chiave)",
+    chromeAiHint: "Esecuzione 100% locale con Gemini Nano. Nessuna chiave API né account richiesti, gratuito e privato.",
+    apiKeyPlaceholderOllama: "Opzionale per Ollama / LM Studio locale",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rifiuto del modello: ${detail}` : "Il modello ha rifiutato di analizzare questo contenuto."),

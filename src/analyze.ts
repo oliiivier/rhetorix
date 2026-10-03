@@ -5,6 +5,7 @@ import { chunkParagraphs, mapLimit, mergeAnalyses } from "./chunking";
 import { resolveLanguage, type Config, type ProviderId } from "./config";
 import type { Extracted } from "./messages";
 import { anthropicProvider } from "./providers/anthropic";
+import { chromeAiProvider } from "./providers/chrome-ai";
 import { geminiProvider } from "./providers/gemini";
 import { openAiCompatibleProvider } from "./providers/openai-compatible";
 import type { LlmProvider, StreamCallbacks } from "./providers/types";
@@ -20,6 +21,7 @@ const PROVIDERS: Record<ProviderId, LlmProvider> = {
   anthropic: anthropicProvider,
   "openai-compatible": openAiCompatibleProvider,
   gemini: geminiProvider,
+  "chrome-ai": chromeAiProvider,
 };
 
 const CONCURRENCY = 2;

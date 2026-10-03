@@ -16,23 +16,37 @@
             <option value="anthropic">Anthropic</option>
             <option value="openai-compatible">Compatible OpenAI (OpenAI, Mistral, OpenRouter, Ollama…)</option>
             <option value="gemini">Google Gemini</option>
+            <option value="chrome-ai" id="opt-chrome-ai">Chrome Built-in AI (Gemini Nano local, sans clé)</option>
           </select>
         </label>
+
+        <div id="chrome-ai-info" class="chrome-ai-info" hidden>
+          <p id="chrome-ai-hint" class="hint"></p>
+        </div>
 
         <label id="endpoint-field">
           <span id="lbl-endpoint">Endpoint</span>
           <input type="url" name="endpoint" placeholder="https://api.openai.com/v1" />
+          <button type="button" id="btn-preset-ollama" class="secondary-btn">🦙 Configurer pour Ollama local (zéro clé)</button>
           <span class="hint" id="endpoint-hint">URL de base de l'API ; <code>/chat/completions</code> y est ajouté.</span>
           <span class="hint" id="endpoint-ollama-hint">Pour Ollama en local (ex. <code>http://localhost:11434/v1</code>), lancez le serveur avec <code>OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*"</code> pour autoriser l'accès.</span>
         </label>
 
-        <label>
+        <label id="api-key-field">
           <span id="lbl-api-key">Clé API</span>
           <input type="password" name="apiKey" autocomplete="off" />
           <span class="hint" id="api-key-hint">Stockée uniquement dans ce navigateur (stockage local, non synchronisé).</span>
+          <div class="key-actions">
+            <a id="btn-get-gemini-key" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="link-btn" hidden>
+              ✨ Obtenir une clé Gemini gratuite (Google AI Studio) ↗
+            </a>
+            <a id="btn-get-anthropic-key" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" class="link-btn" hidden>
+              Obtenir une clé Anthropic ↗
+            </a>
+          </div>
         </label>
 
-        <label>
+        <label id="model-field">
           <span id="lbl-model">Modèle</span>
           <input type="text" name="model" required />
         </label>
@@ -59,11 +73,13 @@
           <span class="hint" id="display-mode-hint">Choisissez si les annotations s'affichent sous forme de bulles au survol du texte, dans le panneau latéral, ou les deux.</span>
         </label>
 
-        <label class="checkbox">
-          <input type="checkbox" name="webSearch" />
-          <span id="lbl-web-search">Vérifier les faits par recherche web</span>
-        </label>
-        <span class="hint" id="websearch-hint"></span>
+        <div id="websearch-field">
+          <label class="checkbox">
+            <input type="checkbox" name="webSearch" />
+            <span id="lbl-web-search">Vérifier les faits par recherche web</span>
+          </label>
+          <span class="hint" id="websearch-hint"></span>
+        </div>
 
         <label>
           <span id="lbl-max-chunk">Taille maximale d'un morceau (tokens)</span>

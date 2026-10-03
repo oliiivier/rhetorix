@@ -33,11 +33,16 @@ function applyOptionsI18n(lang: string): void {
   document.title = t.optionsTitle;
   setTxt("title", t.optionsTitle);
   setTxt("lbl-provider", t.providerLabel);
+  setTxt("opt-chrome-ai", t.chromeAiOption);
+  setTxt("chrome-ai-hint", t.chromeAiHint);
   setTxt("lbl-endpoint", t.endpointLabel);
+  setTxt("btn-preset-ollama", t.presetOllamaBtn);
   setHintWithCode("endpoint-hint", t.endpointHint);
   setHintWithCode("endpoint-ollama-hint", t.endpointOllamaHint);
   setTxt("lbl-api-key", t.apiKeyLabel);
   setTxt("api-key-hint", t.apiKeyHint);
+  setTxt("btn-get-gemini-key", t.getGeminiKeyBtn);
+  setTxt("btn-get-anthropic-key", t.getAnthropicKeyBtn);
   setTxt("lbl-model", t.modelLabel);
   setTxt("lbl-language", t.languageLabel);
   setTxt("lbl-display-mode", t.displayModeLabel);
@@ -85,15 +90,36 @@ function syncProvider(): void {
   const provider = field<HTMLSelectElement>("provider").value as ProviderId;
   const lang = field<HTMLSelectElement>("language")?.value || "auto";
   const t = getUiStrings(lang);
-  document.getElementById("endpoint-field")!.hidden = provider !== "openai-compatible";
-  field<HTMLInputElement>("endpoint").required = provider === "openai-compatible";
-  field<HTMLInputElement>("apiKey").required = provider !== "openai-compatible";
+
+  const isChromeAi = provider === "chrome-ai";
+  const isOpenAi = provider === "openai-compatible";
+
+  document.getElementById("chrome-ai-info")!.hidden = !isChromeAi;
+  document.getElementById("endpoint-field")!.hidden = !isOpenAi;
+  document.getElementById("api-key-field")!.hidden = isChromeAi;
+  document.getElementById("model-field")!.hidden = isChromeAi;
+  document.getElementById("websearch-field")!.hidden = isChromeAi;
+
+  field<HTMLInputElement>("endpoint").required = isOpenAi;
+  field<HTMLInputElement>("apiKey").required = provider === "anthropic" || provider === "gemini";
+  field<HTMLInputElement>("model").required = !isChromeAi;
+
+  if (isOpenAi) {
+    field<HTMLInputElement>("apiKey").placeholder = t.apiKeyPlaceholderOllama;
+  } else {
+    field<HTMLInputElement>("apiKey").placeholder = "";
+  }
+
+  // Boutons d'aide d'obtention de clés
+  document.getElementById("btn-get-gemini-key")!.hidden = provider !== "gemini";
+  document.getElementById("btn-get-anthropic-key")!.hidden = provider !== "anthropic";
+
   field<HTMLInputElement>("webSearch").disabled = false;
   if (provider === "anthropic") {
     document.getElementById("websearch-hint")!.textContent = t.webSearchHintAnthropic;
   } else if (provider === "gemini") {
     document.getElementById("websearch-hint")!.textContent = t.webSearchHintGemini;
-  } else {
+  } else if (isOpenAi) {
     document.getElementById("websearch-hint")!.textContent = t.webSearchHintOpenAi;
   }
   field<HTMLInputElement>("model").placeholder = DEFAULT_MODELS[provider] || "model name";
@@ -101,7 +127,7 @@ function syncProvider(): void {
 
 field<HTMLSelectElement>("provider").addEventListener("change", () => {
   const model = field<HTMLInputElement>("model");
-  if (Object.values(DEFAULT_MODELS).includes(model.value)) {
+  if (Object.values(DEFAULT_MODELS).includes(model.value) || !model.value) {
     model.value = DEFAULT_MODELS[field<HTMLSelectElement>("provider").value as ProviderId];
   }
   syncProvider();
@@ -111,12 +137,34 @@ field<HTMLSelectElement>("language").addEventListener("change", () => {
   applyOptionsI18n(field<HTMLSelectElement>("language").value);
 });
 
+// Bouton de pré-remplissage pour Ollama local (Option D)
+document.getElementById("btn-preset-ollama")?.addEventListener("click", () => {
+  field<HTMLInputElement>("endpoint").value = "http://localhost:11434/v1";
+  field<HTMLInputElement>("model").value = "mistral";
+  field<HTMLInputElement>("apiKey").value = "";
+  field<HTMLInputElement>("webSearch").checked = false;
+  const lang = field<HTMLSelectElement>("language")?.value || "auto";
+  const t = getUiStrings(lang);
+  formStatus.textContent = t.presetOllamaSuccess;
+  formStatus.className = "saved";
+});
+
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   const config = readForm();
   const t = getUiStrings(config.language);
-  const origin = providerOrigin(config);
   formStatus.className = "";
+
+  // Pour Chrome Built-in AI, aucun accès réseau externe n'est requis
+  if (config.provider === "chrome-ai") {
+    void saveConfig(config).then(() => {
+      formStatus.textContent = t.savedSuccess;
+      formStatus.className = "saved";
+    });
+    return;
+  }
+
+  const origin = providerOrigin(config);
   if (!origin) {
     formStatus.textContent = t.invalidEndpoint;
     formStatus.className = "error";

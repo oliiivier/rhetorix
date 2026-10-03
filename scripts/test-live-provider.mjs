@@ -41,7 +41,7 @@ ${c.bold}USAGE :${c.reset}
   npm run test:live -- [options]
 
 ${c.bold}OPTIONS :${c.reset}
-  ${c.green}-p, --provider <id>${c.reset}      Provider à tester : ${c.yellow}anthropic${c.reset}, ${c.yellow}gemini${c.reset}, ou ${c.yellow}openai-compatible${c.reset}
+  ${c.green}-p, --provider <id>${c.reset}      Provider à tester : ${c.yellow}anthropic${c.reset}, ${c.yellow}gemini${c.reset}, ${c.yellow}openai-compatible${c.reset}, ou ${c.yellow}chrome-ai${c.reset}
   ${c.green}-k, --key <cle>${c.reset}          Clé API (sinon variable d'env selon provider)
   ${c.green}-m, --model <nom>${c.reset}        Nom du modèle (défauts : claude-opus-5-5, gemini-2.5-flash, etc.)
   ${c.green}-e, --endpoint <url>${c.reset}     Endpoint URL (pour openai-compatible, ex: http://localhost:11434/v1)
@@ -157,8 +157,8 @@ async function main() {
     }
   }
 
-  if (!["anthropic", "gemini", "openai-compatible"].includes(provider)) {
-    console.error(`${c.red}Erreur : provider invalide '${provider}'. Choix : anthropic, gemini, openai-compatible.${c.reset}`);
+  if (!["anthropic", "gemini", "openai-compatible", "chrome-ai"].includes(provider)) {
+    console.error(`${c.red}Erreur : provider invalide '${provider}'. Choix : anthropic, gemini, openai-compatible, chrome-ai.${c.reset}`);
     printHelp();
     process.exit(1);
   }
@@ -182,13 +182,14 @@ async function main() {
   if (!model) {
     if (provider === "anthropic") model = "claude-opus-5-5";
     else if (provider === "gemini") model = "gemini-2.5-flash";
+    else if (provider === "chrome-ai") model = "gemini-nano";
     else if (provider === "openai-compatible") {
       model = endpoint && endpoint.includes("11434") ? "mistral" : "gpt-4o";
     }
   }
 
   // Vérification de configuration
-  if (provider !== "openai-compatible" && !apiKey) {
+  if (provider !== "openai-compatible" && provider !== "chrome-ai" && !apiKey) {
     console.error(`${c.red}${c.bold}Erreur : Aucune clé API trouvée pour ${provider}.${c.reset}`);
     console.error(`Spécifiez la clé avec ${c.yellow}--key <cle>${c.reset} ou la variable d'environnement ${c.yellow}${provider === "gemini" ? "GEMINI_API_KEY" : "ANTHROPIC_API_KEY"}${c.reset}.\n`);
     printHelp();

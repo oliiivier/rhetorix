@@ -146,15 +146,16 @@ L'orchestration (`src/analyze.ts`) enchaîne : découpage, streaming des morceau
 
 | Adaptateur | Sortie structurée | Recherche web (D3) |
 |---|---|---|
-| Compatible OpenAI (OpenAI, Mistral, OpenRouter, Ollama…) | `response_format: json_schema` (strict) via SSE | Support des citations (`chunk.citations` pour Perplexity, OpenRouter...) avec `webSearch` activé. Si absent ou sans recherche : mode `unverified` |
+| Compatible OpenAI (OpenAI, Mistral, OpenRouter, Ollama…) | `response_format: json_schema` (strict) via SSE | Support des citations (`chunk.citations` pour Perplexity, OpenRouter...) avec `webSearch` activé. Si absent ou sans recherche : mode `unverified`. Clé facultative pour Ollama local |
 | Anthropic (SDK officiel, `dangerouslyAllowBrowser`) | Outil strict `submit_analysis` dont l'`input_schema` est le schéma d'analyse, avec `tool_choice: auto`. Streaming via `streamEvent` | Outil serveur `web_search_20260209`. Les URL des blocs `web_search_tool_result` sont capturées dès `content_block_start` pour être disponibles pendant le flux. `pause_turn` est repris automatiquement |
-| Google Gemini | `responseJsonSchema` via `streamGenerateContent?alt=sse` | Outil `googleSearch` (Grounding Google Search). Les URLs des `groundingChunks` sont extraites dans le flux SSE et validées via la politique D3 |
+| Google Gemini | `responseJsonSchema` via `streamGenerateContent?alt=sse` | Outil `googleSearch` (Grounding Google Search). Les URLs des `groundingChunks` sont extraites dans le flux SSE et validées via la politique D3. Clé API gratuite disponible via Google AI Studio |
+| Chrome Built-in AI (Gemini Nano) | `session.promptStreaming` (Prompt API locale) | Exécution 100% locale sur la machine (Chrome 128+). Zéro clé API, zéro compte, aucune permission réseau externe requise. Mode `unverified` (D3) |
 
 Modèle Anthropic par défaut : `claude-opus-5-5`, avec `effort: high` et `fallbacks: "default"` (reprise côté serveur après un refus) sur les modèles qui l'acceptent.
 
 Quand `supportsWebSearch` est faux, le client force `fact_check.status = "unverified"` et `sources = []`, quoi que le modèle ait renvoyé.
 
-- **Streaming et affichage progressif.** Les trois adaptateurs fonctionnent en streaming (SSE pour OpenAI et Gemini via `parseSseJson`, `streamEvent` pour Anthropic). Le panneau affiche les cartes d'annotations et le résumé au fur et à mesure sans attendre la fin du flux complet grâce à `ProgressiveJsonParser` (`src/streaming-json.ts`).
+- **Streaming et affichage progressif.** Les adaptateurs fonctionnent en streaming (SSE pour OpenAI et Gemini via `parseSseJson`, `streamEvent` pour Anthropic, `promptStreaming` pour Chrome AI). Le panneau affiche les cartes d'annotations et le résumé au fur et à mesure sans attendre la fin du flux complet grâce à `ProgressiveJsonParser` (`src/streaming-json.ts`).
 - **Internationalisation (`src/i18n.ts`).** L'interface et les messages d'erreurs (extraction et providers) sont traduits dans les 5 langues supportées (fr, en, es, de, it).
 - **Langue (D5).** Le prompt impose la langue de l'interface pour `summary`, `rhetoric_critique` et `context`, mais `exact_quote` reste recopié tel quel depuis l'article.
 - **Labels (D4).** `label` est une énumération fermée de 31 labels traduits par catégorie, plus `"autre"`.
