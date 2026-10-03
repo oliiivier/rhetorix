@@ -24,7 +24,7 @@ export interface Config {
 export const DEFAULT_MODELS: Record<ProviderId, string> = {
   anthropic: "claude-opus-5-5",
   "openai-compatible": "",
-  gemini: "gemini-2.5-flash",
+  gemini: "gemini-3.8-flash",
   "chrome-ai": "gemini-nano",
 };
 
@@ -61,6 +61,13 @@ export function isConfigured(c: Config): boolean {
 export function providerOrigin(c: Config): string | null {
   switch (c.provider) {
     case "anthropic":
+      if (c.endpoint) {
+        try {
+          return `${new URL(c.endpoint).origin}/*`;
+        } catch {
+          return "https://api.anthropic.com/*";
+        }
+      }
       return "https://api.anthropic.com/*";
     case "gemini":
       return "https://generativelanguage.googleapis.com/*";

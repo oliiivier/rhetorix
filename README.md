@@ -1,6 +1,6 @@
 # Rhetorix
 
-Extension de navigateur (Manifest V3) pour **Chromium** (Chrome, Brave, Edge) et **Firefox**, qui analyse un article de presse ou une interview avec un LLM :
+Extension de navigateur (Manifest V3) pour **Chromium** (Chrome, Brave, Edge) et **Firefox**, desktop et Android, qui analyse un article de presse ou une interview avec un LLM :
 
 - **dans la page**, les sophismes, biais et allégations factuelles sont surlignés (CSS Custom Highlight API, sans modifier le DOM) ;
 - **deux modes d'affichage au choix** :
@@ -38,6 +38,8 @@ npm run typecheck
 
 **Firefox (≥ 142)** : ouvrir `about:debugging#/runtime/this-firefox`, puis **Charger un module complémentaire temporaire** et choisir `dist/firefox/manifest.json`. Autre possibilité : `npx web-ext run -s dist/firefox`.
 
+**Firefox pour Android (≥ 142)** : téléphone branché en USB avec le débogage activé, puis `npx web-ext run -s dist/firefox -t firefox-android --android-device <id>` (liste des appareils : `adb devices`).
+
 Ensuite, ouvrir les options de l'extension, choisir le fournisseur, saisir la clé API et le modèle, puis enregistrer. Le navigateur demande alors l'autorisation d'accéder à l'API du fournisseur.
 
 ### Utilisation
@@ -45,15 +47,18 @@ Ensuite, ouvrir les options de l'extension, choisir le fournisseur, saisir la cl
 1. Ouvrir un article, puis cliquer sur l'icône Rhetorix pour ouvrir le panneau.
 2. Cliquer sur **Analyser la page**.
 
-Une analyse est mise en cache par URL. **Ré-analyser** force un nouvel appel.
+Une analyse est mise en cache par URL. **Ré-analyser** force un nouvel appel. L'analyse continue si l'on ferme le panneau ou si l'on change d'onglet.
+
+**Sur Firefox pour Android**, il n'y a pas de panneau : toucher Rhetorix dans le menu des extensions lance l'analyse. Un message bref indique l'avancement, puis toucher un passage surligné ouvre son explication.
 
 ## Structure
 
 ```
 build.mjs               # build esbuild + manifest par navigateur
 src/
-  background.ts         # ouverture du panneau (sidePanel / sidebarAction)
-  content-script.ts     # extraction (Readability), surlignage, détection des clics
+  background.ts         # ouverture du panneau, messages, déclenchement mobile
+  runner.ts             # pilotage d'une analyse par onglet (script de fond)
+  content-script.ts     # extraction (Readability), surlignage, bulles, clics et touchers
   sidepanel/            # panneau : déclenchement, cartes, streaming, filtres
   options/              # options : fournisseur, clé API, modèle, langue, cache
   providers/            # adaptateurs anthropic, openai-compatible, gemini, helper http

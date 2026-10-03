@@ -14,10 +14,16 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 | D6 | Articles longs | **Limite configurable, puis découpage par paragraphes** | Plusieurs appels, puis fusion des annotations avec renumérotation des ids et un `summary` consolidé |
 | D7 | Persistance | **Cache par URL dans `storage.local`** | Gérer la clé, l'invalidation et le volume (voir architecture §8) |
 | D8 | Navigateurs | **Chromium (≥ 128) et Firefox (≥ 142)** | Deux paquets générés : `dist/chrome` (`side_panel`, service worker) et `dist/firefox` (`sidebar_action`, script de fond, `data_collection_permissions`). Voir architecture §9 |
+| D9 | Mobile | **Firefox pour Android (≥ 142)**, même paquet que Firefox desktop. **L'analyse est pilotée par le script de fond partout** ; sur mobile, le toucher de l'icône lance l'analyse immédiatement et le résultat s'affiche en **bulles au toucher** seulement | Le panneau devient une vue de l'état publié par le script de fond (architecture §3). Sur mobile : pas de résumé ni de liste, les annotations non localisées ne sont pas visibles ; l'avancement passe par un message bref dans la page. Safari iOS reste hors périmètre |
 
 ## Reste à préciser
 
 - **Identifiant Firefox** : `rhetorix@rhetorix.local` est provisoire. Il faudra le remplacer avant publication définitive sur addons.mozilla.org.
+- **Firefox pour Android (D9), à tester sur un appareil réel** (`npx web-ext run -t firefox-android`) :
+  - le script de fond est maintenu actif pendant l'analyse par un appel d'API toutes les 20 s ; il faut vérifier que Firefox Android ne le suspend pas pendant un appel LLM long ;
+  - l'octroi d'`activeTab` et la demande de permission depuis `action.onClicked` ;
+  - si l'injection du content script échoue, aucun message ne peut s'afficher dans la page.
+- **Chrome Built-in AI et script de fond** : la Prompt API n'est documentée que pour les fenêtres, pas pour les workers ; il faut vérifier qu'elle est exposée dans le service worker d'extension, sinon passer par un document hors écran. Par ailleurs, `chrome-ai.ts` cherche l'ancien global `ai.languageModel`, remplacé par `LanguageModel` dans les versions récentes de Chrome.
 
 ## Éléments traités
 
@@ -42,7 +48,7 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 - **Clic sur une citation surlignée** : la CSS Custom Highlight API n'émet pas d'événements. Il faut un hit-test manuel (voir architecture §5).
 - **Pas de script de fond dans le PRD**, alors qu'il en faut un pour ouvrir le panneau au clic sur l'icône (implémenté dans `src/background.ts`).
 - **`activeTab` seul** : la permission ne vaut que pour l'onglet où l'icône a été cliquée. Si l'utilisateur change d'onglet avec le panneau ouvert, l'injection échoue. Il faut soit redemander un clic sur l'icône, soit ajouter des `host_permissions` larges, ce qui a un coût en confiance et en revue sur le Chrome Web Store.
-- **Appel LLM depuis le panneau** : il faut des `host_permissions` vers l'endpoint configuré (voir architecture §2).
+- **Appel LLM depuis le script de fond** : il faut des `host_permissions` vers l'endpoint configuré (voir architecture §2).
 - **« JSON validé » et streaming** : résolu. Le parseur progressif extrait et valide individuellement chaque annotation du flux dès fermeture de ses accolades (`validateAnnotation`), et transmet le résumé au fur et à mesure sans compromettre l'intégrité du schéma.
 
 ## Risques produit
@@ -55,6 +61,7 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 
 ## Hors périmètre (à confirmer)
 
-- Safari et Firefox pour Android.
+- Safari (macOS et iOS) : il exige un emballage en application Xcode et une publication sur l'App Store.
+- Chrome pour Android et iOS : pas d'extensions.
 - Analyse de vidéos ou de transcriptions.
 - Compte utilisateur, backend propre, historique partagé.

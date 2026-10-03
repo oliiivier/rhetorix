@@ -14,11 +14,31 @@ const MAX_TURNS = 5;
 /** Modèles qui acceptent `fallbacks: "default"` (reprise côté serveur après un refus). */
 const FALLBACK_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
 
+export function createAnthropicClient(apiKey: string, endpoint?: string): Anthropic {
+  const clean = apiKey.trim();
+  const isOAuth = clean.startsWith("sk-ant-oat") || clean.startsWith("Bearer ");
+  const token = clean.replace(/^Bearer\s+/i, "");
+  const baseUrl = endpoint?.trim().replace(/\/+$/, "");
+  return new Anthropic({
+    apiKey: isOAuth ? undefined : token,
+    authToken: isOAuth ? token : undefined,
+    baseURL: baseUrl || undefined,
+    dangerouslyAllowBrowser: true,
+    defaultHeaders: isOAuth
+      ? {
+          "anthropic-beta": "oauth-2025-04-20",
+        }
+      : undefined,
+  });
+}
+
 export const anthropicProvider: LlmProvider = {
   supportsWebSearch: () => true,
 
   async analyze(input, config: Config, signal) {
-    const client = new Anthropic({ apiKey: config.apiKey, dangerouslyAllowBrowser: true });
+    const cleanKey = config.apiKey.trim();
+    const isOAuth = cleanKey.startsWith("sk-ant-oat") || cleanKey.startsWith("Bearer ");
+    const client = createAnthropicClient(config.apiKey, config.endpoint);
     const tools: Anthropic.Beta.Messages.BetaToolUnion[] = [
       ...(input.webSearch ? [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 8 }] : []),
       {
@@ -28,7 +48,10 @@ export const anthropicProvider: LlmProvider = {
         strict: true,
       },
     ];
-    const system = `${systemPrompt(input)}\n\nWhen you are done, call the ${SUBMIT_TOOL} tool with the full analysis. Do not answer in plain text.`;
+    const baseSystem = `${systemPrompt(input)}\n\nWhen you are done, call the ${SUBMIT_TOOL} tool with the full analysis. Do not answer in plain text.`;
+    const system = isOAuth
+      ? `You are Claude Code, Anthropic's official CLI for Claude.\n\n${baseSystem}`
+      : baseSystem;
     const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [{ role: "user", content: userPrompt(input) }];
     const fallback = FALLBACK_MODELS.has(config.model);
     const searched = new Set<string>();
@@ -43,6 +66,11 @@ export const anthropicProvider: LlmProvider = {
         })
       : null;
 
+    const betas: string[] = [
+      ...(isOAuth ? ["oauth-2025-04-20"] : []),
+      ...(fallback ? ["server-side-fallback-2026-07-01"] : []),
+    ];
+
     for (let turn = 0; turn < MAX_TURNS; turn++) {
       const stream = client.beta.messages.stream(
         {
@@ -54,7 +82,8 @@ export const anthropicProvider: LlmProvider = {
           tool_choice: { type: "auto" },
           messages,
           ...(config.model.startsWith("claude-haiku") ? {} : { output_config: { effort: "high" as const } }),
-          ...(fallback ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" } : {}),
+          ...(betas.length > 0 ? { betas: betas as unknown as Anthropic.Beta.AnthropicBeta[] } : {}),
+          ...(fallback ? { fallbacks: "default" } : {}),
         } as Anthropic.Beta.Messages.MessageCreateParamsStreaming,
         { signal },
       );
@@ -112,8 +141,13 @@ export const anthropicProvider: LlmProvider = {
   },
 
   async consolidateSummary(title, summaries, language, config, signal, onProgressText) {
-    const client = new Anthropic({ apiKey: config.apiKey, dangerouslyAllowBrowser: true });
-    const { system, user } = consolidatePrompt(title, summaries, language);
+    const cleanKey = config.apiKey.trim();
+    const isOAuth = cleanKey.startsWith("sk-ant-oat") || cleanKey.startsWith("Bearer ");
+    const client = createAnthropicClient(config.apiKey, config.endpoint);
+    const { system: baseSystem, user } = consolidatePrompt(title, summaries, language);
+    const system = isOAuth
+      ? `You are Claude Code, Anthropic's official CLI for Claude.\n\n${baseSystem}`
+      : baseSystem;
     const stream = client.messages.stream(
       {
         model: config.model,

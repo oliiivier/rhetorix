@@ -34,7 +34,8 @@ export const geminiProvider: LlmProvider = {
 
   async analyze(input, config: Config, signal) {
     const webSearch = Boolean(config.webSearch);
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:streamGenerateContent?alt=sse`;
+    const modelName = config.model.replace(/^models\//, "");
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:streamGenerateContent?alt=sse`;
     const tools = webSearch ? [{ googleSearch: {} }] : undefined;
 
     const body: Record<string, unknown> = {
@@ -44,13 +45,34 @@ export const geminiProvider: LlmProvider = {
     };
     if (tools) body.tools = tools;
 
-    const res = await postJson(
-      url,
-      { "x-goog-api-key": config.apiKey },
-      body,
-      signal,
-      "Gemini",
-    );
+    let res: Response;
+    try {
+      res = await postJson(
+        url,
+        { "x-goog-api-key": config.apiKey },
+        body,
+        signal,
+        "Gemini",
+      );
+    } catch (err) {
+      if (webSearch && err instanceof ProviderError) {
+        const msg = (err.detail || err.message).toLowerCase();
+        if (
+          msg.includes("billing") ||
+          msg.includes("quota") ||
+          msg.includes("search") ||
+          msg.includes("grounding") ||
+          msg.includes("permission")
+        ) {
+          throw new ProviderError(
+            `${err.message} (Astuce : avec le quota gratuit de Google AI Studio, désactivez « Vérifier les faits par recherche web » dans les options de Rhetorix).`,
+            err.code,
+            err.detail,
+          );
+        }
+      }
+      throw err;
+    }
 
     const searchedUrls = webSearch ? new Set<string>() : undefined;
 
@@ -94,7 +116,8 @@ export const geminiProvider: LlmProvider = {
 
   async consolidateSummary(title, summaries, language, config, signal, onProgressText) {
     const { system, user } = consolidatePrompt(title, summaries, language);
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:streamGenerateContent?alt=sse`;
+    const modelName = config.model.replace(/^models\//, "");
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:streamGenerateContent?alt=sse`;
     const res = await postJson(
       url,
       { "x-goog-api-key": config.apiKey },

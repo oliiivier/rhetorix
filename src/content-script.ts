@@ -1,6 +1,6 @@
 // Content script : extraction (Readability), localisation des citations, surlignage
-// par la CSS Custom Highlight API, bulles d'analyse au survol (Shadow DOM) et
-// détection des clics (architecture §4 et §5).
+// par la CSS Custom Highlight API, bulles d'analyse au survol ou au toucher (Shadow
+// DOM), message bref sur mobile et détection des clics (architecture §4 et §5).
 // Injecté à la demande par le panneau ; ne modifie pas le DOM de la page.
 
 import { Readability } from "@mozilla/readability";
@@ -454,6 +454,56 @@ function scheduleHide(): void {
   }, 200);
 }
 
+// ---------- Message bref (mobile, sans panneau) ----------
+
+let toastEl: HTMLElement | null = null;
+let toastTimer: number | null = null;
+
+function ensureToast(): HTMLElement {
+  ensurePopover();
+  if (toastEl) return toastEl;
+  const style = document.createElement("style");
+  style.textContent = `
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      box-sizing: border-box;
+      max-width: calc(100vw - 32px);
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #1c1f24;
+      color: #ffffff;
+      font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      pointer-events: auto;
+    }
+    .toast.error { background: #c92a2a; }
+  `;
+  toastEl = document.createElement("div");
+  toastEl.className = "toast";
+  toastEl.setAttribute("role", "status");
+  toastEl.hidden = true;
+  toastEl.addEventListener("click", hideToast);
+  shadow!.append(style, toastEl);
+  return toastEl;
+}
+
+function hideToast(): void {
+  if (toastEl) toastEl.hidden = true;
+}
+
+/** durationMs = 0 : le message reste affiché jusqu'au suivant. */
+function showToast(text: string, isError = false, durationMs = 0): void {
+  const el = ensureToast();
+  el.textContent = text;
+  el.classList.toggle("error", isError);
+  el.hidden = false;
+  if (toastTimer !== null) window.clearTimeout(toastTimer);
+  toastTimer = durationMs > 0 ? window.setTimeout(hideToast, durationMs) : null;
+}
+
 // ---------- Surlignage ----------
 
 function clear(): void {
@@ -516,7 +566,7 @@ function caretAt(x: number, y: number): { node: Node; offset: number } | null {
 }
 
 function onPointerMove(event: PointerEvent): void {
-  if (currentDisplayMode === "sidepanel" || located.size === 0) return;
+  if (event.pointerType !== "mouse" || currentDisplayMode === "sidepanel" || located.size === 0) return;
   if (pointerRaf !== null) return;
   const x = event.clientX;
   const y = event.clientY;
@@ -572,23 +622,31 @@ function onScrollOrResize(): void {
   if (range) updatePopoverPosition(range);
 }
 
+/**
+ * Clic, ou toucher sur mobile (D9) : met la citation en avant, ouvre sa bulle et
+ * prévient le panneau. Un toucher hors des citations et de la bulle ferme celle-ci.
+ */
 function onClick(event: MouseEvent): void {
   if (located.size === 0) return;
+  if (popoverEl && event.composedPath().includes(popoverEl)) return;
   const point = caretAt(event.clientX, event.clientY);
-  if (!point) return;
-  for (const [id, range] of located) {
-    try {
-      if (range.isPointInRange(point.node, point.offset)) {
-        setActive(id);
-        ext.runtime.sendMessage({ type: "annotation-clicked", id }).catch(() => {
-          // Panneau fermé : rien à synchroniser.
-        });
-        return;
+  if (point) {
+    for (const [id, range] of located) {
+      try {
+        if (range.isPointInRange(point.node, point.offset)) {
+          setActive(id);
+          if (id !== activeHoverId) showPopover(id);
+          ext.runtime.sendMessage({ type: "annotation-clicked", id }).catch(() => {
+            // Panneau fermé : rien à synchroniser.
+          });
+          return;
+        }
+      } catch {
+        // Nœud détaché ou dans un autre document : on ignore.
       }
-    } catch {
-      // Nœud détaché ou dans un autre document : on ignore.
     }
   }
+  if (activeHoverId) hidePopover();
 }
 
 // ---------- Messages ----------
@@ -596,7 +654,8 @@ function onClick(event: MouseEvent): void {
 function init(): void {
   document.addEventListener("click", onClick, true);
   document.addEventListener("pointermove", onPointerMove, { passive: true });
-  document.addEventListener("pointerleave", scheduleHide, { passive: true });
+  // Au doigt, pointerleave suit chaque toucher : seule la souris referme la bulle ainsi.
+  document.addEventListener("pointerleave", (e) => e.pointerType === "mouse" && scheduleHide(), { passive: true });
   window.addEventListener("scroll", onScrollOrResize, { passive: true });
   window.addEventListener("resize", onScrollOrResize, { passive: true });
 
@@ -619,6 +678,10 @@ function init(): void {
         break;
       case "clear":
         clear();
+        sendResponse(null);
+        break;
+      case "toast":
+        showToast(msg.text, msg.isError, msg.durationMs);
         sendResponse(null);
         break;
     }

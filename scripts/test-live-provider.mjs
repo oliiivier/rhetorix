@@ -166,7 +166,7 @@ async function main() {
   // Détection de la clé API
   let apiKey = opts.apiKey;
   if (!apiKey) {
-    if (provider === "anthropic") apiKey = process.env.ANTHROPIC_API_KEY || "";
+    if (provider === "anthropic") apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN || "";
     else if (provider === "gemini") apiKey = process.env.GEMINI_API_KEY || "";
     else if (provider === "openai-compatible") apiKey = process.env.OPENAI_API_KEY || "";
   }

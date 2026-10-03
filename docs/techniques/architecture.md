@@ -20,11 +20,11 @@ Vue d'ensemble des composants, du flux de données et des choix d'implémentatio
 │ calcul des Range, détection des clics sur citation│
 └───────────────────────┬───────────────────────────┘
                         │
-┌─────────────── sidepanel.html / .js ──────────────┐
-│ Déclenchement, cartes d'annotations, filtres,     │
-│ affichage progressif (streaming), synchronisation │
-└───────────────────────┬───────────────────────────┘
-                        │
+┌─────────────── background.js (runner.ts) ─────────┐     ┌──────── sidepanel.html / .js ────────┐
+│ Pilote l'analyse par onglet (D9) : injection,     │◄───►│ Vue : cartes, filtres, affichage     │
+│ extraction, cache, LLM, surlignage ; publie l'état│ msg │ progressif, synchronisation          │
+└───────────────────────┬───────────────────────────┘     └──────────────────────────────────────┘
+                        │       (mobile, sans panneau : bulles au toucher et message bref dans la page)
                         ├───────────────────────────────┐
                         │ appelle                       │ lit / écrit
                         ▼                               ▼
@@ -50,10 +50,12 @@ Vue d'ensemble des composants, du flux de données et des choix d'implémentatio
 ┌──────── options.html / options.js ────────┐    │
 │ provider, endpoint, modèle, clé API, cache│────┴── chrome.storage.local
 └───────────────────────────────────────────┘
-                                          (service worker : ouverture du panneau sur clic de l'icône)
 ```
 
-Le PRD ne mentionne pas de script de fond. Il en faut un, minimal (`src/background.ts`), pour ouvrir le panneau au clic sur l'icône : `sidePanel.setPanelBehavior({ openPanelOnActionClick: true })` sous Chromium, `sidebarAction.toggle()` sous Firefox (voir §9).
+Le PRD ne mentionne pas de script de fond. Il en faut un (`src/background.ts`) pour deux rôles :
+
+- **ouvrir le panneau au clic sur l'icône** : `sidePanel.setPanelBehavior({ openPanelOnActionClick: true })` sous Chromium, `sidebarAction.toggle()` sous Firefox desktop ; sous Firefox Android, qui n'a ni l'un ni l'autre, le clic lance directement l'analyse (§9) ;
+- **piloter les analyses (D9)** : `src/runner.ts` garde l'état de chaque onglet et le publie au panneau. L'analyse continue si le panneau est fermé ou si l'utilisateur change d'onglet.
 
 ## 2. Manifest
 
@@ -68,11 +70,13 @@ Points à noter :
 ## 3. Flux d'analyse
 
 1. Clic sur l'icône : le panneau s'ouvre et `activeTab` est accordé pour l'onglet courant.
-2. « Analyser la page » : le panneau injecte le content script (`chrome.scripting.executeScript`), puis lui envoie `{type: "extract"}` (`chrome.tabs.sendMessage`).
+2. « Analyser la page » : le panneau demande la permission vers l'API du provider (avant tout `await`), puis envoie `{type: "analyze-tab", tabId, force}` au script de fond. **Toute la suite se déroule dans le script de fond** (`src/runner.ts`), qui publie l'état de l'onglet (`run-update`) à chaque étape ; le panneau ne fait que l'afficher. Le script de fond injecte le content script (`scripting.executeScript`), puis lui envoie `{type: "extract"}` (`tabs.sendMessage`).
 3. Le content script exécute `new Readability(document.cloneNode(true)).parse()` et renvoie `{ok: true, article: {title, paragraphs, lang}}`.
-4. Le panneau appelle le LLM en streaming via `ProgressiveJsonParser` (`src/streaming-json.ts`). Le résumé est affiché et mis à jour progressivement. Chaque annotation est extraite dès complétion de ses accolades, validée unitairement (`validateAnnotation`), assainie selon la politique D3 (`enforceAnnotationSourcePolicy`) et affichée immédiatement sous forme de carte dans le panneau, avec incrémentation en temps réel des compteurs de filtres et préfixage des identifiants en cas de découpage.
-5. Une fois l'analyse terminée, le panneau envoie `{type: "highlight", annotations: [{id, exact_quote, category}]}` au content script.
+4. Le script de fond appelle le LLM en streaming via `ProgressiveJsonParser` (`src/streaming-json.ts`). Le résumé est affiché et mis à jour progressivement. Chaque annotation est extraite dès complétion de ses accolades, validée unitairement (`validateAnnotation`), assainie selon la politique D3 (`enforceAnnotationSourcePolicy`) et publiée immédiatement ; le panneau l'affiche sous forme de carte, avec incrémentation en temps réel des compteurs de filtres et préfixage des identifiants en cas de découpage.
+5. Une fois l'analyse terminée, le script de fond envoie `{type: "highlight", annotations: [{id, exact_quote, category}]}` au content script.
 6. Le content script localise chaque citation (§4), crée les `Range`, alimente les highlights et répond avec la liste des ids **non localisés**. Le panneau les affiche en mode dégradé (carte sans lien vers la page).
+
+**Durée de vie du script de fond.** Le service worker (Chromium) comme le script de fond non persistant (Firefox) sont suspendus après une trentaine de secondes sans activité d'API. Pendant une analyse, `runner.ts` appelle `runtime.getPlatformInfo()` toutes les 20 s pour le maintenir actif. S'il est malgré tout suspendu entre deux analyses, l'état en mémoire est perdu, mais le panneau garde ses propres résultats et le cache (D7) rend une nouvelle analyse immédiate.
 
 ## 4. Localisation des citations
 
@@ -89,8 +93,8 @@ Readability travaille sur un clone et produit du texte normalisé. Les citations
 
 **Les highlights ne reçoivent pas d'événements.** Ils ne créent pas d'éléments DOM, donc un clic ou un survol sur une citation surlignée ne peut pas être capté directement. Il faut :
 
-1. écouter `click` sur `document` (phase de capture) pour activer la carte dans le panneau latéral ;
-2. écouter `pointermove` sur `document` (throttlé via `requestAnimationFrame`) pour détecter le survol des zones surlignées (`caretAt` / `isPointInRange`) ;
+1. écouter `click` sur `document` (phase de capture) : il active la carte dans le panneau et ouvre la bulle de la citation. C'est aussi le chemin du **toucher** sur mobile (D9) ; un toucher hors des citations et de la bulle la referme ;
+2. écouter `pointermove` sur `document` (throttlé via `requestAnimationFrame`), **pour la souris seulement**, pour détecter le survol des zones surlignées (`caretAt` / `isPointInRange`). Au doigt, `pointermove` accompagne le défilement et `pointerleave` suit chaque toucher : les deux sont ignorés ;
 3. dans l'autre sens, un clic sur une carte envoie `{type: "focus", id}` : le content script appelle `scrollIntoView` sur l'élément parent du `Range` et active le highlight.
 
 **Modes d'affichage : panneau latéral, bulles en ligne (inline) ou combiné.**
@@ -109,18 +113,23 @@ Afin d'éviter tout conflit de styles avec la page hôte (ex. Wikipedia, Le Mond
 
 ## 6. Messages
 
+Types dans `src/messages.ts`.
+
 | Type | Émetteur → destinataire | Charge utile |
 |---|---|---|
-| `extract` | panneau → content | — |
-| `extract:result` | content → panneau (réponse) | `{ok: true, article: {title, paragraphs, lang}}` ou `{ok: false, error, errorCode}` |
-| `highlight` | panneau → content | `{annotations: HighlightItem[], displayMode?: DisplayMode, lang?: string}` |
+| `analyze-tab` | panneau → fond | `{tabId, force}` |
+| `cancel` | panneau → fond | `{tabId}` |
+| `get-state` | panneau → fond | `{tabId}`, réponse : `RunSnapshot` ou `null` |
+| `run-update` | fond → panneau | `{snapshot: RunSnapshot}` : statut, phase, avancement, résumé, annotations, non localisées, erreur |
+| `extract` | fond → content | réponse : `{ok: true, article: {title, paragraphs, lang}}` ou `{ok: false, error, errorCode}` |
+| `highlight` | fond → content | `{annotations: HighlightItem[], displayMode?: DisplayMode, lang?: string}`, réponse : `{unlocated: string[]}` |
+| `toast` | fond → content | `{text, isError?, durationMs?}` : message bref dans la page, sur mobile |
 | `set-display-mode` | panneau → content | `{displayMode: DisplayMode}` |
-| `highlight:result` | content → panneau (réponse) | `{unlocated: string[]}` |
 | `focus` | panneau → content | `{id}` |
 | `annotation-clicked` | content → panneau | `{id}` |
 | `clear` | panneau → content | — |
 
-Le panneau est partagé entre les onglets. Il associe ses résultats à un `tabId` et réagit à `chrome.tabs.onActivated` et `chrome.tabs.onUpdated` en restaurant l'état sauvegardé ou en réinitialisant la vue.
+Le panneau est partagé entre les onglets. Il garde les résultats terminés par `tabId` et, au changement d'onglet (`tabs.onActivated`), affiche l'état mémorisé ou le demande au script de fond (`get-state`) ; une analyse peut donc se poursuivre dans un onglet pendant qu'on en consulte un autre. Le rechargement ou la fermeture d'un onglet (`tabs.onUpdated`, `tabs.onRemoved`) annule son analyse.
 
 ## 7. Appel LLM
 
@@ -175,17 +184,19 @@ Quand `supportsWebSearch` est faux, le client force `fact_check.status = "unveri
 - **Volume** : `storage.local` est limité à 10 Mo sans la permission `unlimitedStorage`. Garder un index LRU, borner le nombre d'entrées (par exemple 200) et purger les plus anciennes.
 - **Interface** : indiquer « analyse du <date> (cache) » et proposer un bouton « Ré-analyser ». La page d'options permet de vider le cache.
 
-## 9. Compatibilité Chromium et Firefox (D8)
+## 9. Compatibilité Chromium et Firefox (D8, D9)
 
-Le même code source produit deux paquets (`npm run build`) :
+Le même code source produit deux paquets (`npm run build`). Le paquet Firefox sert aussi à Firefox pour Android :
 
-| | `dist/chrome` | `dist/firefox` |
-|---|---|---|
-| Version minimale | Chromium 128 (`caretPositionFromPoint`) | Firefox 142 (`data_collection_permissions` ; CSS Custom Highlight API dès 140) |
-| Panneau | `side_panel` + permission `sidePanel` | `sidebar_action` |
-| Ouverture au clic sur l'icône | `sidePanel.setPanelBehavior` | `action.onClicked` → `sidebarAction.toggle()`, appelé sans `await` préalable : il exige le geste utilisateur |
-| Script de fond | `background.service_worker` | `background.scripts` (Firefox n'accepte pas de service worker d'extension) |
-| Spécifique | — | `browser_specific_settings.gecko` : identifiant, version minimale, `data_collection_permissions` |
+| | `dist/chrome` | `dist/firefox` (desktop) | `dist/firefox` (Android, D9) |
+|---|---|---|---|
+| Version minimale | Chromium 128 (`caretPositionFromPoint`) | Firefox 142 (`data_collection_permissions` ; CSS Custom Highlight API dès 140) | Firefox 142 (`gecko_android`) |
+| Panneau | `side_panel` + permission `sidePanel` | `sidebar_action` | Aucun : bulles au toucher et message bref dans la page |
+| Clic sur l'icône | `sidePanel.setPanelBehavior` | `action.onClicked` → `sidebarAction.toggle()`, appelé sans `await` préalable : il exige le geste utilisateur | `action.onClicked` → demande de permission (sans `await` préalable, d'où la configuration gardée en mémoire), puis analyse immédiate avec `displayMode: "inline"` imposé |
+| Script de fond | `background.service_worker` | `background.scripts` (Firefox n'accepte pas de service worker d'extension) | idem desktop |
+| Spécifique | — | `browser_specific_settings.gecko` : identifiant, version minimale, `data_collection_permissions` | `browser_specific_settings.gecko_android` |
+
+Le mode est détecté à l'exécution dans `background.ts` : `sidePanel` présent → Chromium ; sinon `sidebarAction` présent → Firefox desktop ; sinon → mobile.
 
 Règles pour le code :
 

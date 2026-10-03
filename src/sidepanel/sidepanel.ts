@@ -1,13 +1,11 @@
-// Panneau latéral : déclenche l'analyse de l'onglet actif, affiche les cartes et
-// synchronise la sélection avec la page. Tout contenu issu du LLM ou de la page est
-// inséré via textContent (jamais innerHTML).
+// Panneau latéral : vue de l'analyse de l'onglet actif, pilotée par le script de fond
+// (D9). Il affiche les cartes et synchronise la sélection avec la page. Tout contenu
+// issu du LLM ou de la page est inséré via textContent (jamais innerHTML).
 
-import { analyzeArticle } from "../analyze";
-import { getCached, putCached, sha256 } from "../cache";
 import { isConfigured, loadConfig, providerOrigin, resolveLanguage, saveConfig, type Config, type DisplayMode } from "../config";
 import { ext } from "../ext";
-import { formatErrorMessage, getUiStrings } from "../i18n";
-import type { ContentToPanel, ExtractResult, HighlightResult, PanelToContent } from "../messages";
+import { getUiStrings } from "../i18n";
+import type { BackgroundToPanel, ContentToPanel, PanelToBackground, PanelToContent, RunSnapshot } from "../messages";
 import type { Analysis, Annotation } from "../schema";
 import { labelDef, type Category } from "../taxonomy";
 
@@ -32,7 +30,8 @@ const states = new Map<number, TabState>();
 let config: Config | null = null;
 let currentTabId: number | undefined;
 let windowId: number | undefined;
-let running: AbortController | null = null;
+/** Onglets dont l'analyse est en cours dans le script de fond. */
+const runningTabs = new Set<number>();
 let activeCategoryFilter: "all" | Category = "all";
 
 function strings() {
@@ -209,24 +208,24 @@ function selectCard(id: string, scroll: boolean): void {
   }
 }
 
-// ---------- Échanges avec la page ----------
+// ---------- Échanges avec la page et le script de fond ----------
 
 function send<R>(tabId: number, msg: PanelToContent): Promise<R> {
   return ext.tabs.sendMessage(tabId, msg) as Promise<R>;
 }
 
-async function inject(tabId: number): Promise<void> {
-  try {
-    await ext.scripting.executeScript({ target: { tabId }, files: ["content-script.js"] });
-    await ext.scripting.insertCSS({ target: { tabId }, files: ["highlights.css"] });
-  } catch {
-    throw new Error(strings().accessErrorStatus);
-  }
+function sendToBackground<R>(msg: PanelToBackground): Promise<R> {
+  return ext.runtime.sendMessage(msg) as Promise<R>;
 }
 
 // ---------- Analyse ----------
 
-async function analyze(force: boolean): Promise<void> {
+function setRunningUi(running: boolean): void {
+  analyzeBtn.disabled = running;
+  cancelBtn.hidden = !running;
+}
+
+function analyze(force: boolean): void {
   const t = strings();
   if (!config || !isConfigured(config)) {
     setStatus(t.needConfigStatus, true);
@@ -235,90 +234,95 @@ async function analyze(force: boolean): Promise<void> {
   }
   const origin = providerOrigin(config);
   // Appelé avant tout await : la demande de permission exige le geste utilisateur.
-  const permission = origin ? ext.permissions.request({ origins: [origin] }) : Promise.resolve(false);
+  const permission = origin ? ext.permissions.request({ origins: [origin] }) : Promise.resolve(true);
 
-  const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id === undefined) return;
-  const tabId = tab.id;
-  currentTabId = tabId;
-
-  running = new AbortController();
-  analyzeBtn.disabled = true;
-  cancelBtn.hidden = false;
-  try {
-    if (!(await permission)) throw new Error(t.apiPermissionError);
-    setStatus(t.extractingStatus);
-    await inject(tabId);
-    const extracted = await send<ExtractResult>(tabId, { type: "extract" });
-    if (!extracted.ok) {
-      if (extracted.errorCode === "no_article") throw new Error(t.extractNoArticleError);
-      if (extracted.errorCode === "empty_article") throw new Error(t.extractEmptyArticleError);
-      throw new Error(extracted.error);
+  void (async () => {
+    const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id === undefined) return;
+    currentTabId = tab.id;
+    if (!(await permission)) {
+      setStatus(t.apiPermissionError, true);
+      return;
     }
-    const article = extracted.article;
+    setRunningUi(true);
+    await sendToBackground({ type: "analyze-tab", tabId: tab.id, force });
+  })();
+}
 
-    const fingerprint = {
-      textHash: await sha256(article.paragraphs.join("\n\n")),
-      provider: config.provider,
-      model: config.model,
-      lang: resolveLanguage(config),
-    };
-    const cached = !force && tab.url ? await getCached(tab.url, fingerprint) : null;
-    let analysis: Analysis;
-    if (cached) {
-      analysis = cached.analysis;
-    } else {
-      const streamedAnnotations: Annotation[] = [];
-      cardsEl.replaceChildren();
-      $("summary").textContent = "";
+function statusText(s: RunSnapshot): string {
+  const t = strings();
+  if (s.phase === "extracting") return t.extractingStatus;
+  if (s.phase === "consolidating") return t.consolidatingStatus;
+  return s.total > 1 ? t.analyzingPartStatus(s.done, s.total) : t.analyzingStatus;
+}
+
+function toState(s: RunSnapshot): TabState {
+  return {
+    url: s.url,
+    analysis: { summary: s.summary, annotations: s.annotations },
+    unlocated: new Set(s.unlocated),
+    cachedAt: s.cachedAt,
+  };
+}
+
+/** Affiche l'état publié par le script de fond pour l'onglet courant. */
+function renderSnapshot(s: RunSnapshot): void {
+  const t = strings();
+  setRunningUi(s.status === "running");
+  switch (s.status) {
+    case "running": {
+      setStatus(statusText(s));
+      if (s.phase === "extracting") {
+        resultEl.hidden = true;
+        cardsEl.replaceChildren();
+        return;
+      }
+      resultEl.hidden = s.annotations.length === 0 && !s.summary;
+      $("summary").textContent = s.summary;
       $("cache-note").hidden = true;
-      updateFilterCounts([]);
-
-      analysis = await analyzeArticle(article, config, running.signal, {
-        onProgress: ({ phase, done, total }) => {
-          if (phase === "consolidating") {
-            setStatus(t.consolidatingStatus);
-          } else {
-            setStatus(total > 1 ? t.analyzingPartStatus(done, total) : t.analyzingStatus);
-          }
-        },
-        onSummary: (summary) => {
-          resultEl.hidden = false;
-          $("summary").textContent = summary;
-        },
-        onAnnotation: (a) => {
-          resultEl.hidden = false;
-          streamedAnnotations.push(a);
-          const emptyCard = cardsEl.querySelector(".empty");
-          if (emptyCard) emptyCard.remove();
-          const card = renderCard(a, false);
-          card.hidden = activeCategoryFilter !== "all" && !card.classList.contains(activeCategoryFilter);
-          cardsEl.append(card);
-          updateFilterCounts(streamedAnnotations);
-        },
-      });
-      if (tab.url) await putCached(tab.url, { ...fingerprint, analysis, createdAt: Date.now() });
+      // Ajout incrémental : seules les annotations nouvelles reçoivent une carte.
+      const shown = new Set([...cardsEl.querySelectorAll<HTMLElement>(".card")].map((c) => c.dataset.id));
+      for (const a of s.annotations) {
+        if (shown.has(a.id)) continue;
+        const card = renderCard(a, false);
+        card.hidden = activeCategoryFilter !== "all" && !card.classList.contains(activeCategoryFilter);
+        cardsEl.append(card);
+      }
+      updateFilterCounts(s.annotations);
+      return;
     }
+    case "done": {
+      const state = toState(s);
+      states.set(s.tabId, state);
+      render(state);
+      return;
+    }
+    case "error":
+    case "cancelled":
+      cardsEl.replaceChildren();
+      resultEl.hidden = true;
+      updateFilterCounts([]);
+      if (s.status === "cancelled") setStatus(t.cancelledStatus);
+      else setStatus(s.error ?? "", true);
+      analyzeBtn.textContent = states.has(s.tabId) ? t.reanalyzeBtn : t.analyzeBtn;
+      return;
+  }
+}
 
-    const { unlocated } = await send<HighlightResult>(tabId, {
-      type: "highlight",
-      annotations: analysis.annotations,
-      displayMode: config.displayMode,
-      lang: resolveLanguage(config),
-    });
-    const state: TabState = { url: tab.url, analysis, unlocated: new Set(unlocated), cachedAt: cached?.createdAt };
-    states.set(tabId, state);
-    if (currentTabId === tabId) render(state);
-  } catch (err) {
-    cardsEl.replaceChildren();
-    resultEl.hidden = true;
-    updateFilterCounts([]);
-    if (running.signal.aborted) setStatus(t.cancelledStatus);
-    else setStatus(formatErrorMessage(err, t), true);
-  } finally {
-    running = null;
-    analyzeBtn.disabled = false;
-    cancelBtn.hidden = true;
+/** Onglet devenu courant : état mémorisé, sinon celui du script de fond, sinon repos. */
+async function showTab(tabId: number): Promise<void> {
+  const state = states.get(tabId);
+  if (state && !runningTabs.has(tabId)) {
+    setRunningUi(false);
+    render(state);
+    return;
+  }
+  const snapshot = await sendToBackground<RunSnapshot | null>({ type: "get-state", tabId }).catch(() => null);
+  if (tabId !== currentTabId) return;
+  if (snapshot) renderSnapshot(snapshot);
+  else {
+    setRunningUi(false);
+    showIdle();
   }
 }
 
@@ -326,9 +330,11 @@ async function analyze(force: boolean): Promise<void> {
 
 analyzeBtn.addEventListener("click", () => {
   const hasAnalysis = currentTabId !== undefined && states.has(currentTabId);
-  void analyze(hasAnalysis);
+  analyze(hasAnalysis);
 });
-cancelBtn.addEventListener("click", () => running?.abort());
+cancelBtn.addEventListener("click", () => {
+  if (currentTabId !== undefined) void sendToBackground({ type: "cancel", tabId: currentTabId });
+});
 modeSelect.addEventListener("change", async () => {
   if (!config) return;
   const newMode = modeSelect.value as DisplayMode;
@@ -345,23 +351,32 @@ filtersEl.addEventListener("click", (e) => {
 });
 $("options").addEventListener("click", () => void ext.runtime.openOptionsPage());
 
-ext.runtime.onMessage.addListener((msg: ContentToPanel, sender) => {
+ext.runtime.onMessage.addListener((msg: ContentToPanel | BackgroundToPanel, sender) => {
   if (msg.type === "annotation-clicked" && sender.tab?.id === currentTabId) selectCard(msg.id, true);
+  if (msg.type === "run-update") {
+    const s = msg.snapshot;
+    if (s.status === "running") runningTabs.add(s.tabId);
+    else runningTabs.delete(s.tabId);
+    if (s.tabId === currentTabId) renderSnapshot(s);
+    else if (s.status === "done") states.set(s.tabId, toState(s));
+  }
   return false;
 });
 
 ext.tabs.onActivated.addListener(({ tabId, windowId: w }) => {
-  if (w !== windowId || running) return;
+  if (w !== windowId) return;
   currentTabId = tabId;
-  const state = states.get(tabId);
-  if (state) render(state);
-  else showIdle();
+  void showTab(tabId);
 });
 
 ext.tabs.onUpdated.addListener((tabId, info) => {
   if (info.status !== "loading") return;
   states.delete(tabId);
-  if (tabId === currentTabId && !running) showIdle();
+  runningTabs.delete(tabId);
+  if (tabId === currentTabId) {
+    setRunningUi(false);
+    showIdle();
+  }
 });
 
 ext.storage.onChanged.addListener((changes, area) => {
@@ -370,7 +385,7 @@ ext.storage.onChanged.addListener((changes, area) => {
       config = c;
       modeSelect.value = c.displayMode ?? "both";
       applyI18n();
-      if (currentTabId) {
+      if (currentTabId !== undefined && !runningTabs.has(currentTabId)) {
         const state = states.get(currentTabId);
         if (state) render(state);
       }
@@ -386,4 +401,5 @@ void (async () => {
   const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab?.id;
   if (!isConfigured(config)) setStatus(strings().needConfigStatus);
+  else if (currentTabId !== undefined) await showTab(currentTabId);
 })();

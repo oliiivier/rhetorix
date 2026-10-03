@@ -27,14 +27,25 @@
         <label id="endpoint-field">
           <span id="lbl-endpoint">Endpoint</span>
           <input type="url" name="endpoint" placeholder="https://api.openai.com/v1" />
-          <button type="button" id="btn-preset-ollama" class="secondary-btn">🦙 Configurer pour Ollama local (zéro clé)</button>
+          <div class="key-actions">
+            <button type="button" id="btn-preset-ollama" class="secondary-btn">🦙 Configurer pour Ollama local (zéro clé)</button>
+            <button type="button" id="btn-preset-claude-bridge" class="secondary-btn">⚡ Configurer pour le pont Claude Code local (Abonnement)</button>
+          </div>
           <span class="hint" id="endpoint-hint">URL de base de l'API ; <code>/chat/completions</code> y est ajouté.</span>
           <span class="hint" id="endpoint-ollama-hint">Pour Ollama en local (ex. <code>http://localhost:11434/v1</code>), lancez le serveur avec <code>OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*"</code> pour autoriser l'accès.</span>
         </label>
 
+        <div id="anthropic-auth-mode-group" class="field-block" hidden>
+          <span id="lbl-anthropic-auth-mode">Mode d'authentification Anthropic</span>
+          <div class="auth-mode-toggle">
+            <button type="button" id="btn-anthropic-mode-apikey" class="tab-btn active">🔑 Clé API (Pay-as-you-go)</button>
+            <button type="button" id="btn-anthropic-mode-oauth" class="tab-btn">⚡ Abonnement Claude (OAuth)</button>
+          </div>
+        </div>
+
         <label id="api-key-field">
           <span id="lbl-api-key">Clé API</span>
-          <input type="password" name="apiKey" autocomplete="off" />
+          <input type="password" name="apiKey" id="input-api-key" autocomplete="off" />
           <span class="hint" id="api-key-hint">Stockée uniquement dans ce navigateur (stockage local, non synchronisé).</span>
           <div class="key-actions">
             <a id="btn-get-gemini-key" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="link-btn" hidden>
@@ -43,13 +54,30 @@
             <a id="btn-get-anthropic-key" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" class="link-btn" hidden>
               Obtenir une clé Anthropic ↗
             </a>
+            <button type="button" id="btn-copy-setup-token" class="secondary-btn small-btn" hidden>
+              📋 Copier 'claude setup-token'
+            </button>
+            <button type="button" id="btn-switch-to-bridge" class="secondary-btn small-btn" hidden>
+              ⚡ Activer le pont local anti-CORS (npm run bridge)
+            </button>
           </div>
         </label>
 
-        <label id="model-field">
-          <span id="lbl-model">Modèle</span>
-          <input type="text" name="model" required />
-        </label>
+        <div id="model-field" class="field-block">
+          <div class="field-header">
+            <span id="lbl-model">Modèle</span>
+            <div class="model-actions">
+              <button type="button" id="btn-toggle-custom-model" class="secondary-btn small-btn">✍️ Saisie libre</button>
+              <button type="button" id="btn-refresh-models" class="secondary-btn small-btn">🔄 Actualiser les modèles</button>
+            </div>
+          </div>
+          <div class="model-select-wrapper">
+            <select id="model-select"></select>
+            <input type="text" name="model" id="input-model" autocomplete="off" hidden />
+          </div>
+          <span class="hint" id="model-hint">Sélectionnez un modèle dans la liste ou passez en saisie libre.</span>
+          <span class="hint" id="models-status" role="status"></span>
+        </div>
 
         <label>
           <span id="lbl-language">Langue de l'analyse</span>

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Rhetorix est une extension Manifest V3 pour Chromium et Firefox. Elle surligne dans un article les sophismes, biais et allégations factuelles détectés par un LLM, et les détaille dans un panneau latéral.
+Rhetorix est une extension Manifest V3 pour Chromium et Firefox (desktop et Android). Elle surligne dans un article les sophismes, biais et allégations factuelles détectés par un LLM, et les détaille dans un panneau latéral ou, sur mobile, dans des bulles.
 
 ## Commandes
 
@@ -25,6 +25,8 @@ Après une modification, lancer `typecheck`, `test` et `build`.
 - La documentation, les textes d'interface et les commentaires sont en français.
 - **API d'extension** : toujours passer par `ext` (`src/ext.ts`), jamais par `chrome.*` directement. Une API propre à un navigateur doit être détectée à l'exécution. Le manifest est généré par cible dans `build.mjs` : ne pas créer de `manifest.json` à la main.
 - **`permissions.request`** doit être appelé avant tout `await` dans le gestionnaire d'événement, sinon Firefox refuse la demande.
+- **L'analyse est pilotée par le script de fond** (`src/runner.ts`, D9). Le panneau n'en est qu'une vue : il n'appelle pas le LLM et ne fait que lancer, annuler et afficher l'état publié (`run-update`). Tout comportement doit aussi fonctionner sans panneau (Firefox Android).
+- **Interactions dans la page** : le survol ne concerne que la souris (`pointerType === "mouse"`) ; toute information accessible au survol doit l'être aussi au toucher.
 - Le schéma JSON du LLM (`src/schema.ts`, spec §3) est un contrat. Toute modification se reporte dans la spec, dans la validation et dans le prompt (`src/prompt.ts`).
 - Les labels proviennent exclusivement de `src/taxonomy.ts`. Toute nouvelle étiquette ajoutée dans `src/taxonomy.ts` doit obligatoirement être traduite et documentée dans les 5 langues (`fr`, `en`, `es`, `de`, `it` dans `TAXONOMY_TRANSLATIONS` ; la suite de tests unitaires l'impose).
 - **Internationalisation (D5)** : tout texte d'interface (panneau latéral, options, messages de statut et d'erreur d'extraction ou de provider) passe impérativement par `src/i18n.ts` (`UiStrings`) et doit être décliné dans les 5 langues supportées.
@@ -37,3 +39,5 @@ Après une modification, lancer `typecheck`, `test` et `build`.
 ## Tester manuellement
 
 Charger `dist/chrome` (`chrome://extensions`, mode développeur) ou `dist/firefox` (`about:debugging`, module temporaire), puis analyser quelques pages variées : article classique, citations contenant du balisage, page sans contenu exploitable, article long (découpage).
+
+Sur Firefox Android (`npx web-ext run -s dist/firefox -t firefox-android`), vérifier en plus : analyse lancée par l'icône, message bref d'avancement, bulle au toucher d'une citation et fermeture au toucher ailleurs, analyse longue (le script de fond ne doit pas être suspendu).

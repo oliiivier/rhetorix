@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_CONFIG, isConfigured, loadConfig, providerOrigin, resolveLanguage, saveConfig, type Config } from "../src/config";
+import { DEFAULT_CONFIG, DEFAULT_MODELS, isConfigured, loadConfig, providerOrigin, resolveLanguage, saveConfig, type Config } from "../src/config";
 
 const store: Record<string, unknown> = {};
 
@@ -29,6 +29,7 @@ describe("config module", () => {
     expect(DEFAULT_CONFIG.language).toBe("auto");
     expect(DEFAULT_CONFIG.webSearch).toBe(true);
     expect(DEFAULT_CONFIG.maxChunkTokens).toBe(8_000);
+    expect(DEFAULT_MODELS.gemini).toBe("gemini-3.8-flash");
   });
 
   it("vérifie isConfigured selon le provider et les clés requises", () => {

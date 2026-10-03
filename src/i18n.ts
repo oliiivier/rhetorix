@@ -76,9 +76,24 @@ export interface UiStrings {
   getAnthropicKeyBtn: string;
   presetOllamaBtn: string;
   presetOllamaSuccess: string;
+  presetClaudeBridgeBtn: string;
+  presetClaudeBridgeSuccess: string;
   chromeAiOption: string;
   chromeAiHint: string;
   apiKeyPlaceholderOllama: string;
+  refreshModelsBtn: string;
+  refreshingModels: string;
+  modelsFound: (count: number) => string;
+  modelHint: string;
+  toggleCustomModelBtn: string;
+  toggleSelectModelBtn: string;
+  anthropicAuthModeLabel: string;
+  anthropicModeApiKey: string;
+  anthropicModeOAuth: string;
+  apiKeyLabelOAuth: string;
+  apiKeyHintOAuth: string;
+  copySetupTokenBtn: string;
+  copiedToClipboard: string;
 
   // Erreurs providers
   providerErrors: Record<ProviderErrorCode, (detail?: string) => string>;
@@ -155,7 +170,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchLabel: "Vérifier les faits par recherche web",
     webSearchHintAnthropic: "Utilise l'outil de recherche web d'Anthropic.",
     webSearchHintUnavailable: "Indisponible pour ce fournisseur : les vérifications restent en « non vérifié ».",
-    webSearchHintGemini: "Utilise le grounding Google Search de Gemini pour vérifier les faits.",
+    webSearchHintGemini:
+      "Utilise le grounding Google Search. Attention : nécessite un compte de facturation (Pay-as-you-go). Décochez cette case pour utiliser le quota 100% gratuit de Google AI Studio.",
     webSearchHintOpenAi:
       "Actif si l'endpoint supporte la recherche web (Perplexity, OpenRouter :online…). Avec Ollama ou Mistral sans recherche, les allégations restent en « non vérifié ».",
     maxChunkLabel: "Taille maximale d'un morceau (tokens)",
@@ -175,9 +191,26 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Obtenir une clé Anthropic ↗",
     presetOllamaBtn: "🦙 Configurer pour Ollama local (zéro clé)",
     presetOllamaSuccess: "Paramètres appliqués pour Ollama local (http://localhost:11434/v1, mistral).",
+    presetClaudeBridgeBtn: "⚡ Configurer pour le pont Claude Code local (Abonnement)",
+    presetClaudeBridgeSuccess:
+      "Paramètres appliqués pour le pont Claude Code local (http://localhost:8080/v1). Lancez 'npm run bridge' dans le terminal.",
     chromeAiOption: "Chrome Built-in AI (Gemini Nano local, sans clé)",
     chromeAiHint: "Exécution 100% locale via Gemini Nano. Aucune clé API ni compte requis, gratuit et confidentiel.",
     apiKeyPlaceholderOllama: "Facultatif pour Ollama / LM Studio local",
+    refreshModelsBtn: "🔄 Actualiser les modèles",
+    refreshingModels: "Recherche des modèles disponibles…",
+    modelsFound: (count) => `${count} modèle(s) disponible(s).`,
+    modelHint: "Sélectionnez un modèle dans la liste ou passez en saisie libre.",
+    toggleCustomModelBtn: "✍️ Saisie libre",
+    toggleSelectModelBtn: "📋 Choisir dans la liste",
+    anthropicAuthModeLabel: "Mode d'authentification Anthropic",
+    anthropicModeApiKey: "🔑 Clé API (Pay-as-you-go)",
+    anthropicModeOAuth: "⚡ Abonnement Claude (OAuth)",
+    apiKeyLabelOAuth: "Token OAuth Claude Code (Abonnement)",
+    apiKeyHintOAuth:
+      "Générez votre token dans un terminal avec 'claude setup-token' puis collez-le ici. Vos requêtes seront imputées à votre abonnement Claude Pro / Max.",
+    copySetupTokenBtn: "📋 Copier 'claude setup-token'",
+    copiedToClipboard: "Copié dans le presse-papiers !",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Refus du modèle : ${detail}` : "Le modèle a refusé d'analyser ce contenu."),
@@ -262,7 +295,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchLabel: "Verify facts via web search",
     webSearchHintAnthropic: "Uses Anthropic web search tool.",
     webSearchHintUnavailable: "Unavailable for this provider: fact-checks will remain 'unverified'.",
-    webSearchHintGemini: "Uses Google Search grounding in Gemini to check facts.",
+    webSearchHintGemini:
+      "Uses Google Search grounding. Note: requires a billing account (Pay-as-you-go). Uncheck this box to use Google AI Studio's 100% free quota.",
     webSearchHintOpenAi:
       "Active if the endpoint supports web search (Perplexity, OpenRouter :online…). With Ollama or Mistral without search, claims remain 'unverified'.",
     maxChunkLabel: "Max chunk size (tokens)",
@@ -282,9 +316,26 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Get an Anthropic API key ↗",
     presetOllamaBtn: "🦙 Configure for local Ollama (no key)",
     presetOllamaSuccess: "Settings applied for local Ollama (http://localhost:11434/v1, mistral).",
+    presetClaudeBridgeBtn: "⚡ Configure for local Claude Code bridge (Subscription)",
+    presetClaudeBridgeSuccess:
+      "Settings applied for local Claude Code bridge (http://localhost:8080/v1). Run 'npm run bridge' in the terminal.",
     chromeAiOption: "Chrome Built-in AI (local Gemini Nano, no key)",
     chromeAiHint: "Runs 100% locally with Gemini Nano. No API key or account required, free and private.",
     apiKeyPlaceholderOllama: "Optional for local Ollama / LM Studio",
+    refreshModelsBtn: "🔄 Refresh models",
+    refreshingModels: "Fetching available models…",
+    modelsFound: (count) => `${count} model(s) available.`,
+    modelHint: "Select a model from the list or switch to custom input.",
+    toggleCustomModelBtn: "✍️ Custom input",
+    toggleSelectModelBtn: "📋 Choose from list",
+    anthropicAuthModeLabel: "Anthropic authentication mode",
+    anthropicModeApiKey: "🔑 API Key (Pay-as-you-go)",
+    anthropicModeOAuth: "⚡ Claude Subscription (OAuth)",
+    apiKeyLabelOAuth: "Claude Code OAuth Token (Subscription)",
+    apiKeyHintOAuth:
+      "Generate your token in a terminal with 'claude setup-token' then paste it here. Requests will be billed to your Claude Pro / Max subscription.",
+    copySetupTokenBtn: "📋 Copy 'claude setup-token'",
+    copiedToClipboard: "Copied to clipboard!",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Model refusal: ${detail}` : "The model refused to analyze this content."),
@@ -369,7 +420,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchLabel: "Verificar hechos mediante búsqueda web",
     webSearchHintAnthropic: "Utiliza la herramienta de búsqueda web de Anthropic.",
     webSearchHintUnavailable: "No disponible para este proveedor: las verificaciones permanecerán como 'no verificado'.",
-    webSearchHintGemini: "Utiliza el grounding de Google Search en Gemini para verificar los hechos.",
+    webSearchHintGemini:
+      "Utiliza Google Search grounding. Nota: requiere una cuenta de facturación (Pay-as-you-go). Desmarque esta casilla para usar la cuota 100% gratuita de Google AI Studio.",
     webSearchHintOpenAi:
       "Activo si el endpoint admite búsqueda web (Perplexity, OpenRouter :online…). Con Ollama o Mistral sin búsqueda, las afirmaciones permanecen como 'no verificado'.",
     maxChunkLabel: "Tamaño máximo de fragmento (tokens)",
@@ -389,9 +441,26 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Obtener una clave Anthropic ↗",
     presetOllamaBtn: "🦙 Configurar para Ollama local (sin clave)",
     presetOllamaSuccess: "Ajustes aplicados para Ollama local (http://localhost:11434/v1, mistral).",
+    presetClaudeBridgeBtn: "⚡ Configurar para el puente local de Claude Code (Suscripción)",
+    presetClaudeBridgeSuccess:
+      "Ajustes aplicados para el puente local de Claude Code (http://localhost:8080/v1). Ejecute 'npm run bridge' en el terminal.",
     chromeAiOption: "Chrome Built-in AI (Gemini Nano local, sin clave)",
     chromeAiHint: "Ejecución 100% local con Gemini Nano. Sin clave API ni cuenta, gratuito y privado.",
     apiKeyPlaceholderOllama: "Opcional para Ollama / LM Studio local",
+    refreshModelsBtn: "🔄 Actualizar modelos",
+    refreshingModels: "Buscando modelos disponibles…",
+    modelsFound: (count) => `${count} modelo(s) disponible(s).`,
+    modelHint: "Seleccione un modelo de la lista o cambie a entrada libre.",
+    toggleCustomModelBtn: "✍️ Entrada libre",
+    toggleSelectModelBtn: "📋 Elegir de la lista",
+    anthropicAuthModeLabel: "Modo de autenticación de Anthropic",
+    anthropicModeApiKey: "🔑 Clave API (Pay-as-you-go)",
+    anthropicModeOAuth: "⚡ Suscripción Claude (OAuth)",
+    apiKeyLabelOAuth: "Token OAuth de Claude Code (Suscripción)",
+    apiKeyHintOAuth:
+      "Genere su token en un terminal con 'claude setup-token' y péguelo aquí. Las solicitudes se cargarán a su suscripción Claude Pro / Max.",
+    copySetupTokenBtn: "📋 Copiar 'claude setup-token'",
+    copiedToClipboard: "¡Copiado al portapapeles!",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rechazo del modelo: ${detail}` : "El modelo rechazó analizar este contenido."),
@@ -476,7 +545,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchLabel: "Fakten per Websuche prüfen",
     webSearchHintAnthropic: "Nutzt das native Websuche-Tool von Anthropic.",
     webSearchHintUnavailable: "Für diesen Anbieter nicht verfügbar: Überprüfungen bleiben 'nicht überprüft'.",
-    webSearchHintGemini: "Nutzt das Google Search Grounding von Gemini zur Faktenprüfung.",
+    webSearchHintGemini:
+      "Nutzt Google Search Grounding. Hinweis: Erfordert ein Pay-as-you-go-Abrechnungskonto. Deaktivieren Sie dieses Kontrollkästchen, um das 100% kostenlose Kontingent von Google AI Studio zu nutzen.",
     webSearchHintOpenAi:
       "Aktiv, wenn der Endpunkt Websuche unterstützt (Perplexity, OpenRouter :online…). Bei Ollama oder Mistral ohne Suche bleiben Behauptungen 'nicht überprüft'.",
     maxChunkLabel: "Maximale Blockgröße (Tokens)",
@@ -496,9 +566,26 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Anthropic-API-Schlüssel holen ↗",
     presetOllamaBtn: "🦙 Für lokales Ollama vorkonfigurieren (kein Schlüssel)",
     presetOllamaSuccess: "Einstellungen für lokales Ollama angewendet (http://localhost:11434/v1, mistral).",
+    presetClaudeBridgeBtn: "⚡ Für lokale Claude Code-Bridge konfigurieren (Abonnement)",
+    presetClaudeBridgeSuccess:
+      "Einstellungen für lokale Claude Code-Bridge angewendet (http://localhost:8080/v1). Führen Sie 'npm run bridge' im Terminal aus.",
     chromeAiOption: "Chrome Built-in AI (lokales Gemini Nano, ohne Schlüssel)",
     chromeAiHint: "Läuft zu 100% lokal mit Gemini Nano. Kein API-Schlüssel oder Konto erforderlich, kostenlos und privat.",
     apiKeyPlaceholderOllama: "Optional für lokales Ollama / LM Studio",
+    refreshModelsBtn: "🔄 Modelle aktualisieren",
+    refreshingModels: "Verfügbare Modelle werden abgerufen…",
+    modelsFound: (count) => `${count} Modell(e) verfügbar.`,
+    modelHint: "Wählen Sie ein Modell aus der Liste oder wechseln Sie zur freien Eingabe.",
+    toggleCustomModelBtn: "✍️ Freie Eingabe",
+    toggleSelectModelBtn: "📋 Aus Liste wählen",
+    anthropicAuthModeLabel: "Anthropic-Authentifizierungsmodus",
+    anthropicModeApiKey: "🔑 API-Schlüssel (Pay-as-you-go)",
+    anthropicModeOAuth: "⚡ Claude-Abonnement (OAuth)",
+    apiKeyLabelOAuth: "Claude Code OAuth-Token (Abonnement)",
+    apiKeyHintOAuth:
+      "Generieren Sie Ihr Token in einem Terminal mit 'claude setup-token' und fügen Sie es hier ein. Anfragen werden Ihrem Claude Pro / Max-Abonnement angerechnet.",
+    copySetupTokenBtn: "📋 'claude setup-token' kopieren",
+    copiedToClipboard: "In die Zwischenablage kopiert!",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Ablehnung durch das Modell: ${detail}` : "Das Modell hat die Analyse dieses Inhalts abgelehnt."),
@@ -583,7 +670,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchLabel: "Verifica i fatti tramite ricerca web",
     webSearchHintAnthropic: "Utilizza lo strumento di ricerca web di Anthropic.",
     webSearchHintUnavailable: "Non disponibile per questo fornitore: le verifiche saranno contrassegnate come «non verificato».",
-    webSearchHintGemini: "Utilizza il grounding di Google Search in Gemini per verificare i fatti.",
+    webSearchHintGemini:
+      "Utilizza Google Search grounding. Nota: richiede un account di fatturazione (Pay-as-you-go). Deseleziona questa casella per utilizzare la quota gratuita al 100% di Google AI Studio.",
     webSearchHintOpenAi:
       "Attivo se l'endpoint supporta la ricerca web (Perplexity, OpenRouter :online…). Con Ollama o Mistral senza ricerca, le affermazioni rimangono «non verificato».",
     maxChunkLabel: "Dimensione massima porzione (token)",
@@ -603,9 +691,26 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Ottieni una chiave Anthropic ↗",
     presetOllamaBtn: "🦙 Configura per Ollama locale (senza chiave)",
     presetOllamaSuccess: "Impostazioni applicate per Ollama locale (http://localhost:11434/v1, mistral).",
+    presetClaudeBridgeBtn: "⚡ Configura per il bridge locale di Claude Code (Abbonamento)",
+    presetClaudeBridgeSuccess:
+      "Impostazioni applicate per il bridge locale di Claude Code (http://localhost:8080/v1). Esegui 'npm run bridge' nel terminale.",
     chromeAiOption: "Chrome Built-in AI (Gemini Nano locale, senza chiave)",
     chromeAiHint: "Esecuzione 100% locale con Gemini Nano. Nessuna chiave API né account richiesti, gratuito e privato.",
     apiKeyPlaceholderOllama: "Opzionale per Ollama / LM Studio locale",
+    refreshModelsBtn: "🔄 Aggiorna modelli",
+    refreshingModels: "Recupero modelli disponibili…",
+    modelsFound: (count) => `${count} modello/i disponibile/i.`,
+    modelHint: "Seleziona un modello dall'elenco o passa all'inserimento libero.",
+    toggleCustomModelBtn: "✍️ Inserimento libero",
+    toggleSelectModelBtn: "📋 Scegli dall'elenco",
+    anthropicAuthModeLabel: "Modalità di autenticazione Anthropic",
+    anthropicModeApiKey: "🔑 Chiave API (Pay-as-you-go)",
+    anthropicModeOAuth: "⚡ Abbonamento Claude (OAuth)",
+    apiKeyLabelOAuth: "Token OAuth Claude Code (Abbonamento)",
+    apiKeyHintOAuth:
+      "Genera il tuo token in un terminale con 'claude setup-token' e incollalo qui. Le richieste saranno addebitate al tuo abbonamento Claude Pro / Max.",
+    copySetupTokenBtn: "📋 Copia 'claude setup-token'",
+    copiedToClipboard: "Copiato negli appunti!",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rifiuto del modello: ${detail}` : "Il modello ha rifiutato di analizzare questo contenuto."),

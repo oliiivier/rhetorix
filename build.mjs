@@ -87,6 +87,8 @@ const targets = {
           strict_min_version: "142.0",
           data_collection_permissions: { required: ["websiteContent"] },
         },
+        // Firefox pour Android (D9) : pas de barre latérale, l'icône lance l'analyse.
+        gecko_android: { strict_min_version: "142.0" },
       },
     },
   },

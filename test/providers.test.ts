@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Config } from "../src/config";
+import { anthropicProvider, createAnthropicClient } from "../src/providers/anthropic";
+import { chromeAiProvider } from "../src/providers/chrome-ai";
 import { geminiProvider } from "../src/providers/gemini";
 import { openAiCompatibleProvider } from "../src/providers/openai-compatible";
-import { chromeAiProvider } from "../src/providers/chrome-ai";
 
 describe("geminiProvider", () => {
   const baseConfig: Config = {
@@ -150,3 +151,32 @@ describe("chromeAiProvider", () => {
     expect(summaries).toContain("Analyse locale");
   });
 });
+
+describe("anthropicProvider", () => {
+  it("indique supportsWebSearch = true", () => {
+    expect(anthropicProvider.supportsWebSearch({} as Config)).toBe(true);
+  });
+
+  it("configure une clé standard avec apiKey", () => {
+    const client = createAnthropicClient("sk-ant-api03-test-key");
+    expect(client.apiKey).toBe("sk-ant-api03-test-key");
+    expect(client.authToken).toBeNull();
+  });
+
+  it("configure un token OAuth Claude Code (sk-ant-oat) avec authToken et defaultHeaders", () => {
+    const client = createAnthropicClient("sk-ant-oat01-my-oauth-token");
+    expect(client.authToken).toBe("sk-ant-oat01-my-oauth-token");
+    expect(client.apiKey).toBeNull();
+    // @ts-expect-error test private options
+    expect(client._options?.defaultHeaders?.["anthropic-beta"]).toBe("oauth-2025-04-20");
+  });
+
+  it("nettoie le préfixe Bearer sur un token OAuth", () => {
+    const client = createAnthropicClient("Bearer sk-ant-oat01-token-with-bearer");
+    expect(client.authToken).toBe("sk-ant-oat01-token-with-bearer");
+    expect(client.apiKey).toBeNull();
+    // @ts-expect-error test private options
+    expect(client._options?.defaultHeaders?.["anthropic-beta"]).toBe("oauth-2025-04-20");
+  });
+});
+
