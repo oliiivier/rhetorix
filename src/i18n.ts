@@ -41,6 +41,8 @@ export interface UiStrings {
   filterAll: string;
   displayModes: Record<DisplayMode, string>;
   inlineModeNotice: string;
+  closeSidebarBtn: string;
+  switchBothBtn: string;
   categories: Record<Category, string>;
   categoriesPlural: Record<Category, string>;
   severities: Record<Severity, string>;
@@ -187,6 +189,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       sidepanel: "Panneau latéral uniquement",
     },
     inlineModeNotice: "Mode bulles au survol actif. Survolez les passages surlignés dans la page pour consulter les analyses.",
+    closeSidebarBtn: "Fermer le panneau",
+    switchBothBtn: "Passer en mode combiné",
     categories: {
       sophism: "Sophisme",
       bias: "Biais",
@@ -381,6 +385,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       sidepanel: "Side panel only",
     },
     inlineModeNotice: "Hover bubbles mode active. Hover over highlighted text in the page to view analyses.",
+    closeSidebarBtn: "Close panel",
+    switchBothBtn: "Switch to combined mode",
     categories: {
       sophism: "Fallacy",
       bias: "Bias",
@@ -575,6 +581,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       sidepanel: "Solo panel lateral",
     },
     inlineModeNotice: "Modo burbujas activo. Pase el cursor sobre el texto resaltado en la página para ver los análisis.",
+    closeSidebarBtn: "Cerrar panel",
+    switchBothBtn: "Cambiar a modo combinado",
     categories: {
       sophism: "Falacia",
       bias: "Sesgo",
@@ -769,6 +777,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       sidepanel: "Nur Seitenleiste",
     },
     inlineModeNotice: "Hover-Blasen-Modus aktiv. Bewegen Sie den Mauszeiger über hervorgehobenen Text auf der Seite, um Analysen anzuzeigen.",
+    closeSidebarBtn: "Panel schließen",
+    switchBothBtn: "In kombinierten Modus wechseln",
     categories: {
       sophism: "Trugschluss",
       bias: "Verzerrung",
@@ -963,6 +973,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       sidepanel: "Solo pannello laterale",
     },
     inlineModeNotice: "Modalità fumetti attiva. Passa il cursore sul testo evidenziato nella pagina per visualizzare le analisi.",
+    closeSidebarBtn: "Chiudi pannello",
+    switchBothBtn: "Passa alla modalità combinata",
     categories: {
       sophism: "Fallacia",
       bias: "Bias",

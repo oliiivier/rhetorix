@@ -51,6 +51,8 @@ describe("i18n module", () => {
       expect(strings.displayModes.inline).toBeTruthy();
       expect(strings.displayModes.sidepanel).toBeTruthy();
       expect(strings.inlineModeNotice).toBeTruthy();
+      expect(strings.closeSidebarBtn).toBeTruthy();
+      expect(strings.switchBothBtn).toBeTruthy();
 
       // Vérification des indications de recherche web
       expect(strings.webSearchHintAnthropic).toBeTruthy();

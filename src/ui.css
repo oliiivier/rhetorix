@@ -528,3 +528,77 @@ button.filter-btn.badge.active {
 .options .model-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .options .small-btn { margin: 0; padding: 3px 8px; font-size: 11px; }
 
+/* ---------- Popover (Menu icône) ---------- */
+
+body.popup {
+  width: 290px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.popup .toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.popup h1 {
+  font-size: 15px;
+  margin: 0;
+}
+.popup-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.popup-body .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.popup-body label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.popup-body .mode-select {
+  width: 100%;
+}
+.popup-actions {
+  display: flex;
+  gap: 6px;
+}
+.popup-actions button {
+  flex: 1;
+}
+.popup .status {
+  margin: 0;
+  font-size: 12px;
+}
+.popup-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.popup-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.inline-notice-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.inline-notice-actions button {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+

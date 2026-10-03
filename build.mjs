@@ -12,11 +12,13 @@ const entryPoints = {
   "content-script": "src/content-script.ts",
   sidepanel: "src/sidepanel/sidepanel.ts",
   options: "src/options/options.ts",
+  popup: "src/popup/popup.ts",
 };
 
 const staticFiles = {
   "sidepanel.html": "src/sidepanel/sidepanel.html",
   "options.html": "src/options/options.html",
+  "popup.html": "src/popup/popup.html",
   "ui.css": "src/ui.css",
   "highlights.css": "src/highlights.css",
   "icons/icon-16.png": "src/icons/icon-16.png",

@@ -47,7 +47,12 @@ function updateDisplayModeBanner(): void {
   const notice = $("inline-notice");
   if (!notice) return;
   if (config?.displayMode === "inline") {
-    notice.textContent = t.inlineModeNotice;
+    const textEl = $("inline-notice-text");
+    if (textEl) textEl.textContent = t.inlineModeNotice;
+    const switchBtn = $<HTMLButtonElement>("switch-both-btn");
+    if (switchBtn) switchBtn.textContent = t.switchBothBtn;
+    const closeBtn = $<HTMLButtonElement>("close-sidebar-btn");
+    if (closeBtn) closeBtn.textContent = t.closeSidebarBtn;
     notice.hidden = false;
   } else {
     notice.hidden = true;
@@ -440,6 +445,24 @@ modeSelect.addEventListener("change", async () => {
     void send(currentTabId, { type: "set-display-mode", displayMode: newMode });
   }
   updateDisplayModeBanner();
+  if (newMode === "inline") {
+    void sendToBackground({ type: "close-sidebar" });
+    window.close();
+  }
+});
+$("switch-both-btn")?.addEventListener("click", async () => {
+  if (!config) return;
+  config = { ...config, displayMode: "both" };
+  await saveConfig(config);
+  modeSelect.value = "both";
+  if (currentTabId !== undefined) {
+    void send(currentTabId, { type: "set-display-mode", displayMode: "both" });
+  }
+  updateDisplayModeBanner();
+});
+$("close-sidebar-btn")?.addEventListener("click", () => {
+  void sendToBackground({ type: "close-sidebar" });
+  window.close();
 });
 filtersEl.addEventListener("click", (e) => {
   const btn = (e.target as Element).closest<HTMLButtonElement>(".filter-btn");
@@ -501,6 +524,10 @@ void (async () => {
   config = await loadConfig();
   modeSelect.value = config.displayMode ?? "both";
   applyI18n();
+  if (config.displayMode === "inline") {
+    void sendToBackground({ type: "close-sidebar" });
+    window.close();
+  }
   windowId = (await ext.windows.getCurrent()).id;
   const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab?.id;

@@ -12,16 +12,42 @@ import { CATEGORIES } from "./taxonomy";
 
 interface FirefoxSidebarAction {
   toggle(): Promise<void>;
+  open(): Promise<void>;
+  close(): Promise<void>;
+  isOpen(details?: { windowId?: number }): Promise<boolean>;
 }
 
 const sidebarAction = (globalThis as { browser?: { sidebarAction?: FirefoxSidebarAction } }).browser?.sidebarAction;
 
+function updateActionBehavior(currentConfig: Config | null): void {
+  const isInline = currentConfig?.displayMode === "inline";
+  if (isInline) {
+    ext.action.setPopup({ popup: "popup.html" }).catch(() => {});
+    if (ext.sidePanel) {
+      ext.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(() => {});
+    }
+  } else {
+    ext.action.setPopup({ popup: "" }).catch(() => {});
+    if (ext.sidePanel) {
+      ext.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+    }
+  }
+}
+
 // Configuration gardée en mémoire : sur mobile, la demande de permission doit partir
 // avant tout await, donc sans relire storage.local.
 let config: Config | null = null;
-void loadConfig().then((c) => (config = c));
+void loadConfig().then((c) => {
+  config = c;
+  updateActionBehavior(c);
+});
 ext.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.config) void loadConfig().then((c) => (config = c));
+  if (area === "local" && changes.config) {
+    void loadConfig().then((c) => {
+      config = c;
+      updateActionBehavior(c);
+    });
+  }
 });
 
 /** Publie l'état vers le panneau ; sans panneau ouvert, l'envoi échoue sans conséquence. */
@@ -32,7 +58,7 @@ function broadcast(snapshot: RunSnapshot): void {
 
 // Les messages des content scripts (annotation-clicked) sont destinés au panneau et
 // ignorés ici : seuls les types de PanelToBackground sont traités.
-ext.runtime.onMessage.addListener((msg: PanelToBackground, _sender, sendResponse) => {
+ext.runtime.onMessage.addListener((msg: PanelToBackground, sender, sendResponse) => {
   switch (msg.type) {
     case "analyze-tab":
       void ext.tabs.get(msg.tabId).then((tab) => runAnalysis(msg.tabId, tab.url, { force: msg.force }, broadcast));
@@ -44,6 +70,23 @@ ext.runtime.onMessage.addListener((msg: PanelToBackground, _sender, sendResponse
       break;
     case "get-state":
       sendResponse(getSnapshot(msg.tabId));
+      break;
+    case "open-sidepanel":
+      if (sidebarAction) {
+        sidebarAction.open().catch(() => sidebarAction.toggle().catch(() => {}));
+      } else if (ext.sidePanel) {
+        const windowId = sender.tab?.windowId;
+        if (windowId !== undefined) {
+          ext.sidePanel.open({ windowId }).catch(() => {});
+        }
+      }
+      sendResponse(null);
+      break;
+    case "close-sidebar":
+      if (sidebarAction) {
+        sidebarAction.close().catch(() => {});
+      }
+      sendResponse(null);
       break;
   }
   return false;
@@ -57,10 +100,16 @@ ext.tabs.onRemoved.addListener((tabId) => forgetTab(tabId));
 // ---------- Ouverture du panneau, ou analyse directe sur mobile ----------
 
 if (ext.sidePanel) {
-  ext.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
+  ext.action.onClicked.addListener((tab) => {
+    if (config?.displayMode !== "inline" && tab.windowId !== undefined) {
+      ext.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+    }
+  });
 } else if (sidebarAction) {
   ext.action.onClicked.addListener(() => {
-    sidebarAction.toggle().catch(console.error);
+    if (config?.displayMode !== "inline") {
+      sidebarAction.toggle().catch(console.error);
+    }
   });
 } else {
   setupMobile();

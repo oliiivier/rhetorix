@@ -71,6 +71,8 @@ export interface RunSnapshot {
 export type PanelToBackground =
   | { type: "analyze-tab"; tabId: number; force: boolean }
   | { type: "cancel"; tabId: number }
-  | { type: "get-state"; tabId: number };
+  | { type: "get-state"; tabId: number }
+  | { type: "open-sidepanel"; tabId?: number }
+  | { type: "close-sidebar" };
 
 export type BackgroundToPanel = { type: "run-update"; snapshot: RunSnapshot };

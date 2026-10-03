@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rhetorix</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="popup">
+    <header class="toolbar">
+      <h1>Rhetorix</h1>
+      <button id="options" class="icon" type="button" title="Options" aria-label="Options">⚙</button>
+    </header>
+
+    <main class="popup-body">
+      <div class="field">
+        <label for="display-mode" id="mode-label">Mode d'affichage</label>
+        <select id="display-mode" class="mode-select">
+          <option value="inline" id="opt-inline">Bulles au survol uniquement</option>
+          <option value="both" id="opt-both">Combiné (panneau et bulles)</option>
+          <option value="sidepanel" id="opt-sidepanel">Panneau latéral uniquement</option>
+        </select>
+      </div>
+
+      <div class="popup-actions">
+        <button id="analyze" class="primary" type="button">Analyser la page</button>
+        <button id="cancel" type="button" hidden>Annuler</button>
+      </div>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+
+      <div id="results-summary" class="popup-summary" hidden>
+        <div class="popup-badges" id="badges"></div>
+      </div>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
