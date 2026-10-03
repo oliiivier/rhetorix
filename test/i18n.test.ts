@@ -25,6 +25,8 @@ describe("i18n module", () => {
       expect(strings.cancelBtn).toBeTruthy();
       expect(strings.optionsTitle).toBeTruthy();
       expect(strings.idleStatus).toBeTruthy();
+      expect(strings.clickbaitHeading).toBeTruthy();
+      expect(strings.blindSpotHeading).toBeTruthy();
 
       // Vérification des catégories
       expect(strings.categories.sophism).toBeTruthy();

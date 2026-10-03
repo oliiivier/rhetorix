@@ -75,13 +75,20 @@ describe("runAnalysis (script de fond, D9)", () => {
     mockAnalyze.mockImplementation(async (_article, _config, _signal, cb) => {
       cb.onSummary("Résumé", true);
       cb.onAnnotation(annotation("ann-1"));
-      return { summary: "Résumé", annotations: [annotation("ann-1"), annotation("ann-2")] };
+      return {
+        summary: "Résumé",
+        clickbait_gap: "Titre trompeur",
+        blind_spot: "Point de vue manquant",
+        annotations: [annotation("ann-1"), annotation("ann-2")],
+      };
     });
     const updates: RunSnapshot[] = [];
     const final = await runAnalysis(1, "https://ex.test/a", { force: false }, (s) => updates.push(s));
 
     expect(updates.some((s) => s.status === "running" && s.annotations.length === 1)).toBe(true);
     expect(final.status).toBe("done");
+    expect(final.clickbaitGap).toBe("Titre trompeur");
+    expect(final.blindSpot).toBe("Point de vue manquant");
     expect(final.annotations).toHaveLength(2);
     expect(final.unlocated).toEqual(["ann-2"]);
     expect(updates.at(-1)).toEqual(final);

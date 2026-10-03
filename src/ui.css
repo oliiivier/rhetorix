@@ -100,6 +100,38 @@ a { color: var(--accent); }
 }
 .summary { margin: 0 0 12px; }
 
+.alert-box {
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.alert-icon {
+  font-size: 14px;
+}
+.alert-text {
+  margin: 0;
+}
+.clickbait-box {
+  background: rgba(245, 159, 0, 0.12);
+  border: 1px solid rgba(245, 159, 0, 0.35);
+  border-left: 4px solid #f59f00;
+  color: var(--text);
+}
+.blind-spot-box {
+  background: rgba(116, 143, 252, 0.12);
+  border: 1px solid rgba(116, 143, 252, 0.35);
+  border-left: 4px solid var(--accent);
+  color: var(--text);
+}
+
 .legend { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 
 .badge {

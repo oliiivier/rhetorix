@@ -71,6 +71,18 @@ export const LABELS = {
       name: "Déplacement de l'objectif",
       definition: "Modifier les critères de preuve exigés une fois les premiers satisfaits.",
     },
+    inversion_charge: {
+      name: "Inversion de charge de la preuve",
+      definition: "Exiger de l'adversaire qu'il prouve la fausseté d'une affirmation non démontrée (Théière de Russell).",
+    },
+    infalsifiabilite: {
+      name: "Infalsifiabilité",
+      definition: "Formuler une hypothèse de manière à ce qu'aucune observation ne puisse la contredire (critère de Popper).",
+    },
+    parcimonie_ockham: {
+      name: "Violation de parcimonie (Rasoir d'Ockham)",
+      definition: "Privilégier une explication complexe, conspirationniste ou alambiquée face à des explications simples et probables.",
+    },
     autre: { name: "Autre sophisme", definition: "Sophisme ne relevant d'aucun label ci-dessus ; le nommer dans la critique." },
   },
   bias: {
@@ -106,6 +118,18 @@ export const LABELS = {
       name: "Essentialisation",
       definition: "Attribuer à tout un groupe un trait ou un comportement observé chez certains de ses membres.",
     },
+    preuve_anecdotique: {
+      name: "Preuve anecdotique",
+      definition: "Utiliser un cas isolé ou une expérience vécue individuelle pour prétendre démontrer une vérité générale.",
+    },
+    etude_preliminaire: {
+      name: "Étude préliminaire extrapolée",
+      definition: "Tirer des conclusions définitives d'une étude isolée, préliminaire, in vitro ou sur un échantillon minuscule.",
+    },
+    confusion_facteurs: {
+      name: "Confusion de facteurs",
+      definition: "Attribuer un effet à une cause unique en ignorant l'effet placebo, la régression à la moyenne ou des variables concomitantes.",
+    },
     autre: { name: "Autre biais", definition: "Biais ne relevant d'aucun label ci-dessus ; le nommer dans la critique." },
   },
   factual_claim: {
@@ -114,6 +138,14 @@ export const LABELS = {
     fait_historique: { name: "Fait historique", definition: "Affirmation sur un événement ou une situation passée." },
     fait_scientifique: { name: "Fait scientifique", definition: "Affirmation présentée comme établie par la recherche." },
     comparaison: { name: "Comparaison", definition: "Comparaison chiffrée ou classement entre pays, périodes, groupes." },
+    chiffre_sans_echelle: {
+      name: "Chiffre brut sans échelle",
+      definition: "Montant ou grandeur numérique brut cité sans mise en perspective ni proportion par rapport à l'ensemble.",
+    },
+    source_seconde_main: {
+      name: "Source de seconde main",
+      definition: "Reprise d'une information attribuée à un média tiers ou une dépêche sans accès direct à la source primaire.",
+    },
     autre: { name: "Autre allégation", definition: "Allégation vérifiable ne relevant d'aucun label ci-dessus." },
   },
 } as const satisfies Record<Category, Record<string, LabelDef>>;
@@ -186,6 +218,18 @@ export const TAXONOMY_TRANSLATIONS: Record<
         name: "Moving the Goalposts",
         definition: "Altering the required criteria of proof once the original ones have been satisfied.",
       },
+      inversion_charge: {
+        name: "Reversing Burden of Proof",
+        definition: "Demanding that opponents prove an unevidenced claim false rather than justifying it (Russell's Teapot).",
+      },
+      infalsifiabilite: {
+        name: "Unfalsifiability",
+        definition: "Formulating a claim such that no possible observation or evidence could ever refute it (Popper's criterion).",
+      },
+      parcimonie_ockham: {
+        name: "Occam's Razor Violation",
+        definition: "Preferring a convoluted, conspiratorial, or far-fetched explanation over simpler, well-supported ones.",
+      },
       autre: {
         name: "Other Fallacy",
         definition: "Fallacy not matching any listed category; specified in the critique.",
@@ -224,6 +268,18 @@ export const TAXONOMY_TRANSLATIONS: Record<
         name: "Essentialism",
         definition: "Attributing a general trait to an entire group based on observations of a few.",
       },
+      preuve_anecdotique: {
+        name: "Anecdotal Evidence",
+        definition: "Using an isolated personal story or testimonial to establish a general rule or truth.",
+      },
+      etude_preliminaire: {
+        name: "Extrapolated Preliminary Study",
+        definition: "Drawing firm, broad conclusions from an isolated, preliminary, in vitro, or very small-sample study.",
+      },
+      confusion_facteurs: {
+        name: "Confounding Factors",
+        definition: "Attributing an effect to a single cause while ignoring placebo effect, regression to the mean, or confounding variables.",
+      },
       autre: {
         name: "Other Bias",
         definition: "Bias not falling into the categories above; specified in the critique.",
@@ -249,6 +305,14 @@ export const TAXONOMY_TRANSLATIONS: Record<
       comparaison: {
         name: "Comparison",
         definition: "A quantitative comparison or ranking between countries, eras, or groups.",
+      },
+      chiffre_sans_echelle: {
+        name: "Uncontextualized Statistic",
+        definition: "Raw number or figure presented without scale, baseline, or proportion relative to the whole.",
+      },
+      source_seconde_main: {
+        name: "Secondary Source Relay",
+        definition: "Relaying claims attributed to third-party media or wire services without citing the original primary source.",
       },
       autre: {
         name: "Other Factual Claim",
@@ -318,6 +382,18 @@ export const TAXONOMY_TRANSLATIONS: Record<
         name: "Mover los postes",
         definition: "Modificar las exigencias de prueba una vez satisfechas las condiciones iniciales.",
       },
+      inversion_charge: {
+        name: "Inversión de la carga de la prueba",
+        definition: "Exigir al adversario que demuestre la falsedad de una afirmación no probada (Tetera de Russell).",
+      },
+      infalsifiabilite: {
+        name: "Infalsabilidad",
+        definition: "Plantear una hipótesis de modo que ninguna observación o prueba pueda refutarla (criterio de Popper).",
+      },
+      parcimonie_ockham: {
+        name: "Violación de la navaja de Ockham",
+        definition: "Preferir una explicación enrevesada o conspirativa frente a explicaciones más simples y fundamentadas.",
+      },
       autre: {
         name: "Otra falacia",
         definition: "Falacia no recogida en la lista; descrita en la crítica.",
@@ -356,6 +432,18 @@ export const TAXONOMY_TRANSLATIONS: Record<
         name: "Esencialización",
         definition: "Atribuir a todo un colectivo un rasgo observado solo en algunos miembros.",
       },
+      preuve_anecdotique: {
+        name: "Prueba testimonial o anecdótica",
+        definition: "Utilizar un caso personal o aislado para pretender una validez o verdad general.",
+      },
+      etude_preliminaire: {
+        name: "Estudio preliminar extrapolado",
+        definition: "Sacar conclusiones tajantes a partir de un estudio aislado, in vitro o con una muestra muy reducida.",
+      },
+      confusion_facteurs: {
+        name: "Confusión de variables concurrentes",
+        definition: "Atribuir un efecto a una causa aislada ignorando el efecto placebo, la regresión a la media u otras variables.",
+      },
       autre: {
         name: "Otro sesgo",
         definition: "Sesgo fuera de la lista; descrito en la crítica.",
@@ -381,6 +469,14 @@ export const TAXONOMY_TRANSLATIONS: Record<
       comparaison: {
         name: "Comparación",
         definition: "Comparación cuantitativa o clasificación entre países, periodos o grupos.",
+      },
+      chiffre_sans_echelle: {
+        name: "Cifra sin contexto o escala",
+        definition: "Monto o cifra en bruto presentado sin orden de magnitud ni proporción respecto al conjunto.",
+      },
+      source_seconde_main: {
+        name: "Fuente de segunda mano",
+        definition: "Retransmisión de una información atribuida a terceros o agencias sin consultar la fuente primaria.",
       },
       autre: {
         name: "Otra afirmación",
@@ -450,6 +546,18 @@ export const TAXONOMY_TRANSLATIONS: Record<
         name: "Zielverschiebung",
         definition: "Beweisanforderungen nachträglich ändern, sobald die ursprünglichen erfüllt wurden.",
       },
+      inversion_charge: {
+        name: "Beweislastumkehr",
+        definition: "Vom Gegenüber den Gegenbeweis für eine unbewiesene Behauptung verlangen (Russells Teekanne).",
+      },
+      infalsifiabilite: {
+        name: "Unfalsifizierbarkeit",
+        definition: "Eine Behauptung so aufstellen, dass sie prinzipiell durch keine Beobachtung widerlegt werden kann (Popper-Kriterium).",
+      },
+      parcimonie_ockham: {
+        name: "Ockhams Rasiermesser verletzt",
+        definition: "Eine unnötig komplizierte oder verschwörerische Erklärung einfacheren, plausibleren Annahmen vorziehen.",
+      },
       autre: {
         name: "Anderer Fehlschluss",
         definition: "Fehlschluss außerhalb der obigen Liste; wird in der Kritik benannt.",
@@ -488,6 +596,18 @@ export const TAXONOMY_TRANSLATIONS: Record<
         name: "Essentialisierung",
         definition: "Einer ganzen Gruppe Merkmale zuschreiben, die nur bei Einzelnen beobachtet wurden.",
       },
+      preuve_anecdotique: {
+        name: "Anekdotische Evidenz",
+        definition: "Einen Einzelfall oder persönlichen Erfahrungsbericht als Beweis für eine allgemeine Gültigkeit verwenden.",
+      },
+      etude_preliminaire: {
+        name: "Überinterpretierte Vorstudie",
+        definition: "Aus einer isolierten Vorstudie (z. B. In-vitro oder Kleinststichprobe) voreilige Schlüsse ziehen.",
+      },
+      confusion_facteurs: {
+        name: "Störfaktoren unberücksichtigt",
+        definition: "Einen Effekt einer Ursache zuschreiben und dabei Placebo-Effekt, Regression zur Mitte oder Störvariablen ignorieren.",
+      },
       autre: {
         name: "Andere Verzerrung",
         definition: "Verzerrung außerhalb der obigen Liste; wird in der Kritik benannt.",
@@ -513,6 +633,14 @@ export const TAXONOMY_TRANSLATIONS: Record<
       comparaison: {
         name: "Vergleich",
         definition: "Ein messbarer Vergleich oder Ranking zwischen Ländern, Zeiträumen oder Gruppen.",
+      },
+      chiffre_sans_echelle: {
+        name: "Zahl ohne Größenordnung",
+        definition: "Absolute Zahl oder Betrag ohne Einordnung, Bezugsgröße oder Verhältnis zum Ganzen.",
+      },
+      source_seconde_main: {
+        name: "Sekundärquelle ohne Primärbezug",
+        definition: "Übernahme einer Behauptung aus Drittmedien oder Agenturen ohne Nennung der eigentlichen Primärquelle.",
       },
       autre: {
         name: "Andere Faktenbehauptung",
@@ -582,6 +710,18 @@ export const TAXONOMY_TRANSLATIONS: Record<
         name: "Spostamento dei paletti",
         definition: "Modificare i criteri di prova richiesti una volta soddisfatti quelli iniziali.",
       },
+      inversion_charge: {
+        name: "Inversione dell'onere della prova",
+        definition: "Esigere che l'interlocutore provi la falsità di un'affermazione non dimostrata (Teiera di Russell).",
+      },
+      infalsifiabilite: {
+        name: "Infalsificabilità",
+        definition: "Formulare un'ipotesi in modo tale che nessuna prova o osservazione possa smentirla (criterio di Popper).",
+      },
+      parcimonie_ockham: {
+        name: "Violazione del rasoio di Ockham",
+        definition: "Preferire una spiegazione complessa o cospirativa a spiegazioni più semplici e verosimili.",
+      },
       autre: {
         name: "Altra fallacia",
         definition: "Fallacia non compresa nell'elenco; specificata nella spiegazione.",
@@ -620,6 +760,18 @@ export const TAXONOMY_TRANSLATIONS: Record<
         name: "Essenzializzazione",
         definition: "Attribuire all'intero gruppo una caratteristica osservata solo in alcuni individui.",
       },
+      preuve_anecdotique: {
+        name: "Prova aneddotica",
+        definition: "Utilizzare un'esperienza personale isolata o una testimonianza per sostenere una regola generale.",
+      },
+      etude_preliminaire: {
+        name: "Studio preliminare estrapolato",
+        definition: "Trarre conclusioni definitive da uno studio isolato, in vitro o basato su un campione ridotto.",
+      },
+      confusion_facteurs: {
+        name: "Confusione di fattori concomitanti",
+        definition: "Attribuire un risultato a una causa specifica ignorando effetto placebo, regressione verso la media o altre variabili.",
+      },
       autre: {
         name: "Altro bias",
         definition: "Bias non compreso nelle categorie precedenti; descritto nella critica.",
@@ -645,6 +797,14 @@ export const TAXONOMY_TRANSLATIONS: Record<
       comparaison: {
         name: "Confronto",
         definition: "Comparazione quantitativa o graduatoria tra paesi, epoche o categorie.",
+      },
+      chiffre_sans_echelle: {
+        name: "Dato privo di contesto o scala",
+        definition: "Importo o valore numerico grezzo citato senza contesto né proporzione rispetto all'insieme.",
+      },
+      source_seconde_main: {
+        name: "Fonte di seconda mano",
+        definition: "Ripresa di un'affermazione attribuita a media terzi o agenzie senza verificare la fonte primaria.",
       },
       autre: {
         name: "Altra affermazione",

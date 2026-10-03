@@ -30,6 +30,8 @@ export interface Annotation {
 
 export interface Analysis {
   summary: string;
+  clickbait_gap?: string;
+  blind_spot?: string;
   annotations: Annotation[];
 }
 
@@ -39,9 +41,11 @@ const allLabels = [...new Set(CATEGORIES.flatMap((c) => Object.keys(LABELS[c])))
 export const ANALYSIS_JSON_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["summary", "annotations"],
+  required: ["summary", "clickbait_gap", "blind_spot", "annotations"],
   properties: {
     summary: { type: "string" },
+    clickbait_gap: { type: "string" },
+    blind_spot: { type: "string" },
     annotations: {
       type: "array",
       items: {
@@ -149,10 +153,12 @@ export function validateAnnotation(a: unknown, path = "$.annotation"): Annotatio
 export function validateAnalysis(raw: unknown): Analysis {
   const root = obj(raw, "$");
   const summary = str(root.summary, "$.summary");
+  const clickbait_gap = typeof root.clickbait_gap === "string" ? root.clickbait_gap.trim() : "";
+  const blind_spot = typeof root.blind_spot === "string" ? root.blind_spot.trim() : "";
   const annotations = arr(root.annotations, "$.annotations").map((a, i): Annotation => {
     return validateAnnotation(a, `$.annotations[${i}]`);
   });
-  return { summary, annotations };
+  return { summary, clickbait_gap, blind_spot, annotations };
 }
 
 export function enforceAnnotationSourcePolicy(

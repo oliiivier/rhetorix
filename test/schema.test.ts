@@ -34,6 +34,23 @@ describe("validateAnalysis", () => {
   it("rejette une catégorie inconnue", () => {
     expect(() => validateAnalysis({ summary: "s", annotations: [annotation({ category: "opinion" })] })).toThrow(SchemaError);
   });
+
+  it("extrait et nettoie clickbait_gap et blind_spot quand présents", () => {
+    const a = validateAnalysis({
+      summary: "s",
+      clickbait_gap: "  Titre sensationnaliste  ",
+      blind_spot: "  Absence de point de vue contradictoire  ",
+      annotations: [annotation()],
+    });
+    expect(a.clickbait_gap).toBe("Titre sensationnaliste");
+    expect(a.blind_spot).toBe("Absence de point de vue contradictoire");
+  });
+
+  it("gère l'absence de clickbait_gap et blind_spot gracieusement", () => {
+    const a = validateAnalysis({ summary: "s", annotations: [annotation()] });
+    expect(a.clickbait_gap).toBe("");
+    expect(a.blind_spot).toBe("");
+  });
 });
 
 describe("enforceSourcePolicy (D3)", () => {

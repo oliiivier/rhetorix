@@ -70,6 +70,10 @@ function applyI18n(): void {
   if (optSidepanel) optSidepanel.textContent = t.displayModes.sidepanel;
   const heading = $("summary-heading");
   if (heading) heading.textContent = t.summaryTitle;
+  const clickHeading = $("clickbait-heading");
+  if (clickHeading) clickHeading.textContent = t.clickbaitHeading;
+  const blindHeading = $("blind-spot-heading");
+  if (blindHeading) blindHeading.textContent = t.blindSpotHeading;
   const privacy = $("privacy-footer");
   if (privacy) privacy.textContent = t.privacyNotice;
   updateDisplayModeBanner();
@@ -92,6 +96,10 @@ function isAnalyzableUrl(url?: string): boolean {
 function showIdle(isWebPage = true): void {
   resultEl.hidden = true;
   cardsEl.replaceChildren();
+  const cb = $("clickbait-banner");
+  if (cb) cb.hidden = true;
+  const bs = $("blind-spot-card");
+  if (bs) bs.hidden = true;
   if (isWebPage) {
     setStatus(strings().idleStatus);
     analyzeBtn.disabled = false;
@@ -190,6 +198,31 @@ function render(state: TabState): void {
   setStatus("");
   resultEl.hidden = false;
   $("summary").textContent = state.analysis.summary;
+
+  const cbBanner = $("clickbait-banner");
+  if (cbBanner) {
+    if (state.analysis.clickbait_gap) {
+      const heading = $("clickbait-heading");
+      if (heading) heading.textContent = t.clickbaitHeading;
+      $("clickbait-text").textContent = state.analysis.clickbait_gap;
+      cbBanner.hidden = false;
+    } else {
+      cbBanner.hidden = true;
+    }
+  }
+
+  const bsCard = $("blind-spot-card");
+  if (bsCard) {
+    if (state.analysis.blind_spot) {
+      const heading = $("blind-spot-heading");
+      if (heading) heading.textContent = t.blindSpotHeading;
+      $("blind-spot-text").textContent = state.analysis.blind_spot;
+      bsCard.hidden = false;
+    } else {
+      bsCard.hidden = true;
+    }
+  }
+
   const note = $("cache-note");
   note.hidden = state.cachedAt === undefined;
   if (state.cachedAt !== undefined) note.textContent = t.cacheNote(new Date(state.cachedAt).toLocaleString());
@@ -283,7 +316,12 @@ function statusText(s: RunSnapshot): string {
 function toState(s: RunSnapshot): TabState {
   return {
     url: s.url,
-    analysis: { summary: s.summary, annotations: s.annotations },
+    analysis: {
+      summary: s.summary,
+      clickbait_gap: s.clickbaitGap,
+      blind_spot: s.blindSpot,
+      annotations: s.annotations,
+    },
     unlocated: new Set(s.unlocated),
     cachedAt: s.cachedAt,
   };
@@ -299,10 +337,36 @@ function renderSnapshot(s: RunSnapshot): void {
       if (s.phase === "extracting") {
         resultEl.hidden = true;
         cardsEl.replaceChildren();
+        const cb = $("clickbait-banner");
+        if (cb) cb.hidden = true;
+        const bs = $("blind-spot-card");
+        if (bs) bs.hidden = true;
         return;
       }
       resultEl.hidden = s.annotations.length === 0 && !s.summary;
       $("summary").textContent = s.summary;
+      const cbBanner = $("clickbait-banner");
+      if (cbBanner) {
+        if (s.clickbaitGap) {
+          const heading = $("clickbait-heading");
+          if (heading) heading.textContent = t.clickbaitHeading;
+          $("clickbait-text").textContent = s.clickbaitGap;
+          cbBanner.hidden = false;
+        } else {
+          cbBanner.hidden = true;
+        }
+      }
+      const bsCard = $("blind-spot-card");
+      if (bsCard) {
+        if (s.blindSpot) {
+          const heading = $("blind-spot-heading");
+          if (heading) heading.textContent = t.blindSpotHeading;
+          $("blind-spot-text").textContent = s.blindSpot;
+          bsCard.hidden = false;
+        } else {
+          bsCard.hidden = true;
+        }
+      }
       $("cache-note").hidden = true;
       // Ajout incrémental : seules les annotations nouvelles reçoivent une carte.
       const shown = new Set([...cardsEl.querySelectorAll<HTMLElement>(".card")].map((c) => c.dataset.id));
@@ -325,6 +389,10 @@ function renderSnapshot(s: RunSnapshot): void {
     case "cancelled":
       cardsEl.replaceChildren();
       resultEl.hidden = true;
+      const cb = $("clickbait-banner");
+      if (cb) cb.hidden = true;
+      const bs = $("blind-spot-card");
+      if (bs) bs.hidden = true;
       updateFilterCounts([]);
       if (s.status === "cancelled") setStatus(t.cancelledStatus);
       else setStatus(s.error ?? "", true);

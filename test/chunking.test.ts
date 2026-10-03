@@ -37,6 +37,17 @@ describe("mergeAnalyses", () => {
     ]);
     expect(merged.summary).toBe("A\n\nB");
   });
+
+  it("fusionne clickbait_gap et blind_spot sans duplication", () => {
+    const parts: Analysis[] = [
+      { summary: "A", clickbait_gap: "Titre trompeur", blind_spot: "Point A", annotations: [] },
+      { summary: "B", clickbait_gap: "", blind_spot: "Point B", annotations: [] },
+      { summary: "C", clickbait_gap: "Autre", blind_spot: "Point A", annotations: [] },
+    ];
+    const merged = mergeAnalyses(parts);
+    expect(merged.clickbait_gap).toBe("Titre trompeur");
+    expect(merged.blind_spot).toBe("Point A\n\nPoint B");
+  });
 });
 
 describe("mapLimit", () => {

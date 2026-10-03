@@ -134,6 +134,8 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
     Object.assign(snapshot, {
       status: "done",
       summary: analysis.summary,
+      clickbaitGap: analysis.clickbait_gap,
+      blindSpot: analysis.blind_spot,
       annotations: analysis.annotations,
       unlocated,
       cachedAt: cached?.createdAt,

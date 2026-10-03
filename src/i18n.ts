@@ -30,6 +30,8 @@ export interface UiStrings {
   extractNoArticleError: string;
   extractEmptyArticleError: string;
   summaryTitle: string;
+  clickbaitHeading: string;
+  blindSpotHeading: string;
   cacheNote: (date: string) => string;
   emptyResults: string;
   unlocatedQuote: string;
@@ -170,6 +172,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     extractNoArticleError: "Aucun contenu d'article détecté sur cette page.",
     extractEmptyArticleError: "L'article extrait est vide.",
     summaryTitle: "Posture argumentative",
+    clickbaitHeading: "Décalage titre / contenu",
+    blindSpotHeading: "Angle mort / Omission clé",
     cacheNote: (date) => `Analyse du ${date} (cache).`,
     emptyResults: "Aucun procédé rhétorique notable relevé.",
     unlocatedQuote: "Citation introuvable dans la page.",
@@ -362,6 +366,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     extractNoArticleError: "No article content detected on this page.",
     extractEmptyArticleError: "The extracted article is empty.",
     summaryTitle: "Argumentative stance",
+    clickbaitHeading: "Headline / Content Gap",
+    blindSpotHeading: "Blind Spot / Key Omission",
     cacheNote: (date) => `Analysis from ${date} (cached).`,
     emptyResults: "No significant rhetorical devices found.",
     unlocatedQuote: "Quote could not be located in the page.",
@@ -554,6 +560,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     extractNoArticleError: "No se detectó contenido de artículo en esta página.",
     extractEmptyArticleError: "El artículo extraído está vacío.",
     summaryTitle: "Postura argumentativa",
+    clickbaitHeading: "Desfase titular / contenido",
+    blindSpotHeading: "Punto ciego / Omisión clave",
     cacheNote: (date) => `Análisis del ${date} (caché).`,
     emptyResults: "No se detectaron recursos retóricos relevantes.",
     unlocatedQuote: "Cita no encontrada en la página.",
@@ -746,6 +754,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     extractNoArticleError: "Kein Artikelinhalt auf dieser Seite erkannt.",
     extractEmptyArticleError: "Der extrahierte Artikel ist leer.",
     summaryTitle: "Argumentative Haltung",
+    clickbaitHeading: "Diskrepanz Titel / Inhalt",
+    blindSpotHeading: "Blinder Fleck / Zentrale Auslassung",
     cacheNote: (date) => `Analyse vom ${date} (Cache).`,
     emptyResults: "Keine auffälligen rhetorischen Mittel festgestellt.",
     unlocatedQuote: "Zitat auf der Seite nicht gefunden.",
@@ -938,6 +948,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     extractNoArticleError: "Nessun contenuto di articolo rilevato su questa pagina.",
     extractEmptyArticleError: "L'articolo estratto è vuoto.",
     summaryTitle: "Postura argomentativa",
+    clickbaitHeading: "Discrepanza titolo / contenuto",
+    blindSpotHeading: "Punto cieco / Omissione chiave",
     cacheNote: (date) => `Analisi del ${date} (cache).`,
     emptyResults: "Nessun artificio retorico rilevante individuato.",
     unlocatedQuote: "Citazione non trovata nella pagina.",

@@ -45,7 +45,15 @@ export function mergeAnalyses(parts: Analysis[]): Analysis {
       seen.add(key);
       return true;
     });
-  return renumber({ summary: parts.map((p) => p.summary.trim()).filter(Boolean).join("\n\n"), annotations });
+  const clickbait_gap = parts.map((p) => p.clickbait_gap?.trim()).find((s) => Boolean(s)) ?? "";
+  const blind_spots = parts.map((p) => p.blind_spot?.trim()).filter((s): s is string => Boolean(s));
+  const blind_spot = Array.from(new Set(blind_spots)).join("\n\n");
+  return renumber({
+    summary: parts.map((p) => p.summary.trim()).filter(Boolean).join("\n\n"),
+    clickbait_gap,
+    blind_spot,
+    annotations,
+  });
 }
 
 function renumber(a: Analysis): Analysis {

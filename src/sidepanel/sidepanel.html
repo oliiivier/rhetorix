@@ -29,8 +29,22 @@
       <section id="result" hidden>
         <p id="cache-note" class="note" hidden></p>
         <p id="inline-notice" class="note inline-notice" hidden></p>
+        <div id="clickbait-banner" class="alert-box clickbait-box" hidden>
+          <div class="alert-header">
+            <span class="alert-icon">⚠️</span>
+            <strong id="clickbait-heading">Décalage titre / contenu</strong>
+          </div>
+          <p id="clickbait-text" class="alert-text"></p>
+        </div>
         <h2 id="summary-heading">Posture argumentative</h2>
         <p id="summary" class="summary"></p>
+        <div id="blind-spot-card" class="alert-box blind-spot-box" hidden>
+          <div class="alert-header">
+            <span class="alert-icon">💡</span>
+            <strong id="blind-spot-heading">Angle mort / Omission clé</strong>
+          </div>
+          <p id="blind-spot-text" class="alert-text"></p>
+        </div>
         <div class="legend" id="filters" role="group" aria-label="Filtrer les annotations par catégorie">
           <button type="button" class="filter-btn active" data-category="all">Tous</button>
           <button type="button" class="filter-btn badge sophism" data-category="sophism">Sophisme</button>

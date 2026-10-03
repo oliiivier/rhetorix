@@ -29,7 +29,10 @@ Rules:
 - severity reflects how much the device distorts the reader's understanding.
 - For "sophism" and "bias" annotations, fact_check.status is "unverified" with empty sources unless the passage also makes a checkable claim.
 - ${factRule}
-- Write summary, rhetoric_critique and fact_check.context in this language: ${opts.language}. ids are "ann-1", "ann-2", …
+- Write summary, clickbait_gap, blind_spot, rhetoric_critique and fact_check.context in this language: ${opts.language}. ids are "ann-1", "ann-2", …
+- Evaluate editorial integrity at the document level:
+  * clickbait_gap: Compare the article's title to its actual content. If the title is sensationalist, misleading, or overpromises compared to the real text, explain the gap concisely (1-2 sentences). If the title is faithful and proportionate, return an empty string "".
+  * blind_spot: Highlight any crucial opposing viewpoint, legitimate counter-argument, or established scientific/academic consensus omitted by the article that skews the reader's perspective (1-2 sentences). If the article is balanced and presents necessary perspectives, return an empty string "".
 
 Labels:
 ${taxonomyText(opts.language)}`;

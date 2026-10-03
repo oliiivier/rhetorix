@@ -59,6 +59,8 @@ export interface RunSnapshot {
   done: number;
   total: number;
   summary: string;
+  clickbaitGap?: string;
+  blindSpot?: string;
   /** Annotations reçues au fil du flux, puis liste finale fusionnée. */
   annotations: Annotation[];
   unlocated: string[];
