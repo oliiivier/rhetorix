@@ -87,6 +87,63 @@ export interface UiStrings {
   toggleCustomModelBtn: string;
   toggleSelectModelBtn: string;
 
+  // Onglets et Guide d'information
+  tabSettings: string;
+  tabGuide: string;
+  guideTitle: string;
+  guideIntro: string;
+  guideCapabilitiesHeading: string;
+  guideCap1Title: string;
+  guideCap1Desc: string;
+  guideCap2Title: string;
+  guideCap2Desc: string;
+  guideCap3Title: string;
+  guideCap3Desc: string;
+  guideCap4Title: string;
+  guideCap4Desc: string;
+  guideCap5Title: string;
+  guideCap5Desc: string;
+  guideCap6Title: string;
+  guideCap6Desc: string;
+
+  guideColorsHeading: string;
+  guideColorsIntro: string;
+  guideColorSophismTitle: string;
+  guideColorSophismDesc: string;
+  guideColorSophismSample: string;
+  guideColorBiasTitle: string;
+  guideColorBiasDesc: string;
+  guideColorBiasSample: string;
+  guideColorFactualTitle: string;
+  guideColorFactualDesc: string;
+  guideColorFactualSample: string;
+  guideColorActiveTitle: string;
+  guideColorActiveDesc: string;
+  guideColorActiveSample: string;
+
+  guideFactCheckHeading: string;
+  guideFactCheckIntro: string;
+  guideFactSupportedTitle: string;
+  guideFactSupportedDesc: string;
+  guideFactRefutedTitle: string;
+  guideFactRefutedDesc: string;
+  guideFactMisleadingTitle: string;
+  guideFactMisleadingDesc: string;
+  guideFactUnverifiedTitle: string;
+  guideFactUnverifiedDesc: string;
+
+  guideSeverityHeading: string;
+  guideSeverityIntro: string;
+  guideSeverityLowTitle: string;
+  guideSeverityLowDesc: string;
+  guideSeverityMediumTitle: string;
+  guideSeverityMediumDesc: string;
+  guideSeverityHighTitle: string;
+  guideSeverityHighDesc: string;
+
+  guideTaxonomyHeading: string;
+  guideTaxonomyIntro: string;
+
   // Erreurs providers
   providerErrors: Record<ProviderErrorCode, (detail?: string) => string>;
 }
@@ -193,6 +250,83 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     modelHint: "Sélectionnez un modèle dans la liste ou passez en saisie libre.",
     toggleCustomModelBtn: "✍️ Saisie libre",
     toggleSelectModelBtn: "📋 Choisir dans la liste",
+
+    tabSettings: "Paramètres",
+    tabGuide: "Capacités & Charte",
+    guideTitle: "Rhetorix — Guide & Capacités",
+    guideIntro:
+      "Rhetorix est un assistant d'esprit critique conçu pour décortiquer l'argumentation des articles de presse, éditoriaux et discours en ligne. Il identifie les failles de raisonnement, éclaire les procédés d'influence et confronte les affirmations aux faits vérifiés.",
+    guideCapabilitiesHeading: "Capacités de l'outil",
+    guideCap1Title: "Analyse rhétorique & cognitive",
+    guideCap1Desc:
+      "Détecte les sophismes logiques et biais de cadrage avec explications critiques et citations textuelles précises.",
+    guideCap2Title: "Vérification factuelle & Recherche web",
+    guideCap2Desc:
+      "Isole les affirmations vérifiables et les confronte au web en direct grâce aux moteurs de recherche intégrés.",
+    guideCap3Title: "Extraction d'article propre",
+    guideCap3Desc:
+      "Isole le cœur du texte avec le moteur Readability de Mozilla, débarrassé des publicités, menus et bannières.",
+    guideCap4Title: "Découpage intelligent (Chunking)",
+    guideCap4Desc:
+      "Prend en charge les articles courts comme les dossiers volumineux par partitionnement de paragraphes et synthèse globale.",
+    guideCap5Title: "Affichage adapté à votre lecture",
+    guideCap5Desc:
+      "Consultez l'analyse dans le volet latéral interactif, en bulles directement au survol du texte, ou les deux à la fois.",
+    guideCap6Title: "Confidentialité & Zéro serveur tiers",
+    guideCap6Desc:
+      "Aucun serveur central Rhetorix : vos requêtes vont directement au fournisseur d'IA configuré ou s'exécutent 100% en local.",
+
+    guideColorsHeading: "Charte de couleur et surlignage",
+    guideColorsIntro:
+      "Les surlignages dans le texte de l'article correspondent fidèlement aux catégories et cartes du volet latéral :",
+    guideColorSophismTitle: "Sophismes",
+    guideColorSophismDesc:
+      "Erreurs de logique, raisonnements fallacieux ou manipulations argumentatives (homme de paille, ad hominem, faux dilemme, etc.).",
+    guideColorSophismSample:
+      "« Si nous n'adoptons pas immédiatement cette mesure d'urgence, notre économie va s'effondrer d'ici la fin du mois. »",
+    guideColorBiasTitle: "Biais cognitifs & éditoriaux",
+    guideColorBiasDesc:
+      "Cadrages orientés, langage émotionnellement chargé, omissions de contexte ou sélection partiale d'arguments.",
+    guideColorBiasSample:
+      "« Les prétendus spécialistes ont une nouvelle fois tenté d'imposer leur vision rétrograde sans la moindre concertation. »",
+    guideColorFactualTitle: "Allégations factuelles",
+    guideColorFactualDesc:
+      "Affirmations portant sur des faits, chiffres, dates ou événements mesurables et vérifiables.",
+    guideColorFactualSample:
+      "« Le taux de chômage national a reculé de 1,2% au cours du second semestre selon l'institut officiel de statistique. »",
+    guideColorActiveTitle: "Sélection active / Focus",
+    guideColorActiveDesc:
+      "Mise en surbrillance dorée de la citation correspondant à la carte actuellement cliquée ou survolée dans le volet.",
+    guideColorActiveSample:
+      "« Extrait actuellement sélectionné ou survolé dans le volet latéral »",
+
+    guideFactCheckHeading: "Statuts de vérification des faits",
+    guideFactCheckIntro:
+      "Lorsque la recherche web est activée, chaque allégation factuelle est confrontée à des sources d'information fiables :",
+    guideFactSupportedTitle: "Étayée",
+    guideFactSupportedDesc: "L'allégation est vérifiée et corroborée par des sources documentées concordantes.",
+    guideFactRefutedTitle: "Réfutée",
+    guideFactRefutedDesc: "L'allégation est contredite ou infirmée par les faits et données avérés.",
+    guideFactMisleadingTitle: "Trompeuse",
+    guideFactMisleadingDesc:
+      "L'allégation contient une part de vérité mais est déformée, exagérée ou sortie de son contexte.",
+    guideFactUnverifiedTitle: "Non vérifiée",
+    guideFactUnverifiedDesc:
+      "Les sources consultées sont insuffisantes pour conclure, ou la recherche web n'est pas activée.",
+
+    guideSeverityHeading: "Niveaux de gravité",
+    guideSeverityIntro:
+      "Chaque sophisme ou biais est évalué selon son impact sur la sincérité et la validité de l'argumentation :",
+    guideSeverityLowTitle: "Faible",
+    guideSeverityLowDesc: "Biais mineur ou tournure maladroite sans incidence décisive sur la logique globale.",
+    guideSeverityMediumTitle: "Moyenne",
+    guideSeverityMediumDesc: "Distorsion sensible ou omission notable qui affaiblit nettement la portée du raisonnement.",
+    guideSeverityHighTitle: "Élevée",
+    guideSeverityHighDesc: "Manipulation caractérisée, contre-vérité grave ou sophisme invalidant la thèse défendue.",
+
+    guideTaxonomyHeading: "Répertoire des sophismes et biais",
+    guideTaxonomyIntro:
+      "Consultez les définitions complètes des catégories de sophismes, biais cognitifs et allégations répertoriés par Rhetorix :",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Refus du modèle : ${detail}` : "Le modèle a refusé d'analyser ce contenu."),
@@ -309,6 +443,83 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     toggleCustomModelBtn: "✍️ Custom input",
     toggleSelectModelBtn: "📋 Choose from list",
 
+    tabSettings: "Settings",
+    tabGuide: "Capabilities & Chart",
+    guideTitle: "Rhetorix — Capabilities & Guide",
+    guideIntro:
+      "Rhetorix is a critical thinking companion designed to dissect arguments in news articles, op-eds, and speeches. It uncovers reasoning fallacies, highlights persuasion tactics, and verifies factual claims against reliable evidence.",
+    guideCapabilitiesHeading: "Tool Capabilities",
+    guideCap1Title: "Rhetorical & Cognitive Analysis",
+    guideCap1Desc:
+      "Identifies logical fallacies and framing biases with detailed critiques and precise text quotes.",
+    guideCap2Title: "Fact-Checking & Web Search",
+    guideCap2Desc:
+      "Extracts verifiable claims and cross-checks them in real time using integrated web search grounding.",
+    guideCap3Title: "Clean Article Extraction",
+    guideCap3Desc:
+      "Isolates the core article text with Mozilla Readability, free from ads, banners, and navigation clutter.",
+    guideCap4Title: "Smart Chunking",
+    guideCap4Desc:
+      "Effortlessly processes short articles and long investigative reports through paragraph batching and consolidated synthesis.",
+    guideCap5Title: "Flexible Reading Layout",
+    guideCap5Desc:
+      "Explore insights in the interactive sidebar, directly in hover tooltips on the page, or both simultaneously.",
+    guideCap6Title: "Privacy & Zero Intermediary Server",
+    guideCap6Desc:
+      "No central Rhetorix server: your requests go straight to your chosen AI provider or run 100% locally on your machine.",
+
+    guideColorsHeading: "Color Chart & Highlighting",
+    guideColorsIntro:
+      "Highlight colors in the article text correspond directly to the sidebar cards, badges, and filters:",
+    guideColorSophismTitle: "Fallacies",
+    guideColorSophismDesc:
+      "Errors in logic, flawed reasoning, or manipulative arguments (straw man, ad hominem, false dilemma, etc.).",
+    guideColorSophismSample:
+      "“If we do not adopt this emergency measure immediately, our economy will collapse by the end of the month.”",
+    guideColorBiasTitle: "Cognitive & Editorial Biases",
+    guideColorBiasDesc:
+      "Biased framing, emotionally loaded language, omission of vital context, or cherry-picked evidence.",
+    guideColorBiasSample:
+      "“The self-proclaimed specialists once again attempted to impose their backward vision without any consultation.”",
+    guideColorFactualTitle: "Factual Claims",
+    guideColorFactualDesc:
+      "Statements asserting measurable facts, figures, historical dates, or attributed quotes.",
+    guideColorFactualSample:
+      "“The national unemployment rate dropped by 1.2% during the second quarter according to official statistics.”",
+    guideColorActiveTitle: "Active Selection / Focus",
+    guideColorActiveDesc:
+      "Golden spotlight highlighting the text quote corresponding to the card clicked or hovered in the sidebar.",
+    guideColorActiveSample:
+      "“Excerpt currently selected or hovered in the sidebar”",
+
+    guideFactCheckHeading: "Fact-Checking Verdicts",
+    guideFactCheckIntro:
+      "When web search is enabled, each factual claim is cross-referenced with trusted information sources:",
+    guideFactSupportedTitle: "Supported",
+    guideFactSupportedDesc: "The claim is verified and substantiated by reliable, corroborating sources.",
+    guideFactRefutedTitle: "Refuted",
+    guideFactRefutedDesc: "The claim is contradicted or disproven by documented facts and empirical data.",
+    guideFactMisleadingTitle: "Misleading",
+    guideFactMisleadingDesc:
+      "The claim contains an element of truth but is distorted, exaggerated, or stripped of context.",
+    guideFactUnverifiedTitle: "Unverified",
+    guideFactUnverifiedDesc:
+      "Available sources are inconclusive, or web search is turned off in settings.",
+
+    guideSeverityHeading: "Severity Levels",
+    guideSeverityIntro:
+      "Each detected issue is evaluated based on its impact on the integrity and validity of the discourse:",
+    guideSeverityLowTitle: "Low",
+    guideSeverityLowDesc: "Minor bias or awkward wording with negligible effect on the central thesis.",
+    guideSeverityMediumTitle: "Medium",
+    guideSeverityMediumDesc: "Noticeable distortion or omission that significantly weakens the argument.",
+    guideSeverityHighTitle: "High",
+    guideSeverityHighDesc: "Major manipulative tactic, severe falsehood, or fallacy invalidating the thesis.",
+
+    guideTaxonomyHeading: "Catalog of Fallacies & Biases",
+    guideTaxonomyIntro:
+      "Explore the complete definitions of all fallacy, bias, and claim categories cataloged by Rhetorix:",
+
     providerErrors: {
       refusal: (detail) => (detail ? `Model refusal: ${detail}` : "The model refused to analyze this content."),
       max_tokens: () => "Response truncated (max_tokens reached). Reduce chunk size in options.",
@@ -423,6 +634,83 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     modelHint: "Seleccione un modelo de la lista o cambie a entrada libre.",
     toggleCustomModelBtn: "✍️ Entrada libre",
     toggleSelectModelBtn: "📋 Elegir de la lista",
+
+    tabSettings: "Ajustes",
+    tabGuide: "Capacidades y guía",
+    guideTitle: "Rhetorix — Capacidades y guía",
+    guideIntro:
+      "Rhetorix es un asistente de pensamiento crítico diseñado para analizar artículos de prensa, editoriales y discursos en línea. Detecta fallas lógicas, arroja luz sobre tácticas de persuasión y contrasta afirmaciones con hechos comprobados.",
+    guideCapabilitiesHeading: "Capacidades de la herramienta",
+    guideCap1Title: "Análisis retórico y cognitivo",
+    guideCap1Desc:
+      "Detecta falacias lógicas y sesgos de encuadre con explicaciones críticas y citas textuales exactas.",
+    guideCap2Title: "Verificación de hechos y búsqueda web",
+    guideCap2Desc:
+      "Aísla afirmaciones comprobables y las contrasta en tiempo real gracias a los motores de búsqueda web integrados.",
+    guideCap3Title: "Extracción limpia del artículo",
+    guideCap3Desc:
+      "Extrae el texto principal con Mozilla Readability, libre de publicidad, menús y elementos distractores.",
+    guideCap4Title: "Fragmentación inteligente (Chunking)",
+    guideCap4Desc:
+      "Procesa con fluidez artículos breves y extensos mediante partición por párrafos y consolidación unificada.",
+    guideCap5Title: "Lectura personalizada",
+    guideCap5Desc:
+      "Consulte los análisis en el panel lateral interactivo, en globos emergentes en el texto o en ambos.",
+    guideCap6Title: "Privacidad sin servidor intermediario",
+    guideCap6Desc:
+      "Sin servidor central Rhetorix: las solicitudes van directamente a su proveedor de IA o se ejecutan 100% en local.",
+
+    guideColorsHeading: "Carta de colores y resaltado",
+    guideColorsIntro:
+      "Los colores de resaltado en el artículo coinciden con las tarjetas, distintivos y filtros del panel lateral:",
+    guideColorSophismTitle: "Falacias",
+    guideColorSophismDesc:
+      "Errores lógicos, razonamientos engañosos o manipulaciones argumentativas (hombre de paja, ad hominem, falso dilema, etc.).",
+    guideColorSophismSample:
+      "«Si no adoptamos de inmediato esta medida de urgencia, nuestra economía colapsará antes de fin de mes.»",
+    guideColorBiasTitle: "Sesgos cognitivos y editoriales",
+    guideColorBiasDesc:
+      "Encuadres orientados, lenguaje cargado, omisiones de contexto o selección interesada de hechos.",
+    guideColorBiasSample:
+      "«Los supuestos especialistas intentaron una vez más imponer su visión retrógrada sin consulta alguna.»",
+    guideColorFactualTitle: "Afirmaciones factuales",
+    guideColorFactualDesc:
+      "Afirmaciones sobre hechos, cifras, fechas o citas atribuibles y verificables.",
+    guideColorFactualSample:
+      "«La tasa de desempleo nacional se redujo un 1,2% durante el segundo semestre según el instituto oficial.»",
+    guideColorActiveTitle: "Selección activa / Enfoque",
+    guideColorActiveDesc:
+      "Resaltado dorado que señala en la página la cita de la tarjeta seleccionada o sobrevolada en el panel.",
+    guideColorActiveSample:
+      "«Extracto actualmente seleccionado o sobrevolado en el panel lateral»",
+
+    guideFactCheckHeading: "Estados de verificación factual",
+    guideFactCheckIntro:
+      "Con la búsqueda web activada, cada afirmación factual se contrasta con fuentes contrastadas:",
+    guideFactSupportedTitle: "Respaldada",
+    guideFactSupportedDesc: "La afirmación está verificada y corroborada por fuentes documentadas e independientes.",
+    guideFactRefutedTitle: "Refutada",
+    guideFactRefutedDesc: "La afirmación es contradicha o desmentida por datos y hechos demostrados.",
+    guideFactMisleadingTitle: "Engañosa",
+    guideFactMisleadingDesc:
+      "Contiene algo de verdad pero está descontextualizada, exagerada o deformada.",
+    guideFactUnverifiedTitle: "No verificada",
+    guideFactUnverifiedDesc:
+      "Las fuentes son insuficientes para concluir o la búsqueda web está desactivada.",
+
+    guideSeverityHeading: "Niveles de gravedad",
+    guideSeverityIntro:
+      "Cada problema detectado se evalúa según su impacto en la solidez y honestidad de la argumentación:",
+    guideSeverityLowTitle: "Baja",
+    guideSeverityLowDesc: "Sesgo leve o redacción torpe sin alterar de forma determinante la tesis central.",
+    guideSeverityMediumTitle: "Media",
+    guideSeverityMediumDesc: "Distorsión notable u omisión que debilita sensiblemente el peso del razonamiento.",
+    guideSeverityHighTitle: "Alta",
+    guideSeverityHighDesc: "Manipulación deliberada, falsedad grave o falacia que invalida el razonamiento.",
+
+    guideTaxonomyHeading: "Repertorio de falacias y sesgos",
+    guideTaxonomyIntro:
+      "Consulte las definiciones completas de las categorías de falacias, sesgos y hechos catalogadas por Rhetorix:",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rechazo del modelo: ${detail}` : "El modelo rechazó analizar este contenido."),
@@ -539,6 +827,83 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     toggleCustomModelBtn: "✍️ Freie Eingabe",
     toggleSelectModelBtn: "📋 Aus Liste wählen",
 
+    tabSettings: "Einstellungen",
+    tabGuide: "Funktionen & Farbkarte",
+    guideTitle: "Rhetorix — Funktionen & Leitfaden",
+    guideIntro:
+      "Rhetorix ist ein Assistent für kritisches Denken, der Artikel, Leitartikel und Online-Reden analysiert. Er deckt argumentative Mängel auf, beleuchtet manipulative Taktiken und gleicht Behauptungen mit belegten Fakten ab.",
+    guideCapabilitiesHeading: "Funktionen des Werkzeugs",
+    guideCap1Title: "Rhetorische & kognitive Analyse",
+    guideCap1Desc:
+      "Erkennt logische Fehlschlüsse und Verzerrungen mit fundierter Kritik und präzisen Textzitaten.",
+    guideCap2Title: "Faktencheck & Websuche",
+    guideCap2Desc:
+      "Isoliert prüfbare Aussagen und gleicht sie in Echtzeit über integrierte Websuchwerkzeuge ab.",
+    guideCap3Title: "Saubere Artikelextraktion",
+    guideCap3Desc:
+      "Extrahiert den Kerntext mit Mozilla Readability, befreit von Werbebannern, Menüs und Störfaktoren.",
+    guideCap4Title: "Intelligente Aufteilung (Chunking)",
+    guideCap4Desc:
+      "Bewältigt kurze Artikel ebenso wie umfangreiche Dossiers durch abschnittsweise Segmentierung und Gesamtsynthese.",
+    guideCap5Title: "Flexible Leseansicht",
+    guideCap5Desc:
+      "Ergebnisse in der interaktiven Seitenleiste, als Tooltips direkt beim Textüberfahren oder kombiniert anzeigen.",
+    guideCap6Title: "Datenschutz ohne Drittanbieterserver",
+    guideCap6Desc:
+      "Kein Rhetorix-Zentralserver: Anfragen gehen direkt an den gewählten KI-Anbieter oder laufen 100% lokal.",
+
+    guideColorsHeading: "Farbkarte und Texthervorhebung",
+    guideColorsIntro:
+      "Die Hervorhebungsfarben im Artikeltext entsprechen exakt den Karten, Badges und Filtern der Seitenleiste:",
+    guideColorSophismTitle: "Fehlschlüsse",
+    guideColorSophismDesc:
+      "Logische Fehler, irreführende Begründungen oder manipulative Taktiken (Strohmann, Ad hominem, falsches Dilemma usw.).",
+    guideColorSophismSample:
+      "„Wenn wir diese Notmaßnahme nicht unverzüglich beschließen, wird unsere Wirtschaft bis Monatsende kollabieren.“",
+    guideColorBiasTitle: "Kognitive & redaktionelle Verzerrungen",
+    guideColorBiasDesc:
+      "Tendenziöses Framing, emotional aufgeladene Sprache, Auslassung von Kontext oder einseitige Auswahl von Fakten.",
+    guideColorBiasSample:
+      "„Die sogenannten Experten haben erneut versucht, ihre rückständige Sichtweise ohne jede Mitsprache durchzusetzen.“",
+    guideColorFactualTitle: "Faktenbehauptungen",
+    guideColorFactualDesc:
+      "Aussagen über messbare Fakten, Zahlen, historische Daten oder zugeschriebene Zitate.",
+    guideColorFactualSample:
+      "„Die Arbeitslosenquote ist laut Statistischem Bundesamt im zweiten Halbjahr um 1,2% gesunken.“",
+    guideColorActiveTitle: "Aktive Auswahl / Fokus",
+    guideColorActiveDesc:
+      "Goldgelbe Hervorhebung des Zitats zur aktuell in der Seitenleiste angeklickten oder überfahrenen Karte.",
+    guideColorActiveSample:
+      "„Aktuell in der Seitenleiste ausgewähltes oder überfahrenes Textzitat“",
+
+    guideFactCheckHeading: "Faktencheck-Status",
+    guideFactCheckIntro:
+      "Bei aktivierter Websuche wird jede Tatsachenbehauptung mit verlässlichen Quellen abgeglichen:",
+    guideFactSupportedTitle: "Bestätigt",
+    guideFactSupportedDesc: "Die Behauptung ist durch übereinstimmende und verlässliche Quellen belegt.",
+    guideFactRefutedTitle: "Widerlegt",
+    guideFactRefutedDesc: "Die Behauptung wird durch nachweisbare Fakten und Daten eindeutig widerlegt.",
+    guideFactMisleadingTitle: "Irreführend",
+    guideFactMisleadingDesc:
+      "Enthält einen wahren Kern, ist jedoch verzerrt, übertrieben oder aus dem Zusammenhang gerissen.",
+    guideFactUnverifiedTitle: "Nicht verifiziert",
+    guideFactUnverifiedDesc:
+      "Die Quellenlage reicht für ein Urteil nicht aus oder die Websuche ist deaktiviert.",
+
+    guideSeverityHeading: "Schweregrade",
+    guideSeverityIntro:
+      "Jeder erkannte Mangel wird nach seiner Auswirkung auf die logische Stichhaltigkeit bewertet:",
+    guideSeverityLowTitle: "Gering",
+    guideSeverityLowDesc: "Geringfügige Verzerrung oder unglückliche Formulierung ohne Einfluss auf die Kernthese.",
+    guideSeverityMediumTitle: "Mittel",
+    guideSeverityMediumDesc: "Spürbare Verzerrung oder Auslassung, welche die Argumentation deutlich schwächt.",
+    guideSeverityHighTitle: "Hoch",
+    guideSeverityHighDesc: "Gezielte Manipulation, grobe Falschinformation oder Fehlschluss, der die These entkräftet.",
+
+    guideTaxonomyHeading: "Katalog der Fehlschlüsse & Verzerrungen",
+    guideTaxonomyIntro:
+      "Detaillierte Definitionen aller Kategorien von Fehlschlüssen und Verzerrungen:",
+
     providerErrors: {
       refusal: (detail) => (detail ? `Ablehnung durch das Modell: ${detail}` : "Das Modell hat die Analyse dieses Inhalts abgelehnt."),
       max_tokens: () => "Antwort abgeschnitten (max_tokens erreicht). Reduzieren Sie die Blockgröße in den Optionen.",
@@ -653,6 +1018,83 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     modelHint: "Seleziona un modello dall'elenco o passa all'inserimento libero.",
     toggleCustomModelBtn: "✍️ Inserimento libero",
     toggleSelectModelBtn: "📋 Scegli dall'elenco",
+
+    tabSettings: "Impostazioni",
+    tabGuide: "Funzionalità e Guida colori",
+    guideTitle: "Rhetorix — Funzionalità e Guida",
+    guideIntro:
+      "Rhetorix è un assistente per il pensiero critico ideato per analizzare articoli di stampa, editoriali e discorsi online. Individua fallacie logiche, evidenzia le tecniche di persuasione e confronta le affermazioni con fatti accertati.",
+    guideCapabilitiesHeading: "Funzionalità dello strumento",
+    guideCap1Title: "Analisi retorica e cognitiva",
+    guideCap1Desc:
+      "Rileva fallacie logiche e bias di inquadramento con spiegazioni critiche e citazioni testuali esatte.",
+    guideCap2Title: "Fact-checking e ricerca web",
+    guideCap2Desc:
+      "Isola le affermazioni verificabili e le confronta in tempo reale grazie agli strumenti di ricerca web integrati.",
+    guideCap3Title: "Estrazione pulita del testo",
+    guideCap3Desc:
+      "Estrae il corpo dell'articolo con Mozilla Readability, ripulito da pubblicità, banner e menu.",
+    guideCap4Title: "Suddivisione intelligente (Chunking)",
+    guideCap4Desc:
+      "Elabora con fluidità articoli brevi e lunghi reportage mediante partizionamento per paragrafi e sintesi consolidata.",
+    guideCap5Title: "Visualizzazione personalizzata",
+    guideCap5Desc:
+      "Consulta i risultati nel pannello laterale, nei tooltip al passaggio del mouse o in entrambe le modalità.",
+    guideCap6Title: "Privacy senza server intermediari",
+    guideCap6Desc:
+      "Nessun server centrale Rhetorix: le richieste vanno direttamente al fornitore configurato o girano al 100% in locale.",
+
+    guideColorsHeading: "Guida colori ed evidenziazione",
+    guideColorsIntro:
+      "I colori di evidenziazione nel testo corrispondono esattamente alle schede, badge e filtri del pannello laterale:",
+    guideColorSophismTitle: "Fallacie",
+    guideColorSophismDesc:
+      "Errori di logica, ragionamenti ingannevoli o manipolazioni argomentative (uomo di paglia, ad hominem, falso dilemma, ecc.).",
+    guideColorSophismSample:
+      "«Se non adottiamo immediatamente questo provvedimento d'urgenza, la nostra economia crollerà entro fine mese.»",
+    guideColorBiasTitle: "Bias cognitivi ed editoriali",
+    guideColorBiasDesc:
+      "Inquadramenti orientati, linguaggio emotivo, omissioni di contesto o selezione partigiana dei fatti.",
+    guideColorBiasSample:
+      "«I cosiddetti esperti hanno tentato ancora una volta di imporre la loro visione retrograda senza alcun confronto.»",
+    guideColorFactualTitle: "Affermazioni di fatto",
+    guideColorFactualDesc:
+      "Affermazioni riguardanti fatti misurabili, numeri, date storiche o citazioni attribuite verificabili.",
+    guideColorFactualSample:
+      "«Il tasso di disoccupazione nazionale è diminuito dell'1,2% nel secondo semestre secondo i dati ufficiali.»",
+    guideColorActiveTitle: "Selezione attiva / Focus",
+    guideColorActiveDesc:
+      "Evidenziazione dorata che individua nella pagina la citazione corrispondente alla scheda selezionata nel pannello.",
+    guideColorActiveSample:
+      "«Estratto attualmente selezionato o puntato con il cursore nel pannello laterale»",
+
+    guideFactCheckHeading: "Esiti del fact-checking",
+    guideFactCheckIntro:
+      "Quando la ricerca web è attiva, ogni affermazione di fatto viene confrontata con fonti autorevoli:",
+    guideFactSupportedTitle: "Confermata",
+    guideFactSupportedDesc: "L'affermazione è verificata e supportata da fonti indipendenti e concordanti.",
+    guideFactRefutedTitle: "Smentita",
+    guideFactRefutedDesc: "L'affermazione è contraddetta o smentita dai fatti e dai dati accertati.",
+    guideFactMisleadingTitle: "Fuorviante",
+    guideFactMisleadingDesc:
+      "Contiene un fondo di verità ma è distorta, esagerata o decontestualizzata.",
+    guideFactUnverifiedTitle: "Non verificata",
+    guideFactUnverifiedDesc:
+      "Le fonti consultate sono insufficienti per concludere o la ricerca web è disattivata.",
+
+    guideSeverityHeading: "Livelli di gravità",
+    guideSeverityIntro:
+      "Ogni anomalia rilevata è valutata in base al suo impatto sull'onestà e la validità dell'argomentazione:",
+    guideSeverityLowTitle: "Bassa",
+    guideSeverityLowDesc: "Bias marginale o formulazione imprecisa senza impatto determinante sulla tesi centrale.",
+    guideSeverityMediumTitle: "Media",
+    guideSeverityMediumDesc: "Distorsione sensibile o omissione che indebolisce nettamente la portata del ragionamento.",
+    guideSeverityHighTitle: "Alta",
+    guideSeverityHighDesc: "Manipolazione palese, falsità grave o fallacia che invalida la tesi sostenuta.",
+
+    guideTaxonomyHeading: "Repertorio delle fallacie e dei bias",
+    guideTaxonomyIntro:
+      "Consulta le definizioni complete delle categorie censite da Rhetorix:",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rifiuto del modello: ${detail}` : "Il modello ha rifiutato di analizzare questo contenuto."),

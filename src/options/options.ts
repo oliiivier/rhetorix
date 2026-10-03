@@ -3,6 +3,7 @@ import { DEFAULT_MODELS, loadConfig, providerOrigin, saveConfig, type Config, ty
 import { ext } from "../ext";
 import { getUiStrings } from "../i18n";
 import { FALLBACK_MODELS, fetchAvailableModels, type ModelOption } from "../providers/models";
+import { LABELS, labelDef, type Category } from "../taxonomy";
 
 const form = document.getElementById("form") as HTMLFormElement;
 const field = <T extends HTMLInputElement | HTMLSelectElement>(name: string) => form.elements.namedItem(name) as T;
@@ -62,7 +63,124 @@ function applyOptionsI18n(lang: string): void {
   setTxt("clear-cache", t.clearCacheBtn);
   setTxt("heading-privacy", t.privacySectionTitle);
   setTxt("privacy-text", t.privacyText);
+
+  // Onglets et Guide
+  setTxt("tab-label-settings", t.tabSettings);
+  setTxt("tab-label-guide", t.tabGuide);
+  setTxt("guide-intro", t.guideIntro);
+
+  setTxt("guide-cap-heading", t.guideCapabilitiesHeading);
+  setTxt("guide-cap-1-title", `🧠 ${t.guideCap1Title}`);
+  setTxt("guide-cap-1-desc", t.guideCap1Desc);
+  setTxt("guide-cap-2-title", `🔍 ${t.guideCap2Title}`);
+  setTxt("guide-cap-2-desc", t.guideCap2Desc);
+  setTxt("guide-cap-3-title", `📑 ${t.guideCap3Title}`);
+  setTxt("guide-cap-3-desc", t.guideCap3Desc);
+  setTxt("guide-cap-4-title", `⚡ ${t.guideCap4Title}`);
+  setTxt("guide-cap-4-desc", t.guideCap4Desc);
+  setTxt("guide-cap-5-title", `🎨 ${t.guideCap5Title}`);
+  setTxt("guide-cap-5-desc", t.guideCap5Desc);
+  setTxt("guide-cap-6-title", `🔒 ${t.guideCap6Title}`);
+  setTxt("guide-cap-6-desc", t.guideCap6Desc);
+
+  setTxt("guide-colors-heading", t.guideColorsHeading);
+  setTxt("guide-colors-intro", t.guideColorsIntro);
+  setTxt("badge-demo-sophism", t.categories.sophism);
+  setTxt("guide-color-sophism-title", t.guideColorSophismTitle);
+  setTxt("guide-color-sophism-sample", t.guideColorSophismSample);
+  setTxt("guide-color-sophism-desc", t.guideColorSophismDesc);
+
+  setTxt("badge-demo-bias", t.categories.bias);
+  setTxt("guide-color-bias-title", t.guideColorBiasTitle);
+  setTxt("guide-color-bias-sample", t.guideColorBiasSample);
+  setTxt("guide-color-bias-desc", t.guideColorBiasDesc);
+
+  setTxt("badge-demo-factual", t.categories.factual_claim);
+  setTxt("guide-color-factual-title", t.guideColorFactualTitle);
+  setTxt("guide-color-factual-sample", t.guideColorFactualSample);
+  setTxt("guide-color-factual-desc", t.guideColorFactualDesc);
+
+  setTxt("badge-demo-active", "Actif");
+  setTxt("guide-color-active-title", t.guideColorActiveTitle);
+  setTxt("guide-color-active-sample", t.guideColorActiveSample);
+  setTxt("guide-color-active-desc", t.guideColorActiveDesc);
+
+  setTxt("guide-fact-heading", t.guideFactCheckHeading);
+  setTxt("guide-fact-intro", t.guideFactCheckIntro);
+  setTxt("guide-fact-supported-title", t.guideFactSupportedTitle);
+  setTxt("guide-fact-supported-desc", t.guideFactSupportedDesc);
+  setTxt("guide-fact-refuted-title", t.guideFactRefutedTitle);
+  setTxt("guide-fact-refuted-desc", t.guideFactRefutedDesc);
+  setTxt("guide-fact-misleading-title", t.guideFactMisleadingTitle);
+  setTxt("guide-fact-misleading-desc", t.guideFactMisleadingDesc);
+  setTxt("guide-fact-unverified-title", t.guideFactUnverifiedTitle);
+  setTxt("guide-fact-unverified-desc", t.guideFactUnverifiedDesc);
+
+  setTxt("guide-severity-heading", t.guideSeverityHeading);
+  setTxt("guide-severity-intro", t.guideSeverityIntro);
+  setTxt("guide-severity-low-title", t.guideSeverityLowTitle);
+  setTxt("guide-severity-low-desc", t.guideSeverityLowDesc);
+  setTxt("guide-severity-medium-title", t.guideSeverityMediumTitle);
+  setTxt("guide-severity-medium-desc", t.guideSeverityMediumDesc);
+  setTxt("guide-severity-high-title", t.guideSeverityHighTitle);
+  setTxt("guide-severity-high-desc", t.guideSeverityHighDesc);
+
+  setTxt("guide-taxonomy-heading", t.guideTaxonomyHeading);
+  setTxt("guide-taxonomy-intro", t.guideTaxonomyIntro);
+
+  renderTaxonomyGuide(lang);
   syncProvider();
+}
+
+function renderTaxonomyGuide(lang: string): void {
+  const container = document.getElementById("taxonomy-container");
+  if (!container) return;
+  container.replaceChildren();
+
+  const t = getUiStrings(lang);
+  const categories: Category[] = ["sophism", "bias", "factual_claim"];
+
+  for (const cat of categories) {
+    const details = document.createElement("details");
+    details.className = "taxonomy-category-details";
+    if (cat === "sophism") details.open = true;
+
+    const summary = document.createElement("summary");
+    summary.className = "taxonomy-category-summary";
+
+    const badge = document.createElement("span");
+    badge.className = `badge ${cat}`;
+    badge.textContent = t.categories[cat];
+
+    const count = Object.keys(LABELS[cat]).length;
+    const countSpan = document.createElement("span");
+    countSpan.className = "taxonomy-category-count";
+    countSpan.textContent = ` (${count})`;
+
+    summary.append(badge, countSpan);
+    details.appendChild(summary);
+
+    const dl = document.createElement("dl");
+    dl.className = "taxonomy-list";
+
+    for (const key of Object.keys(LABELS[cat])) {
+      const def = labelDef(cat, key, lang);
+      if (!def) continue;
+
+      const dt = document.createElement("dt");
+      dt.className = "taxonomy-term";
+      dt.textContent = def.name;
+
+      const dd = document.createElement("dd");
+      dd.className = "taxonomy-desc";
+      dd.textContent = def.definition;
+
+      dl.append(dt, dd);
+    }
+
+    details.appendChild(dl);
+    container.appendChild(details);
+  }
 }
 
 let isCustomModelMode = false;
@@ -366,4 +484,32 @@ document.getElementById("clear-cache")!.addEventListener("click", () => {
   void clearCache().then(() => (document.getElementById("cache-status")!.textContent = t.cacheCleared));
 });
 
+function switchTab(tab: "settings" | "guide"): void {
+  const isSettings = tab === "settings";
+  const btnSettings = document.getElementById("tab-btn-settings");
+  const btnGuide = document.getElementById("tab-btn-guide");
+  const panelSettings = document.getElementById("panel-settings");
+  const panelGuide = document.getElementById("panel-guide");
+
+  btnSettings?.classList.toggle("active", isSettings);
+  btnSettings?.setAttribute("aria-selected", String(isSettings));
+  btnGuide?.classList.toggle("active", !isSettings);
+  btnGuide?.setAttribute("aria-selected", String(!isSettings));
+
+  if (panelSettings) panelSettings.hidden = !isSettings;
+  if (panelGuide) panelGuide.hidden = isSettings;
+
+  if (window.history.replaceState) {
+    window.history.replaceState(null, "", isSettings ? "#settings" : "#guide");
+  }
+}
+
+document.getElementById("tab-btn-settings")?.addEventListener("click", () => switchTab("settings"));
+document.getElementById("tab-btn-guide")?.addEventListener("click", () => switchTab("guide"));
+
+if (window.location.hash === "#guide" || window.location.hash === "#about") {
+  switchTab("guide");
+}
+
 void loadConfig().then(fillForm);
+

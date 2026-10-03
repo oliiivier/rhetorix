@@ -8,8 +8,20 @@
   </head>
   <body class="options">
     <main>
-      <h1 id="title">Rhetorix — options</h1>
-      <form id="form">
+      <div class="options-header">
+        <h1 id="title">Rhetorix</h1>
+        <nav class="options-nav" role="tablist" aria-label="Navigation">
+          <button type="button" class="nav-tab active" id="tab-btn-settings" role="tab" aria-selected="true" aria-controls="panel-settings">
+            ⚙️ <span id="tab-label-settings">Paramètres</span>
+          </button>
+          <button type="button" class="nav-tab" id="tab-btn-guide" role="tab" aria-selected="false" aria-controls="panel-guide">
+            📖 <span id="tab-label-guide">Capacités & Charte</span>
+          </button>
+        </nav>
+      </div>
+
+      <div id="panel-settings" role="tabpanel" aria-labelledby="tab-btn-settings">
+        <form id="form">
         <label>
           <span id="lbl-provider">Fournisseur</span>
           <select name="provider">
@@ -121,7 +133,164 @@
           Rhetorix ne dispose d'aucun serveur.
         </p>
       </section>
-    </main>
+    </div>
+
+    <!-- ONGLET 2 : GUIDE & CHARTE DE COULEUR -->
+    <div id="panel-guide" role="tabpanel" aria-labelledby="tab-btn-guide" hidden>
+      <p id="guide-intro" class="guide-intro"></p>
+
+      <!-- Section 1 : Capacités de l'outil -->
+      <section class="guide-section">
+        <h2 id="guide-cap-heading">Capacités de l'outil</h2>
+        <div class="capabilities-grid">
+          <div class="capability-item">
+            <h3 id="guide-cap-1-title">🧠 Analyse rhétorique & cognitive</h3>
+            <p id="guide-cap-1-desc"></p>
+          </div>
+          <div class="capability-item">
+            <h3 id="guide-cap-2-title">🔍 Vérification factuelle & Recherche web</h3>
+            <p id="guide-cap-2-desc"></p>
+          </div>
+          <div class="capability-item">
+            <h3 id="guide-cap-3-title">📑 Extraction d'article propre</h3>
+            <p id="guide-cap-3-desc"></p>
+          </div>
+          <div class="capability-item">
+            <h3 id="guide-cap-4-title">⚡ Découpage intelligent (Chunking)</h3>
+            <p id="guide-cap-4-desc"></p>
+          </div>
+          <div class="capability-item">
+            <h3 id="guide-cap-5-title">🎨 Affichage adapté à votre lecture</h3>
+            <p id="guide-cap-5-desc"></p>
+          </div>
+          <div class="capability-item">
+            <h3 id="guide-cap-6-title">🔒 Confidentialité & Zéro serveur tiers</h3>
+            <p id="guide-cap-6-desc"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2 : Charte de couleur et surlignage -->
+      <section class="guide-section">
+        <h2 id="guide-colors-heading">Charte de couleur et surlignage</h2>
+        <p id="guide-colors-intro" class="section-intro"></p>
+        <div class="color-chart-grid">
+          <div class="color-chart-item sophism">
+            <div class="color-chart-header">
+              <span class="badge sophism" id="badge-demo-sophism">Sophisme</span>
+              <span class="color-name" id="guide-color-sophism-title">Sophismes</span>
+            </div>
+            <div class="color-sample">
+              <span class="demo-highlight demo-sophism" id="guide-color-sophism-sample"></span>
+            </div>
+            <p class="color-chart-desc" id="guide-color-sophism-desc"></p>
+          </div>
+
+          <div class="color-chart-item bias">
+            <div class="color-chart-header">
+              <span class="badge bias" id="badge-demo-bias">Biais</span>
+              <span class="color-name" id="guide-color-bias-title">Biais cognitifs & éditoriaux</span>
+            </div>
+            <div class="color-sample">
+              <span class="demo-highlight demo-bias" id="guide-color-bias-sample"></span>
+            </div>
+            <p class="color-chart-desc" id="guide-color-bias-desc"></p>
+          </div>
+
+          <div class="color-chart-item factual">
+            <div class="color-chart-header">
+              <span class="badge factual_claim" id="badge-demo-factual">Allégation</span>
+              <span class="color-name" id="guide-color-factual-title">Allégations factuelles</span>
+            </div>
+            <div class="color-sample">
+              <span class="demo-highlight demo-factual" id="guide-color-factual-sample"></span>
+            </div>
+            <p class="color-chart-desc" id="guide-color-factual-desc"></p>
+          </div>
+
+          <div class="color-chart-item active-focus">
+            <div class="color-chart-header">
+              <span class="badge badge-active-demo" id="badge-demo-active">Actif</span>
+              <span class="color-name" id="guide-color-active-title">Sélection active / Focus</span>
+            </div>
+            <div class="color-sample">
+              <span class="demo-highlight demo-active" id="guide-color-active-sample"></span>
+            </div>
+            <p class="color-chart-desc" id="guide-color-active-desc"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3 : Statuts de vérification factuelle -->
+      <section class="guide-section">
+        <h2 id="guide-fact-heading">Statuts de vérification des faits</h2>
+        <p id="guide-fact-intro" class="section-intro"></p>
+        <div class="fact-check-grid">
+          <div class="status-card status-supported-card">
+            <div class="status-card-header">
+              <span class="fact-indicator supported">●</span>
+              <span id="guide-fact-supported-title">Étayée</span>
+            </div>
+            <p id="guide-fact-supported-desc"></p>
+          </div>
+          <div class="status-card status-refuted-card">
+            <div class="status-card-header">
+              <span class="fact-indicator refuted">●</span>
+              <span id="guide-fact-refuted-title">Réfutée</span>
+            </div>
+            <p id="guide-fact-refuted-desc"></p>
+          </div>
+          <div class="status-card status-misleading-card">
+            <div class="status-card-header">
+              <span class="fact-indicator misleading">●</span>
+              <span id="guide-fact-misleading-title">Trompeuse</span>
+            </div>
+            <p id="guide-fact-misleading-desc"></p>
+          </div>
+          <div class="status-card status-unverified-card">
+            <div class="status-card-header">
+              <span class="fact-indicator unverified">●</span>
+              <span id="guide-fact-unverified-title">Non vérifiée</span>
+            </div>
+            <p id="guide-fact-unverified-desc"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4 : Niveaux de gravité -->
+      <section class="guide-section">
+        <h2 id="guide-severity-heading">Niveaux de gravité</h2>
+        <p id="guide-severity-intro" class="section-intro"></p>
+        <div class="severity-grid">
+          <div class="status-card severity-low-card">
+            <div class="status-card-header">
+              <span class="severity-tag low" id="guide-severity-low-title">Faible</span>
+            </div>
+            <p id="guide-severity-low-desc"></p>
+          </div>
+          <div class="status-card severity-medium-card">
+            <div class="status-card-header">
+              <span class="severity-tag medium" id="guide-severity-medium-title">Moyenne</span>
+            </div>
+            <p id="guide-severity-medium-desc"></p>
+          </div>
+          <div class="status-card severity-high-card">
+            <div class="status-card-header">
+              <span class="severity-tag high" id="guide-severity-high-title">Élevée</span>
+            </div>
+            <p id="guide-severity-high-desc"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5 : Répertoire complet des sophismes et biais -->
+      <section class="guide-section">
+        <h2 id="guide-taxonomy-heading">Répertoire des sophismes et biais</h2>
+        <p id="guide-taxonomy-intro" class="section-intro"></p>
+        <div id="taxonomy-container" class="taxonomy-container"></div>
+      </section>
+    </div>
+  </main>
     <script src="options.js"></script>
   </body>
 </html>

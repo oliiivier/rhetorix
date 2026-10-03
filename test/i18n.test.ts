@@ -71,6 +71,21 @@ describe("i18n module", () => {
       expect(strings.modelHint).toBeTruthy();
       expect(strings.toggleCustomModelBtn).toBeTruthy();
       expect(strings.toggleSelectModelBtn).toBeTruthy();
+
+      // Vérification des onglets et du guide d'information
+      expect(strings.tabSettings).toBeTruthy();
+      expect(strings.tabGuide).toBeTruthy();
+      expect(strings.guideTitle).toBeTruthy();
+      expect(strings.guideIntro).toBeTruthy();
+      expect(strings.guideCapabilitiesHeading).toBeTruthy();
+      expect(strings.guideCap1Title).toBeTruthy();
+      expect(strings.guideColorsHeading).toBeTruthy();
+      expect(strings.guideColorSophismTitle).toBeTruthy();
+      expect(strings.guideFactCheckHeading).toBeTruthy();
+      expect(strings.guideFactSupportedTitle).toBeTruthy();
+      expect(strings.guideSeverityHeading).toBeTruthy();
+      expect(strings.guideSeverityHighTitle).toBeTruthy();
+      expect(strings.guideTaxonomyHeading).toBeTruthy();
     }
   });
 
