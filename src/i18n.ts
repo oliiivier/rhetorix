@@ -77,8 +77,6 @@ export interface UiStrings {
   getAnthropicKeyBtn: string;
   presetOllamaBtn: string;
   presetOllamaSuccess: string;
-  presetClaudeBridgeBtn: string;
-  presetClaudeBridgeSuccess: string;
   chromeAiOption: string;
   chromeAiHint: string;
   apiKeyPlaceholderOllama: string;
@@ -88,13 +86,6 @@ export interface UiStrings {
   modelHint: string;
   toggleCustomModelBtn: string;
   toggleSelectModelBtn: string;
-  anthropicAuthModeLabel: string;
-  anthropicModeApiKey: string;
-  anthropicModeOAuth: string;
-  apiKeyLabelOAuth: string;
-  apiKeyHintOAuth: string;
-  copySetupTokenBtn: string;
-  copiedToClipboard: string;
 
   // Erreurs providers
   providerErrors: Record<ProviderErrorCode, (detail?: string) => string>;
@@ -193,9 +184,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Obtenir une clé Anthropic ↗",
     presetOllamaBtn: "🦙 Configurer pour Ollama local (zéro clé)",
     presetOllamaSuccess: "Paramètres appliqués pour Ollama local (http://localhost:11434/v1, mistral).",
-    presetClaudeBridgeBtn: "⚡ Configurer pour le pont Claude Code local (Abonnement)",
-    presetClaudeBridgeSuccess:
-      "Paramètres appliqués pour le pont Claude Code local (http://localhost:8080/v1). Lancez 'npm run bridge' dans le terminal.",
     chromeAiOption: "Chrome Built-in AI (Gemini Nano local, sans clé)",
     chromeAiHint: "Exécution 100% locale via Gemini Nano. Aucune clé API ni compte requis, gratuit et confidentiel.",
     apiKeyPlaceholderOllama: "Facultatif pour Ollama / LM Studio local",
@@ -205,14 +193,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     modelHint: "Sélectionnez un modèle dans la liste ou passez en saisie libre.",
     toggleCustomModelBtn: "✍️ Saisie libre",
     toggleSelectModelBtn: "📋 Choisir dans la liste",
-    anthropicAuthModeLabel: "Mode d'authentification Anthropic",
-    anthropicModeApiKey: "🔑 Clé API (Pay-as-you-go)",
-    anthropicModeOAuth: "⚡ Abonnement Claude (OAuth)",
-    apiKeyLabelOAuth: "Token OAuth Claude Code (Abonnement)",
-    apiKeyHintOAuth:
-      "Générez votre token dans un terminal avec 'claude setup-token' puis collez-le ici. Vos requêtes seront imputées à votre abonnement Claude Pro / Max.",
-    copySetupTokenBtn: "📋 Copier 'claude setup-token'",
-    copiedToClipboard: "Copié dans le presse-papiers !",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Refus du modèle : ${detail}` : "Le modèle a refusé d'analyser ce contenu."),
@@ -319,9 +299,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Get an Anthropic API key ↗",
     presetOllamaBtn: "🦙 Configure for local Ollama (no key)",
     presetOllamaSuccess: "Settings applied for local Ollama (http://localhost:11434/v1, mistral).",
-    presetClaudeBridgeBtn: "⚡ Configure for local Claude Code bridge (Subscription)",
-    presetClaudeBridgeSuccess:
-      "Settings applied for local Claude Code bridge (http://localhost:8080/v1). Run 'npm run bridge' in the terminal.",
     chromeAiOption: "Chrome Built-in AI (local Gemini Nano, no key)",
     chromeAiHint: "Runs 100% locally with Gemini Nano. No API key or account required, free and private.",
     apiKeyPlaceholderOllama: "Optional for local Ollama / LM Studio",
@@ -331,14 +308,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     modelHint: "Select a model from the list or switch to custom input.",
     toggleCustomModelBtn: "✍️ Custom input",
     toggleSelectModelBtn: "📋 Choose from list",
-    anthropicAuthModeLabel: "Anthropic authentication mode",
-    anthropicModeApiKey: "🔑 API Key (Pay-as-you-go)",
-    anthropicModeOAuth: "⚡ Claude Subscription (OAuth)",
-    apiKeyLabelOAuth: "Claude Code OAuth Token (Subscription)",
-    apiKeyHintOAuth:
-      "Generate your token in a terminal with 'claude setup-token' then paste it here. Requests will be billed to your Claude Pro / Max subscription.",
-    copySetupTokenBtn: "📋 Copy 'claude setup-token'",
-    copiedToClipboard: "Copied to clipboard!",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Model refusal: ${detail}` : "The model refused to analyze this content."),
@@ -445,9 +414,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Obtener una clave Anthropic ↗",
     presetOllamaBtn: "🦙 Configurar para Ollama local (sin clave)",
     presetOllamaSuccess: "Ajustes aplicados para Ollama local (http://localhost:11434/v1, mistral).",
-    presetClaudeBridgeBtn: "⚡ Configurar para el puente local de Claude Code (Suscripción)",
-    presetClaudeBridgeSuccess:
-      "Ajustes aplicados para el puente local de Claude Code (http://localhost:8080/v1). Ejecute 'npm run bridge' en el terminal.",
     chromeAiOption: "Chrome Built-in AI (Gemini Nano local, sin clave)",
     chromeAiHint: "Ejecución 100% local con Gemini Nano. Sin clave API ni cuenta, gratuito y privado.",
     apiKeyPlaceholderOllama: "Opcional para Ollama / LM Studio local",
@@ -457,14 +423,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     modelHint: "Seleccione un modelo de la lista o cambie a entrada libre.",
     toggleCustomModelBtn: "✍️ Entrada libre",
     toggleSelectModelBtn: "📋 Elegir de la lista",
-    anthropicAuthModeLabel: "Modo de autenticación de Anthropic",
-    anthropicModeApiKey: "🔑 Clave API (Pay-as-you-go)",
-    anthropicModeOAuth: "⚡ Suscripción Claude (OAuth)",
-    apiKeyLabelOAuth: "Token OAuth de Claude Code (Suscripción)",
-    apiKeyHintOAuth:
-      "Genere su token en un terminal con 'claude setup-token' y péguelo aquí. Las solicitudes se cargarán a su suscripción Claude Pro / Max.",
-    copySetupTokenBtn: "📋 Copiar 'claude setup-token'",
-    copiedToClipboard: "¡Copiado al portapapeles!",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rechazo del modelo: ${detail}` : "El modelo rechazó analizar este contenido."),
@@ -571,9 +529,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Anthropic-API-Schlüssel holen ↗",
     presetOllamaBtn: "🦙 Für lokales Ollama vorkonfigurieren (kein Schlüssel)",
     presetOllamaSuccess: "Einstellungen für lokales Ollama angewendet (http://localhost:11434/v1, mistral).",
-    presetClaudeBridgeBtn: "⚡ Für lokale Claude Code-Bridge konfigurieren (Abonnement)",
-    presetClaudeBridgeSuccess:
-      "Einstellungen für lokale Claude Code-Bridge angewendet (http://localhost:8080/v1). Führen Sie 'npm run bridge' im Terminal aus.",
     chromeAiOption: "Chrome Built-in AI (lokales Gemini Nano, ohne Schlüssel)",
     chromeAiHint: "Läuft zu 100% lokal mit Gemini Nano. Kein API-Schlüssel oder Konto erforderlich, kostenlos und privat.",
     apiKeyPlaceholderOllama: "Optional für lokales Ollama / LM Studio",
@@ -583,14 +538,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     modelHint: "Wählen Sie ein Modell aus der Liste oder wechseln Sie zur freien Eingabe.",
     toggleCustomModelBtn: "✍️ Freie Eingabe",
     toggleSelectModelBtn: "📋 Aus Liste wählen",
-    anthropicAuthModeLabel: "Anthropic-Authentifizierungsmodus",
-    anthropicModeApiKey: "🔑 API-Schlüssel (Pay-as-you-go)",
-    anthropicModeOAuth: "⚡ Claude-Abonnement (OAuth)",
-    apiKeyLabelOAuth: "Claude Code OAuth-Token (Abonnement)",
-    apiKeyHintOAuth:
-      "Generieren Sie Ihr Token in einem Terminal mit 'claude setup-token' und fügen Sie es hier ein. Anfragen werden Ihrem Claude Pro / Max-Abonnement angerechnet.",
-    copySetupTokenBtn: "📋 'claude setup-token' kopieren",
-    copiedToClipboard: "In die Zwischenablage kopiert!",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Ablehnung durch das Modell: ${detail}` : "Das Modell hat die Analyse dieses Inhalts abgelehnt."),
@@ -697,9 +644,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     getAnthropicKeyBtn: "Ottieni una chiave Anthropic ↗",
     presetOllamaBtn: "🦙 Configura per Ollama locale (senza chiave)",
     presetOllamaSuccess: "Impostazioni applicate per Ollama locale (http://localhost:11434/v1, mistral).",
-    presetClaudeBridgeBtn: "⚡ Configura per il bridge locale di Claude Code (Abbonamento)",
-    presetClaudeBridgeSuccess:
-      "Impostazioni applicate per il bridge locale di Claude Code (http://localhost:8080/v1). Esegui 'npm run bridge' nel terminale.",
     chromeAiOption: "Chrome Built-in AI (Gemini Nano locale, senza chiave)",
     chromeAiHint: "Esecuzione 100% locale con Gemini Nano. Nessuna chiave API né account richiesti, gratuito e privato.",
     apiKeyPlaceholderOllama: "Opzionale per Ollama / LM Studio locale",
@@ -709,14 +653,6 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     modelHint: "Seleziona un modello dall'elenco o passa all'inserimento libero.",
     toggleCustomModelBtn: "✍️ Inserimento libero",
     toggleSelectModelBtn: "📋 Scegli dall'elenco",
-    anthropicAuthModeLabel: "Modalità di autenticazione Anthropic",
-    anthropicModeApiKey: "🔑 Chiave API (Pay-as-you-go)",
-    anthropicModeOAuth: "⚡ Abbonamento Claude (OAuth)",
-    apiKeyLabelOAuth: "Token OAuth Claude Code (Abbonamento)",
-    apiKeyHintOAuth:
-      "Genera il tuo token in un terminale con 'claude setup-token' e incollalo qui. Le richieste saranno addebitate al tuo abbonamento Claude Pro / Max.",
-    copySetupTokenBtn: "📋 Copia 'claude setup-token'",
-    copiedToClipboard: "Copiato negli appunti!",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rifiuto del modello: ${detail}` : "Il modello ha rifiutato di analizzare questo contenuto."),

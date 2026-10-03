@@ -29,19 +29,10 @@
           <input type="url" name="endpoint" placeholder="https://api.openai.com/v1" />
           <div class="key-actions">
             <button type="button" id="btn-preset-ollama" class="secondary-btn">🦙 Configurer pour Ollama local (zéro clé)</button>
-            <button type="button" id="btn-preset-claude-bridge" class="secondary-btn">⚡ Configurer pour le pont Claude Code local (Abonnement)</button>
           </div>
           <span class="hint" id="endpoint-hint">URL de base de l'API ; <code>/chat/completions</code> y est ajouté.</span>
           <span class="hint" id="endpoint-ollama-hint">Pour Ollama en local (ex. <code>http://localhost:11434/v1</code>), lancez le serveur avec <code>OLLAMA_ORIGINS="chrome-extension://*,moz-extension://*"</code> pour autoriser l'accès.</span>
         </label>
-
-        <div id="anthropic-auth-mode-group" class="field-block" hidden>
-          <span id="lbl-anthropic-auth-mode">Mode d'authentification Anthropic</span>
-          <div class="auth-mode-toggle">
-            <button type="button" id="btn-anthropic-mode-apikey" class="tab-btn active">🔑 Clé API (Pay-as-you-go)</button>
-            <button type="button" id="btn-anthropic-mode-oauth" class="tab-btn">⚡ Abonnement Claude (OAuth)</button>
-          </div>
-        </div>
 
         <label id="api-key-field">
           <span id="lbl-api-key">Clé API</span>
@@ -54,12 +45,6 @@
             <a id="btn-get-anthropic-key" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" class="link-btn" hidden>
               Obtenir une clé Anthropic ↗
             </a>
-            <button type="button" id="btn-copy-setup-token" class="secondary-btn small-btn" hidden>
-              📋 Copier 'claude setup-token'
-            </button>
-            <button type="button" id="btn-switch-to-bridge" class="secondary-btn small-btn" hidden>
-              ⚡ Activer le pont local anti-CORS (npm run bridge)
-            </button>
           </div>
         </label>
 

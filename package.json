@@ -9,8 +9,7 @@
     "watch": "node build.mjs --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:live": "node scripts/test-live-provider.mjs",
-    "bridge": "node scripts/claude-bridge.mjs"
+    "test:live": "node scripts/test-live-provider.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

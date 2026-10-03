@@ -60,8 +60,6 @@ describe("i18n module", () => {
       expect(strings.getAnthropicKeyBtn).toBeTruthy();
       expect(strings.presetOllamaBtn).toBeTruthy();
       expect(strings.presetOllamaSuccess).toBeTruthy();
-      expect(strings.presetClaudeBridgeBtn).toBeTruthy();
-      expect(strings.presetClaudeBridgeSuccess).toBeTruthy();
       expect(strings.chromeAiOption).toBeTruthy();
       expect(strings.chromeAiHint).toBeTruthy();
       expect(strings.apiKeyPlaceholderOllama).toBeTruthy();
@@ -73,15 +71,6 @@ describe("i18n module", () => {
       expect(strings.modelHint).toBeTruthy();
       expect(strings.toggleCustomModelBtn).toBeTruthy();
       expect(strings.toggleSelectModelBtn).toBeTruthy();
-
-      // Vérification des modes d'authentification Anthropic
-      expect(strings.anthropicAuthModeLabel).toBeTruthy();
-      expect(strings.anthropicModeApiKey).toBeTruthy();
-      expect(strings.anthropicModeOAuth).toBeTruthy();
-      expect(strings.apiKeyLabelOAuth).toBeTruthy();
-      expect(strings.apiKeyHintOAuth).toBeTruthy();
-      expect(strings.copySetupTokenBtn).toBeTruthy();
-      expect(strings.copiedToClipboard).toBeTruthy();
     }
   });
 
