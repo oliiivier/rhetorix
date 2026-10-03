@@ -34,7 +34,7 @@ export const DEFAULT_CONFIG: Config = {
   endpoint: "",
   language: "auto",
   webSearch: true,
-  maxChunkTokens: 12_000,
+  maxChunkTokens: 8_000,
   displayMode: "both",
 };
 

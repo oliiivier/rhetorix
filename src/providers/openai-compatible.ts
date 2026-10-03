@@ -1,21 +1,24 @@
 // Adaptateur pour les endpoints compatibles OpenAI Chat Completions (OpenAI, Mistral,
-// OpenRouter, Ollama, LM Studio…). Pas de recherche web : mode "unverified" (D3).
+// OpenRouter, Ollama, LM Studio, Perplexity…).
+// Prise en charge des citations web (D3) si l'endpoint dispose de la recherche web.
 
 import type { Config } from "../config";
 import { consolidatePrompt, systemPrompt, userPrompt } from "../prompt";
-import { ANALYSIS_JSON_SCHEMA, enforceAnnotationSourcePolicy } from "../schema";
+import { ANALYSIS_JSON_SCHEMA, enforceAnnotationSourcePolicy, normalizeSourceUrl } from "../schema";
 import { parseSseJson, ProgressiveJsonParser, stripCodeFence } from "../streaming-json";
 import { postJson } from "./http";
 import { ProviderError, type LlmProvider } from "./types";
 
 interface ChatCompletionChunk {
   choices?: { delta?: { content?: string | null; refusal?: string | null }; finish_reason?: string }[];
+  citations?: string[];
 }
 
 export const openAiCompatibleProvider: LlmProvider = {
-  supportsWebSearch: () => false,
+  supportsWebSearch: (config) => Boolean(config.webSearch),
 
   async analyze(input, config: Config, signal) {
+    const webSearch = Boolean(config.webSearch);
     const url = `${config.endpoint.replace(/\/+$/, "")}/chat/completions`;
     const res = await postJson(
       url,
@@ -23,7 +26,7 @@ export const openAiCompatibleProvider: LlmProvider = {
       {
         model: config.model,
         messages: [
-          { role: "system", content: systemPrompt({ ...input, webSearch: false }) },
+          { role: "system", content: systemPrompt({ ...input, webSearch }) },
           { role: "user", content: userPrompt(input) },
         ],
         response_format: { type: "json_schema", json_schema: { name: "analysis", strict: true, schema: ANALYSIS_JSON_SCHEMA } },
@@ -33,10 +36,12 @@ export const openAiCompatibleProvider: LlmProvider = {
       "l'endpoint",
     );
 
+    const searchedUrls = webSearch ? new Set<string>() : undefined;
+
     const parser = new ProgressiveJsonParser({
       onSummary: input.onStream?.onSummary,
       onAnnotation: (a) => {
-        const safe = enforceAnnotationSourcePolicy(a, undefined);
+        const safe = enforceAnnotationSourcePolicy(a, searchedUrls);
         input.onStream?.onAnnotation?.(safe);
       },
     });
@@ -49,6 +54,11 @@ export const openAiCompatibleProvider: LlmProvider = {
       if (choice?.delta?.refusal) {
         throw new ProviderError(`Refus du modèle : ${choice.delta.refusal}`, "refusal", choice.delta.refusal);
       }
+      if (searchedUrls && chunk.citations) {
+        for (const u of chunk.citations) {
+          searchedUrls.add(normalizeSourceUrl(u));
+        }
+      }
       if (choice?.delta?.content) {
         parser.feed(choice.delta.content);
       }
@@ -57,7 +67,7 @@ export const openAiCompatibleProvider: LlmProvider = {
     const rawText = stripCodeFence(parser.getRawText());
     if (!rawText) throw new ProviderError("Réponse vide de l'endpoint.", "empty_response");
     try {
-      return { raw: JSON.parse(rawText) };
+      return { raw: JSON.parse(rawText), searchedUrls };
     } catch {
       throw new ProviderError("La réponse n'est pas un JSON valide.", "invalid_json");
     }

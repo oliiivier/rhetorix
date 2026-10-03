@@ -146,9 +146,9 @@ L'orchestration (`src/analyze.ts`) enchaîne : découpage, streaming des morceau
 
 | Adaptateur | Sortie structurée | Recherche web (D3) |
 |---|---|---|
-| Compatible OpenAI (OpenAI, Mistral, OpenRouter, Ollama…) | `response_format: json_schema` (strict) via SSE | En général absente : mode `unverified` |
+| Compatible OpenAI (OpenAI, Mistral, OpenRouter, Ollama…) | `response_format: json_schema` (strict) via SSE | Support des citations (`chunk.citations` pour Perplexity, OpenRouter...) avec `webSearch` activé. Si absent ou sans recherche : mode `unverified` |
 | Anthropic (SDK officiel, `dangerouslyAllowBrowser`) | Outil strict `submit_analysis` dont l'`input_schema` est le schéma d'analyse, avec `tool_choice: auto`. Streaming via `streamEvent` | Outil serveur `web_search_20260209`. Les URL des blocs `web_search_tool_result` sont capturées dès `content_block_start` pour être disponibles pendant le flux. `pause_turn` est repris automatiquement |
-| Google Gemini | `responseJsonSchema` via `streamGenerateContent?alt=sse` | Pas encore branchée : mode `unverified`. Le grounding Google Search reste à intégrer |
+| Google Gemini | `responseJsonSchema` via `streamGenerateContent?alt=sse` | Outil `googleSearch` (Grounding Google Search). Les URLs des `groundingChunks` sont extraites dans le flux SSE et validées via la politique D3 |
 
 Modèle Anthropic par défaut : `claude-opus-5-5`, avec `effort: high` et `fallbacks: "default"` (reprise côté serveur après un refus) sur les modèles qui l'acceptent.
 
@@ -158,8 +158,9 @@ Quand `supportsWebSearch` est faux, le client force `fact_check.status = "unveri
 - **Internationalisation (`src/i18n.ts`).** L'interface et les messages d'erreurs (extraction et providers) sont traduits dans les 5 langues supportées (fr, en, es, de, it).
 - **Langue (D5).** Le prompt impose la langue de l'interface pour `summary`, `rhetoric_critique` et `context`, mais `exact_quote` reste recopié tel quel depuis l'article.
 - **Labels (D4).** `label` est une énumération fermée de 31 labels traduits par catégorie, plus `"autre"`.
-- **Longueur (D6).** Au-delà d'une limite configurable (12 000 tokens par défaut), le texte est découpé en morceaux sur des frontières de paragraphes. Les morceaux sont analysés en parallèle, deux à la fois, puis fusionnés : ids renumérotés et citations en double retirées. Le `summary` est consolidé par un appel dédié `consolidateSummary` (avec streaming textuel), ou repli gracieux sur la concaténation en cas d'erreur.
+- **Longueur (D6).** Au-delà d'une limite configurable (8 000 tokens par défaut, soit ~6 000 mots), le texte est découpé en morceaux sur des frontières de paragraphes. Les morceaux sont analysés en parallèle, deux à la fois, puis fusionnés : ids renumérotés et citations en double retirées. Le `summary` est consolidé par un appel dédié `consolidateSummary` (avec streaming textuel), ou repli gracieux sur la concaténation en cas d'erreur.
 - **Filtres de catégories.** Des filtres interactifs par catégorie avec compteurs en temps réel permettent d'isoler rapidement les sophismes, biais ou allégations.
+- **Banc d'essai CLI (`scripts/test-live-provider.mjs`).** Exécutable via `npm run test:live`, ce banc d'essai permet de vérifier les requêtes en streaming, le découpage et les sources sur les API réelles sans lancer le navigateur.
 
 ## 8. Stockage
 

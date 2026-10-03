@@ -24,6 +24,7 @@ npm install
 npm run build      # génère dist/chrome et dist/firefox
 npm run watch      # reconstruit à chaque modification
 npm test           # tests unitaires (vitest)
+npm run test:live  # banc d'essai CLI direct sur les API LLM (Anthropic, Gemini, OpenAI)
 npm run typecheck
 ```
 
@@ -60,6 +61,8 @@ src/
   text-match.ts         # localisation des citations dans la page
   chunking.ts, cache.ts, config.ts, prompt.ts, messages.ts, ext.ts
   icons/                # icônes SVG et PNG (16, 32, 48, 128 px)
+scripts/
+  test-live-provider.mjs # banc d'essai CLI des providers LLM réels
 test/                   # tests unitaires des modules purs
 docs/
 ```

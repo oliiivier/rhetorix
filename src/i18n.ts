@@ -59,6 +59,7 @@ export interface UiStrings {
   webSearchHintAnthropic: string;
   webSearchHintUnavailable: string;
   webSearchHintGemini: string;
+  webSearchHintOpenAi: string;
   maxChunkLabel: string;
   maxChunkHint: string;
   saveBtn: string;
@@ -147,7 +148,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchLabel: "Vérifier les faits par recherche web",
     webSearchHintAnthropic: "Utilise l'outil de recherche web d'Anthropic.",
     webSearchHintUnavailable: "Indisponible pour ce fournisseur : les vérifications restent en « non vérifié ».",
-    webSearchHintGemini: "Pas encore disponible pour Gemini : les vérifications restent en « non vérifié ».",
+    webSearchHintGemini: "Utilise le grounding Google Search de Gemini pour vérifier les faits.",
+    webSearchHintOpenAi:
+      "Actif si l'endpoint supporte la recherche web (Perplexity, OpenRouter :online…). Avec Ollama ou Mistral sans recherche, les allégations restent en « non vérifié ».",
     maxChunkLabel: "Taille maximale d'un morceau (tokens)",
     maxChunkHint: "Au-delà de cette taille, l'article est découpé par paragraphes et analysé en plusieurs appels.",
     saveBtn: "Enregistrer",
@@ -245,7 +248,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchLabel: "Verify facts via web search",
     webSearchHintAnthropic: "Uses Anthropic web search tool.",
     webSearchHintUnavailable: "Unavailable for this provider: fact-checks will remain 'unverified'.",
-    webSearchHintGemini: "Not yet available for Gemini: fact-checks will remain 'unverified'.",
+    webSearchHintGemini: "Uses Google Search grounding in Gemini to check facts.",
+    webSearchHintOpenAi:
+      "Active if the endpoint supports web search (Perplexity, OpenRouter :online…). With Ollama or Mistral without search, claims remain 'unverified'.",
     maxChunkLabel: "Max chunk size (tokens)",
     maxChunkHint: "Beyond this limit, the article is split by paragraphs and analyzed across multiple calls.",
     saveBtn: "Save",
@@ -343,7 +348,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchLabel: "Verificar hechos mediante búsqueda web",
     webSearchHintAnthropic: "Utiliza la herramienta de búsqueda web de Anthropic.",
     webSearchHintUnavailable: "No disponible para este proveedor: las verificaciones permanecerán como 'no verificado'.",
-    webSearchHintGemini: "Aún no disponible para Gemini: las verificaciones permanecerán como 'no verificado'.",
+    webSearchHintGemini: "Utiliza el grounding de Google Search en Gemini para verificar los hechos.",
+    webSearchHintOpenAi:
+      "Activo si el endpoint admite búsqueda web (Perplexity, OpenRouter :online…). Con Ollama o Mistral sin búsqueda, las afirmaciones permanecen como 'no verificado'.",
     maxChunkLabel: "Tamaño máximo de fragmento (tokens)",
     maxChunkHint: "Más allá de este límite, el artículo se divide por párrafos y se analiza en varias llamadas.",
     saveBtn: "Guardar",
@@ -439,9 +446,11 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     modelLabel: "Modell",
     languageLabel: "Analysesprache",
     webSearchLabel: "Fakten per Websuche prüfen",
-    webSearchHintAnthropic: "Nutzt das Websuche-Tool von Anthropic.",
+    webSearchHintAnthropic: "Nutzt das native Websuche-Tool von Anthropic.",
     webSearchHintUnavailable: "Für diesen Anbieter nicht verfügbar: Überprüfungen bleiben 'nicht überprüft'.",
-    webSearchHintGemini: "Für Gemini noch nicht verfügbar: Überprüfungen bleiben 'nicht überprüft'.",
+    webSearchHintGemini: "Nutzt das Google Search Grounding von Gemini zur Faktenprüfung.",
+    webSearchHintOpenAi:
+      "Aktiv, wenn der Endpunkt Websuche unterstützt (Perplexity, OpenRouter :online…). Bei Ollama oder Mistral ohne Suche bleiben Behauptungen 'nicht überprüft'.",
     maxChunkLabel: "Maximale Blockgröße (Tokens)",
     maxChunkHint: "Jenseits dieser Grenze wird der Artikel in Absätze unterteilt und über mehrere Aufrufe analysiert.",
     saveBtn: "Speichern",
@@ -539,7 +548,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchLabel: "Verifica i fatti tramite ricerca web",
     webSearchHintAnthropic: "Utilizza lo strumento di ricerca web di Anthropic.",
     webSearchHintUnavailable: "Non disponibile per questo fornitore: le verifiche saranno contrassegnate come «non verificato».",
-    webSearchHintGemini: "Non ancora disponibile per Gemini: le verifiche saranno contrassegnate come «non verificato».",
+    webSearchHintGemini: "Utilizza il grounding di Google Search in Gemini per verificare i fatti.",
+    webSearchHintOpenAi:
+      "Attivo se l'endpoint supporta la ricerca web (Perplexity, OpenRouter :online…). Con Ollama o Mistral senza ricerca, le affermazioni rimangono «non verificato».",
     maxChunkLabel: "Dimensione massima porzione (token)",
     maxChunkHint: "Oltre questo limite, l'articolo viene suddiviso in paragrafi e analizzato in più chiamate.",
     saveBtn: "Salva",

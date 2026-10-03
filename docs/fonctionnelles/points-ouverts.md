@@ -17,13 +17,13 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 
 ## Reste à préciser
 
-- **Recherche web et sortie structurée pour Gemini** : vérifier pour Gemini comment combiner l'outil de recherche web (grounding Google Search) et la sortie JSON contrainte (`responseJsonSchema`). À défaut, prévoir deux passes : une analyse structurée, puis une passe de vérification avec recherche web.
-- **Compatible OpenAI et recherche web** : la plupart des endpoints compatibles n'ont pas d'outil de recherche web. Ils fonctionnent donc en mode `unverified` par défaut.
-- **Limite de découpage (D6)** : la valeur par défaut est de 12 000 tokens. À ajuster selon les coûts constatés.
 - **Identifiant Firefox** : `rhetorix@rhetorix.local` est provisoire. Il faudra le remplacer avant publication définitive sur addons.mozilla.org.
 
 ## Éléments traités
 
+- **Recherche web Gemini (Google Search grounding) & Compatible OpenAI (citations)** : l'outil `googleSearch` de Gemini est pleinement supporté et ses `groundingChunks` sont extraits du flux SSE pour valider les sources (D3). Pour les endpoints compatibles OpenAI (Perplexity `sonar`, OpenRouter `:online`), les citations `chunk.citations` sont capturées en streaming.
+- **Banc d'essai CLI (`scripts/test-live-provider.mjs`)** : script de test direct en ligne de commande (`npm run test:live`) permettant de vérifier le streaming, le fact-checking et la conformité D3 sur de vraies clés d'API sans passer par l'interface du navigateur.
+- **Ajustement de la limite de découpage (D6)** : valeur par défaut ramenée à 8 000 tokens (~6 000 mots) pour optimiser le temps de réponse et paralléliser l'analyse des longs articles par tranches traitées par 2 workers concurrents.
 - **Streaming et affichage progressif (D2 / D6)** : implémenté via `src/streaming-json.ts` (`ProgressiveJsonParser`) sur les 3 fournisseurs (Anthropic, Gemini, OpenAI-compatible). Le résumé se met à jour en temps réel et les cartes d'annotations apparaissent dynamiquement au fil de l'eau dès validation unitaire, avec application immédiate de la politique D3 et préfixage des identifiants lors du découpage.
 - **Internationalisation complète & Traduction de la taxonomie (D4 / D5)** : module `src/i18n.ts` et traductions complètes de la taxonomie (`src/taxonomy.ts`) pour les 5 langues supportées (fr, en, es, de, it). Panneau latéral, options et messages d'erreurs (extraction et providers) s'adaptent dynamiquement en temps réel.
 - **Icônes de l'extension** : créées en SVG (`src/icons/icon.svg`) et déclinées en PNG (16, 32, 48, 128 px), déclarées dans les manifests Chromium et Firefox.

@@ -28,7 +28,7 @@ describe("config module", () => {
     expect(DEFAULT_CONFIG.provider).toBe("anthropic");
     expect(DEFAULT_CONFIG.language).toBe("auto");
     expect(DEFAULT_CONFIG.webSearch).toBe(true);
-    expect(DEFAULT_CONFIG.maxChunkTokens).toBe(12_000);
+    expect(DEFAULT_CONFIG.maxChunkTokens).toBe(8_000);
   });
 
   it("vérifie isConfigured selon le provider et les clés requises", () => {

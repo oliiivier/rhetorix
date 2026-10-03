@@ -65,7 +65,7 @@ function readForm(): Config {
     language: field<HTMLSelectElement>("language").value,
     displayMode: field<HTMLSelectElement>("displayMode").value as DisplayMode,
     webSearch: field<HTMLInputElement>("webSearch").checked,
-    maxChunkTokens: Math.max(2000, Number(field<HTMLInputElement>("maxChunkTokens").value) || 12_000),
+    maxChunkTokens: Math.max(2000, Number(field<HTMLInputElement>("maxChunkTokens").value) || 8_000),
   };
 }
 
@@ -88,13 +88,13 @@ function syncProvider(): void {
   document.getElementById("endpoint-field")!.hidden = provider !== "openai-compatible";
   field<HTMLInputElement>("endpoint").required = provider === "openai-compatible";
   field<HTMLInputElement>("apiKey").required = provider !== "openai-compatible";
-  field<HTMLInputElement>("webSearch").disabled = provider !== "anthropic";
+  field<HTMLInputElement>("webSearch").disabled = false;
   if (provider === "anthropic") {
     document.getElementById("websearch-hint")!.textContent = t.webSearchHintAnthropic;
   } else if (provider === "gemini") {
     document.getElementById("websearch-hint")!.textContent = t.webSearchHintGemini;
   } else {
-    document.getElementById("websearch-hint")!.textContent = t.webSearchHintUnavailable;
+    document.getElementById("websearch-hint")!.textContent = t.webSearchHintOpenAi;
   }
   field<HTMLInputElement>("model").placeholder = DEFAULT_MODELS[provider] || "model name";
 }

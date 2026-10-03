@@ -49,6 +49,11 @@ describe("i18n module", () => {
       expect(strings.displayModes.inline).toBeTruthy();
       expect(strings.displayModes.sidepanel).toBeTruthy();
       expect(strings.inlineModeNotice).toBeTruthy();
+
+      // Vérification des indications de recherche web
+      expect(strings.webSearchHintAnthropic).toBeTruthy();
+      expect(strings.webSearchHintGemini).toBeTruthy();
+      expect(strings.webSearchHintOpenAi).toBeTruthy();
     }
   });
 
