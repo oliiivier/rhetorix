@@ -20,6 +20,12 @@ interface GroundingMetadata {
   groundingChunks?: GroundingChunk[];
 }
 
+interface UsageMetadata {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+  totalTokenCount?: number;
+}
+
 interface GenerateContentChunk {
   candidates?: {
     content?: { parts?: { text?: string }[] };
@@ -27,6 +33,7 @@ interface GenerateContentChunk {
     groundingMetadata?: GroundingMetadata;
   }[];
   promptFeedback?: { blockReason?: string };
+  usageMetadata?: UsageMetadata;
 }
 
 export const geminiProvider: LlmProvider = {
@@ -84,7 +91,30 @@ export const geminiProvider: LlmProvider = {
       },
     });
 
+    const sysText = systemPrompt({ ...input, webSearch });
+    const userText = userPrompt(input);
+    let promptTokens = Math.ceil((sysText.length + userText.length) / 4);
+    let candidateTokens = 0;
+    let streamedChars = 0;
+
+    const emitUsage = () => {
+      input.onStream?.onUsage?.({
+        inputTokens: promptTokens,
+        outputTokens: candidateTokens,
+        totalTokens: promptTokens + candidateTokens,
+      });
+    };
+    emitUsage();
+
     for await (const chunk of parseSseJson<GenerateContentChunk>(res)) {
+      if (chunk.usageMetadata) {
+        if (typeof chunk.usageMetadata.promptTokenCount === "number") {
+          promptTokens = chunk.usageMetadata.promptTokenCount;
+        }
+        if (typeof chunk.usageMetadata.candidatesTokenCount === "number") {
+          candidateTokens = chunk.usageMetadata.candidatesTokenCount;
+        }
+      }
       if (chunk.promptFeedback?.blockReason) {
         throw new ProviderError(`Requête bloquée par Gemini (${chunk.promptFeedback.blockReason}).`, "blocked", chunk.promptFeedback.blockReason);
       }
@@ -101,20 +131,34 @@ export const geminiProvider: LlmProvider = {
       }
       const text = candidate?.content?.parts?.map((p) => p.text ?? "").join("");
       if (text) {
+        streamedChars += text.length;
+        if (!chunk.usageMetadata?.candidatesTokenCount) {
+          candidateTokens = Math.ceil(streamedChars / 4);
+        }
         parser.feed(text);
+        emitUsage();
+      } else if (chunk.usageMetadata) {
+        emitUsage();
       }
     }
+
+    const finalUsage = {
+      inputTokens: promptTokens,
+      outputTokens: candidateTokens,
+      totalTokens: promptTokens + candidateTokens,
+    };
+    input.onStream?.onUsage?.(finalUsage);
 
     const rawText = stripCodeFence(parser.getRawText());
     if (!rawText) throw new ProviderError("Réponse vide de Gemini.", "empty_response");
     try {
-      return { raw: JSON.parse(rawText), searchedUrls };
+      return { raw: JSON.parse(rawText), searchedUrls, usage: finalUsage };
     } catch {
       throw new ProviderError("La réponse n'est pas un JSON valide.", "invalid_json");
     }
   },
 
-  async consolidateSummary(title, summaries, language, config, signal, onProgressText) {
+  async consolidateSummary(title, summaries, language, config, signal, onProgressText, onUsage) {
     const { system, user } = consolidatePrompt(title, summaries, language);
     const modelName = config.model.replace(/^models\//, "");
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:streamGenerateContent?alt=sse`;
@@ -129,14 +173,31 @@ export const geminiProvider: LlmProvider = {
       "Gemini",
     );
 
+    let promptTokens = Math.ceil((system.length + user.length) / 4);
+    let candidateTokens = 0;
+    let streamedChars = 0;
+
     let accumulated = "";
     for await (const chunk of parseSseJson<GenerateContentChunk>(res)) {
+      if (chunk.usageMetadata) {
+        if (typeof chunk.usageMetadata.promptTokenCount === "number") promptTokens = chunk.usageMetadata.promptTokenCount;
+        if (typeof chunk.usageMetadata.candidatesTokenCount === "number") candidateTokens = chunk.usageMetadata.candidatesTokenCount;
+      }
       const text = chunk.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("");
       if (text) {
         accumulated += text;
+        streamedChars += text.length;
+        if (!chunk.usageMetadata?.candidatesTokenCount) {
+          candidateTokens = Math.ceil(streamedChars / 4);
+        }
         onProgressText?.(accumulated);
       }
     }
+    onUsage?.({
+      inputTokens: promptTokens,
+      outputTokens: candidateTokens,
+      totalTokens: promptTokens + candidateTokens,
+    });
     const text = accumulated.trim();
     if (!text) throw new ProviderError("Résumé consolidé vide.", "empty_consolidated");
     return text;

@@ -71,7 +71,22 @@ export const anthropicProvider: LlmProvider = {
       ...(fallback ? ["server-side-fallback-2026-07-01"] : []),
     ];
 
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+
     for (let turn = 0; turn < MAX_TURNS; turn++) {
+      let turnInputTokens = 0;
+      let turnOutputTokens = 0;
+      const emitTurnUsage = () => {
+        const inTok = totalInputTokens + turnInputTokens;
+        const outTok = totalOutputTokens + turnOutputTokens;
+        input.onStream?.onUsage?.({
+          inputTokens: inTok,
+          outputTokens: outTok,
+          totalTokens: inTok + outTok,
+        });
+      };
+
       const stream = client.beta.messages.stream(
         {
           model: config.model,
@@ -88,30 +103,39 @@ export const anthropicProvider: LlmProvider = {
         { signal },
       );
 
-      if (parser) {
-        let submitBlockIndex: number | null = null;
-        stream.on("streamEvent", (event) => {
-          if (event.type === "content_block_start") {
-            const b = event.content_block;
-            if (b.type === "web_search_tool_result" && Array.isArray(b.content)) {
-              for (const r of b.content) if (r.type === "web_search_result") searched.add(normalizeSourceUrl(r.url));
-            }
-            if (b.type === "tool_use" && b.name === SUBMIT_TOOL) {
-              submitBlockIndex = event.index;
-            }
-          } else if (event.type === "content_block_delta") {
-            if (event.index === submitBlockIndex && event.delta.type === "input_json_delta") {
-              parser.feed(event.delta.partial_json);
-            }
-          } else if (event.type === "content_block_stop") {
-            if (event.index === submitBlockIndex) {
-              submitBlockIndex = null;
-            }
+      let submitBlockIndex: number | null = null;
+      stream.on("streamEvent", (event) => {
+        if (event.type === "message_start") {
+          turnInputTokens = event.message.usage.input_tokens;
+          emitTurnUsage();
+        } else if (event.type === "message_delta") {
+          turnOutputTokens = event.usage.output_tokens;
+          emitTurnUsage();
+        } else if (event.type === "content_block_start") {
+          const b = event.content_block;
+          if (b.type === "web_search_tool_result" && Array.isArray(b.content)) {
+            for (const r of b.content) if (r.type === "web_search_result") searched.add(normalizeSourceUrl(r.url));
           }
-        });
-      }
+          if (b.type === "tool_use" && b.name === SUBMIT_TOOL) {
+            submitBlockIndex = event.index;
+          }
+        } else if (event.type === "content_block_delta") {
+          if (parser && event.index === submitBlockIndex && event.delta.type === "input_json_delta") {
+            parser.feed(event.delta.partial_json);
+          }
+        } else if (event.type === "content_block_stop") {
+          if (event.index === submitBlockIndex) {
+            submitBlockIndex = null;
+          }
+        }
+      });
 
       const message = await stream.finalMessage();
+      totalInputTokens += message.usage.input_tokens;
+      totalOutputTokens += message.usage.output_tokens;
+      turnInputTokens = 0;
+      turnOutputTokens = 0;
+      emitTurnUsage();
 
       for (const block of message.content) {
         if (block.type === "web_search_tool_result" && Array.isArray(block.content)) {
@@ -121,7 +145,15 @@ export const anthropicProvider: LlmProvider = {
 
       const submit = message.content.find((b) => b.type === "tool_use" && b.name === SUBMIT_TOOL);
       if (submit && submit.type === "tool_use") {
-        return { raw: submit.input, searchedUrls: input.webSearch ? searched : undefined };
+        return {
+          raw: submit.input,
+          searchedUrls: input.webSearch ? searched : undefined,
+          usage: {
+            inputTokens: totalInputTokens,
+            outputTokens: totalOutputTokens,
+            totalTokens: totalInputTokens + totalOutputTokens,
+          },
+        };
       }
 
       switch (message.stop_reason) {
@@ -140,7 +172,7 @@ export const anthropicProvider: LlmProvider = {
     throw new ProviderError("Trop de reprises de la recherche web.", "too_many_turns");
   },
 
-  async consolidateSummary(title, summaries, language, config, signal, onProgressText) {
+  async consolidateSummary(title, summaries, language, config, signal, onProgressText, onUsage) {
     const cleanKey = config.apiKey.trim();
     const isOAuth = cleanKey.startsWith("sk-ant-oat") || cleanKey.startsWith("Bearer ");
     const client = createAnthropicClient(config.apiKey, config.endpoint);
@@ -163,6 +195,13 @@ export const anthropicProvider: LlmProvider = {
       });
     }
     const message = await stream.finalMessage();
+    if (onUsage && message.usage) {
+      onUsage({
+        inputTokens: message.usage.input_tokens,
+        outputTokens: message.usage.output_tokens,
+        totalTokens: message.usage.input_tokens + message.usage.output_tokens,
+      });
+    }
     const text = message.content
       .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
       .map((b) => b.text)

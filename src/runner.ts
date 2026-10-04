@@ -8,6 +8,7 @@ import { isConfigured, loadConfig, resolveLanguage, type DisplayMode } from "./c
 import { ext } from "./ext";
 import { formatErrorMessage, getUiStrings } from "./i18n";
 import type { ExtractResult, HighlightResult, PanelToContent, RunSnapshot, YouTubeExtractResult } from "./messages";
+import { recordTokenUsage, type TokenUsage } from "./tokens";
 import { isYouTubeWatchUrl } from "./youtube/youtube-detector";
 import { matchAnnotationsToCues } from "./youtube/youtube-matcher";
 
@@ -78,6 +79,7 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
     annotations: cached.analysis.annotations,
     unlocated,
     cachedAt: cached.createdAt,
+    usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
   };
 
   const controller = new AbortController();
@@ -144,6 +146,7 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
   const keepAlive = setInterval(() => void ext.runtime.getPlatformInfo(), KEEPALIVE_MS);
   const config = await loadConfig();
   const t = getUiStrings(config);
+  let currentUsage: TokenUsage | undefined;
   try {
     if (!isConfigured(config)) throw new Error(t.needConfigStatus);
     publish();
@@ -206,8 +209,18 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
             snapshot.annotations.push(a);
             publish();
           },
+          onUsage: (usage) => {
+            currentUsage = usage;
+            snapshot.usage = usage;
+            publish();
+          },
         });
         await putCached(cacheUrl, { ...fingerprint, analysis, createdAt: Date.now() });
+        if (currentUsage) {
+          await recordTokenUsage(currentUsage);
+        }
+      } else {
+        snapshot.usage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
       }
 
       const videoAnnotations = matchAnnotationsToCues(analysis.annotations, extracted.slice.cues, 0);
@@ -228,6 +241,7 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         annotations: videoAnnotations,
         unlocated: videoAnnotations.filter((a) => a.startTime < 0).map((a) => a.id),
         cachedAt: cached?.createdAt,
+        usage: snapshot.usage ?? currentUsage,
         isVideo: true,
         videoChunkRange: analyzedRange,
         videoTotalDuration: extracted.transcript.durationMs / 1000,
@@ -269,8 +283,18 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
             snapshot.annotations.push(a);
             publish();
           },
+          onUsage: (usage) => {
+            currentUsage = usage;
+            snapshot.usage = usage;
+            publish();
+          },
         });
         if (url) await putCached(url, { ...fingerprint, analysis, createdAt: Date.now() });
+        if (currentUsage) {
+          await recordTokenUsage(currentUsage);
+        }
+      } else {
+        snapshot.usage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
       }
 
       const { unlocated } = await sendToTab<HighlightResult>(tabId, {
@@ -287,6 +311,7 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         annotations: analysis.annotations,
         unlocated,
         cachedAt: cached?.createdAt,
+        usage: snapshot.usage ?? currentUsage,
       } satisfies Partial<RunSnapshot>);
     }
   } catch (err) {

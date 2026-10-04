@@ -11,12 +11,14 @@ import { labelDef, type Category } from "../taxonomy";
 import { isYouTubeWatchUrl } from "../youtube/youtube-detector";
 import { formatTimestamp } from "../youtube/youtube-transcript";
 import type { VideoAnnotation } from "../youtube/types";
+import { formatTokenCount, type TokenUsage } from "../tokens";
 
 interface TabState {
   url: string | undefined;
   analysis: Analysis;
   unlocated: Set<string>;
   cachedAt?: number;
+  usage?: TokenUsage;
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -125,7 +127,47 @@ function showIdle(isWebPage = true): void {
     setStatus(strings().internalPageNotice);
     analyzeBtn.disabled = true;
   }
+  renderTokenUsage(undefined);
   applyI18n();
+}
+
+function renderTokenUsage(usage: TokenUsage | undefined, isCached = false): void {
+  const bar = $("token-bar");
+  if (!bar) return;
+  const t = strings();
+  const lang = currentLang();
+
+  if (!usage || (usage.totalTokens === 0 && !isCached)) {
+    bar.hidden = true;
+    return;
+  }
+
+  bar.hidden = false;
+  const lbl = $("token-label");
+  if (lbl) lbl.textContent = t.tokenUsageLabel;
+
+  const inEl = $("token-in");
+  const dotEl = $("token-dot");
+  const outEl = $("token-out");
+  const totalEl = $("token-total");
+  const cachedEl = $("token-cached");
+
+  if (isCached && usage.totalTokens === 0) {
+    if (inEl) inEl.textContent = "";
+    if (dotEl) dotEl.hidden = true;
+    if (outEl) outEl.textContent = "";
+    if (totalEl) totalEl.textContent = "";
+    if (cachedEl) {
+      cachedEl.textContent = t.tokenCached;
+      cachedEl.hidden = false;
+    }
+  } else {
+    if (dotEl) dotEl.hidden = false;
+    if (inEl) inEl.textContent = t.tokenIn(formatTokenCount(usage.inputTokens, lang));
+    if (outEl) outEl.textContent = t.tokenOut(formatTokenCount(usage.outputTokens, lang));
+    if (totalEl) totalEl.textContent = t.tokenTotal(formatTokenCount(usage.totalTokens, lang));
+    if (cachedEl) cachedEl.hidden = true;
+  }
 }
 
 function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
@@ -274,6 +316,7 @@ function render(state: TabState): void {
   }
   cardsEl.replaceChildren(...state.analysis.annotations.map((a) => renderCard(a, state.unlocated.has(a.id))));
   applyCategoryFilter(activeCategoryFilter);
+  renderTokenUsage(state.usage, Boolean(state.cachedAt));
   updateDisplayModeBanner();
 }
 
@@ -401,6 +444,7 @@ function toState(s: RunSnapshot): TabState {
     },
     unlocated: new Set(s.unlocated),
     cachedAt: s.cachedAt,
+    usage: s.usage,
   };
 }
 
@@ -411,6 +455,7 @@ function renderSnapshot(s: RunSnapshot): void {
   switch (s.status) {
     case "running": {
       setStatus(statusText(s));
+      renderTokenUsage(s.usage, false);
       if (s.phase === "extracting") {
         resultEl.hidden = true;
         cardsEl.replaceChildren();
@@ -471,6 +516,7 @@ function renderSnapshot(s: RunSnapshot): void {
       const bs = $("blind-spot-card");
       if (bs) bs.hidden = true;
       updateFilterCounts([]);
+      renderTokenUsage(s.usage);
       if (s.status === "cancelled") setStatus(t.cancelledStatus);
       else setStatus(s.error ?? "", true);
       applyI18n();

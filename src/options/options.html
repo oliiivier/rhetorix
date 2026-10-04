@@ -168,6 +168,45 @@
         </div>
       </section>
 
+      <section id="section-tokens">
+        <h2 id="heading-tokens">Consommation de tokens</h2>
+        <div class="tokens-stats-card">
+          <div class="tokens-stats-grid">
+            <div class="tokens-stat-item">
+              <span class="tokens-stat-label" id="lbl-tokens-period">Période en cours</span>
+              <span class="tokens-stat-value" id="val-tokens-period">0</span>
+              <span class="tokens-stat-detail" id="detail-tokens-period">0 in · 0 out</span>
+            </div>
+            <div class="tokens-stat-item">
+              <span class="tokens-stat-label" id="lbl-tokens-alltime">Cumul total (depuis l'installation)</span>
+              <span class="tokens-stat-value" id="val-tokens-alltime">0</span>
+              <span class="tokens-stat-detail" id="detail-tokens-alltime">0 in · 0 out</span>
+            </div>
+          </div>
+
+          <div class="tokens-settings-row">
+            <label>
+              <span id="lbl-monthly-reset">Réinitialisation mensuelle</span>
+              <select id="monthly-reset-day">
+                <option value="0" id="opt-reset-disabled">Désactivée (cumul continu)</option>
+                <option value="1">Le 1er de chaque mois</option>
+                <option value="5">Le 5 de chaque mois</option>
+                <option value="10">Le 10 de chaque mois</option>
+                <option value="15">Le 15 de chaque mois</option>
+                <option value="20">Le 20 de chaque mois</option>
+                <option value="25">Le 25 de chaque mois</option>
+                <option value="28">Le 28 de chaque mois</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row">
+            <button id="btn-reset-tokens" type="button">Remettre à zéro le compteur (RAZ)</button>
+            <span id="tokens-reset-status" role="status"></span>
+          </div>
+        </div>
+      </section>
+
       <section>
         <h2 id="heading-privacy">Confidentialité</h2>
         <p id="privacy-text">

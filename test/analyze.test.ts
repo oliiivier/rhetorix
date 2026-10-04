@@ -366,4 +366,32 @@ describe("analyzeArticle", () => {
     expect(result.annotations[0]!.fact_check.status).toBe("unverified");
     expect(result.annotations[0]!.fact_check.sources).toEqual([]);
   });
+
+  it("transmet les consommations de tokens en continu via onUsage", async () => {
+    mockAnalyze.mockImplementationOnce(async (input) => {
+      input.onStream?.onUsage?.({ inputTokens: 400, outputTokens: 50, totalTokens: 450 });
+      return {
+        raw: {
+          summary: "Résumé unique",
+          annotations: [],
+        },
+        usage: { inputTokens: 400, outputTokens: 120, totalTokens: 520 },
+      };
+    });
+
+    const article: Extracted = {
+      title: "Test tokens",
+      lang: "fr",
+      paragraphs: ["Court texte."],
+    };
+
+    const usages: unknown[] = [];
+    await analyzeArticle(article, baseConfig, new AbortController().signal, {
+      onUsage: (u) => usages.push(u),
+    });
+
+    expect(usages.length).toBeGreaterThanOrEqual(2);
+    expect(usages[0]).toEqual({ inputTokens: 400, outputTokens: 50, totalTokens: 450 });
+    expect(usages[usages.length - 1]).toEqual({ inputTokens: 400, outputTokens: 120, totalTokens: 520 });
+  });
 });

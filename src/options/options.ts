@@ -4,6 +4,7 @@ import { ext } from "../ext";
 import { getUiStrings } from "../i18n";
 import { FALLBACK_MODELS, fetchAvailableModels, type ModelOption } from "../providers/models";
 import { LABELS, labelDef, type Category } from "../taxonomy";
+import { formatTokenCount, loadTokenStats, resetTokenStats, setMonthlyResetDay } from "../tokens";
 
 const form = document.getElementById("form") as HTMLFormElement;
 const field = <T extends HTMLInputElement | HTMLSelectElement>(name: string) => form.elements.namedItem(name) as T;
@@ -61,6 +62,22 @@ function applyOptionsI18n(lang: string): void {
   setTxt("btn-save", t.saveBtn);
   setTxt("heading-cache", t.cacheSectionTitle);
   setTxt("clear-cache", t.clearCacheBtn);
+  setTxt("heading-tokens", t.tokensSectionTitle);
+  setTxt("lbl-tokens-period", t.tokensPeriodLabel);
+  setTxt("lbl-tokens-alltime", t.tokensAllTimeLabel);
+  setTxt("lbl-monthly-reset", t.tokensMonthlyResetLabel);
+  setTxt("opt-reset-disabled", t.tokensResetDisabled);
+  setTxt("btn-reset-tokens", t.tokensResetBtn);
+
+  const selectResetDay = document.getElementById("monthly-reset-day") as HTMLSelectElement | null;
+  if (selectResetDay) {
+    for (const opt of selectResetDay.options) {
+      const day = parseInt(opt.value, 10);
+      if (day === 0) opt.textContent = t.tokensResetDisabled;
+      else opt.textContent = t.tokensResetDayOption(day);
+    }
+  }
+
   setTxt("heading-privacy", t.privacySectionTitle);
   setTxt("privacy-text", t.privacyText);
 
@@ -333,6 +350,7 @@ function fillForm(c: Config): void {
   populateModelSelect(FALLBACK_MODELS[c.provider] || []);
   setCustomModelMode(false, c.language);
   applyOptionsI18n(c.language);
+  void refreshTokensDisplay(c.language);
 }
 
 function syncProvider(): void {
@@ -507,6 +525,51 @@ document.getElementById("clear-cache")!.addEventListener("click", () => {
   const t = getUiStrings(lang);
   void clearCache().then(() => (document.getElementById("cache-status")!.textContent = t.cacheCleared));
 });
+
+async function refreshTokensDisplay(lang?: string): Promise<void> {
+  const currentLang = lang || field<HTMLSelectElement>("language")?.value || "fr";
+  const stats = await loadTokenStats();
+  const valPeriod = document.getElementById("val-tokens-period");
+  const detailPeriod = document.getElementById("detail-tokens-period");
+  const valAllTime = document.getElementById("val-tokens-alltime");
+  const detailAllTime = document.getElementById("detail-tokens-alltime");
+  const selectDay = document.getElementById("monthly-reset-day") as HTMLSelectElement | null;
+
+  if (valPeriod) valPeriod.textContent = formatTokenCount(stats.periodTotalTokens, currentLang);
+  if (detailPeriod) detailPeriod.textContent = `${formatTokenCount(stats.periodInputTokens, currentLang)} in · ${formatTokenCount(stats.periodOutputTokens, currentLang)} out`;
+  if (valAllTime) valAllTime.textContent = formatTokenCount(stats.allTimeTotalTokens, currentLang);
+  if (detailAllTime) detailAllTime.textContent = `${formatTokenCount(stats.allTimeInputTokens, currentLang)} in · ${formatTokenCount(stats.allTimeOutputTokens, currentLang)} out`;
+
+  if (selectDay) {
+    selectDay.value = String(stats.monthlyResetDay);
+  }
+}
+
+const selectResetDay = document.getElementById("monthly-reset-day") as HTMLSelectElement | null;
+if (selectResetDay) {
+  selectResetDay.addEventListener("change", async () => {
+    await setMonthlyResetDay(parseInt(selectResetDay.value, 10));
+    await refreshTokensDisplay();
+  });
+}
+
+const btnResetTokens = document.getElementById("btn-reset-tokens") as HTMLButtonElement | null;
+if (btnResetTokens) {
+  btnResetTokens.addEventListener("click", async () => {
+    const lang = field<HTMLSelectElement>("language")?.value || "fr";
+    const t = getUiStrings(lang);
+    await resetTokenStats("period");
+    await refreshTokensDisplay(lang);
+    const status = document.getElementById("tokens-reset-status");
+    if (status) {
+      status.textContent = t.tokensResetSuccess;
+      status.className = "saved";
+      setTimeout(() => {
+        if (status) status.textContent = "";
+      }, 3000);
+    }
+  });
+}
 
 function switchTab(tab: "settings" | "guide"): void {
   const isSettings = tab === "settings";

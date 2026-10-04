@@ -903,3 +903,136 @@ body.popup-page {
   padding: 4px 8px;
 }
 
+/* Barres de consommation de tokens (sidepanel & popup) */
+.token-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.token-bar .token-icon {
+  font-size: 12px;
+  color: #fab005;
+}
+
+.token-bar .token-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.token-bar .token-in,
+.token-bar .token-out {
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.token-bar .token-total {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.token-bar .token-cached {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.popup-token-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
+.popup-token-bar .token-icon {
+  font-size: 12px;
+  color: #fab005;
+}
+
+.popup-token-bar .token-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.popup-token-bar .token-in,
+.popup-token-bar .token-out {
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.popup-token-bar .token-total {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.popup-token-bar .token-cached {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Section Consommation de tokens dans Options */
+.tokens-stats-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.tokens-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.tokens-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.tokens-stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.tokens-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.tokens-stat-detail {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.tokens-settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+

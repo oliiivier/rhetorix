@@ -89,8 +89,19 @@ export const chromeAiProvider: LlmProvider = {
       },
     });
 
+    const sysText = systemPrompt({ ...input, webSearch: false });
+    const userText = userPrompt(input);
+    const promptTokens = Math.ceil((sysText.length + userText.length) / 4);
+    let outputTokens = 0;
+
+    input.onStream?.onUsage?.({
+      inputTokens: promptTokens,
+      outputTokens: 0,
+      totalTokens: promptTokens,
+    });
+
     try {
-      const stream = session.promptStreaming(userPrompt(input), { signal });
+      const stream = session.promptStreaming(userText, { signal });
       let accumulated = "";
       for await (const chunk of stream) {
         let delta = chunk;
@@ -101,14 +112,27 @@ export const chromeAiProvider: LlmProvider = {
           accumulated += chunk;
         }
         if (delta) {
+          outputTokens = Math.ceil(accumulated.length / 4);
           parser.feed(delta);
+          input.onStream?.onUsage?.({
+            inputTokens: promptTokens,
+            outputTokens,
+            totalTokens: promptTokens + outputTokens,
+          });
         }
       }
+
+      const finalUsage = {
+        inputTokens: promptTokens,
+        outputTokens,
+        totalTokens: promptTokens + outputTokens,
+      };
+      input.onStream?.onUsage?.(finalUsage);
 
       const rawText = stripCodeFence(parser.getRawText());
       if (!rawText) throw new ProviderError("Réponse vide de Chrome Built-in AI.", "empty_response");
       try {
-        return { raw: JSON.parse(rawText) };
+        return { raw: JSON.parse(rawText), usage: finalUsage };
       } catch {
         throw new ProviderError("La réponse de Chrome Built-in AI n'est pas un JSON valide.", "invalid_json");
       }
@@ -117,7 +141,7 @@ export const chromeAiProvider: LlmProvider = {
     }
   },
 
-  async consolidateSummary(title, summaries, language, _config, signal, onProgressText) {
+  async consolidateSummary(title, summaries, language, _config, signal, onProgressText, onUsage) {
     const factory = getAILanguageModelFactory();
     if (!factory) {
       throw new ProviderError("Chrome Built-in AI non disponible.", "blocked");
@@ -128,6 +152,8 @@ export const chromeAiProvider: LlmProvider = {
       systemPrompt: system,
       signal,
     });
+
+    const promptTokens = Math.ceil((system.length + user.length) / 4);
 
     try {
       if (onProgressText) {
@@ -143,10 +169,24 @@ export const chromeAiProvider: LlmProvider = {
           }
           if (delta) onProgressText(accumulated);
         }
-        return accumulated.trim();
+        const text = accumulated.trim();
+        const outputTokens = Math.ceil(text.length / 4);
+        onUsage?.({
+          inputTokens: promptTokens,
+          outputTokens,
+          totalTokens: promptTokens + outputTokens,
+        });
+        return text;
       } else {
         const res = await session.prompt(user, { signal });
-        return res.trim();
+        const text = res.trim();
+        const outputTokens = Math.ceil(text.length / 4);
+        onUsage?.({
+          inputTokens: promptTokens,
+          outputTokens,
+          totalTokens: promptTokens + outputTokens,
+        });
+        return text;
       }
     } finally {
       session.destroy();

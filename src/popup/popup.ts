@@ -8,6 +8,7 @@ import { getUiStrings } from "../i18n";
 import type { BackgroundToPanel, PanelToBackground, RunSnapshot } from "../messages";
 import { CATEGORIES } from "../taxonomy";
 import { isYouTubeWatchUrl } from "../youtube/youtube-detector";
+import { formatTokenCount, type TokenUsage } from "../tokens";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -189,6 +190,46 @@ function renderSnapshot(s: RunSnapshot | null): void {
         }
       }
     }
+    renderTokenUsage(s.usage, Boolean(s.cachedAt));
+  }
+}
+
+function renderTokenUsage(usage: TokenUsage | undefined, isCached = false): void {
+  const bar = $("popup-token-bar");
+  if (!bar) return;
+  const t = strings();
+  const lang = config ? config.language : "fr";
+
+  if (!usage || (usage.totalTokens === 0 && !isCached)) {
+    bar.hidden = true;
+    return;
+  }
+
+  bar.hidden = false;
+  const lbl = $("popup-token-label");
+  if (lbl) lbl.textContent = t.tokenUsageLabel;
+
+  const inEl = $("popup-token-in");
+  const dotEl = $("popup-token-dot");
+  const outEl = $("popup-token-out");
+  const totalEl = $("popup-token-total");
+  const cachedEl = $("popup-token-cached");
+
+  if (isCached && usage.totalTokens === 0) {
+    if (inEl) inEl.textContent = "";
+    if (dotEl) dotEl.hidden = true;
+    if (outEl) outEl.textContent = "";
+    if (totalEl) totalEl.textContent = "";
+    if (cachedEl) {
+      cachedEl.textContent = t.tokenCached;
+      cachedEl.hidden = false;
+    }
+  } else {
+    if (dotEl) dotEl.hidden = false;
+    if (inEl) inEl.textContent = t.tokenIn(formatTokenCount(usage.inputTokens, lang));
+    if (outEl) outEl.textContent = t.tokenOut(formatTokenCount(usage.outputTokens, lang));
+    if (totalEl) totalEl.textContent = t.tokenTotal(formatTokenCount(usage.totalTokens, lang));
+    if (cachedEl) cachedEl.hidden = true;
   }
 }
 

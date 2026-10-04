@@ -1,9 +1,11 @@
 import type { Config } from "../config";
 import type { Annotation } from "../schema";
+import type { TokenUsage } from "../tokens";
 
 export interface StreamCallbacks {
   onSummary?: (summary: string, isComplete: boolean) => void;
   onAnnotation?: (annotation: Annotation) => void;
+  onUsage?: (usage: TokenUsage) => void;
 }
 
 export interface AnalyzeInput {
@@ -23,6 +25,8 @@ export interface ProviderResult {
    * Absent quand aucune recherche web n'a été possible.
    */
   searchedUrls?: Set<string>;
+  /** Consommation de tokens mesurée pour cet appel (entrée, sortie, total). */
+  usage?: TokenUsage;
 }
 
 export interface LlmProvider {
@@ -35,6 +39,7 @@ export interface LlmProvider {
     config: Config,
     signal: AbortSignal,
     onProgressText?: (text: string) => void,
+    onUsage?: (usage: TokenUsage) => void,
   ): Promise<string>;
 }
 

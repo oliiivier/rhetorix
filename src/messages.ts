@@ -3,6 +3,7 @@ import type { Annotation, FactStatus, Severity, Source } from "./schema";
 import type { Category } from "./taxonomy";
 import type { TimeRange, YouTubePlayerOptions } from "./youtube/youtube-player";
 import type { VideoAnnotation, VideoTranscript, VideoTranscriptSlice } from "./youtube/types";
+import type { TokenUsage } from "./tokens";
 
 export interface HighlightItem {
   id: string;
@@ -80,6 +81,8 @@ export interface RunSnapshot {
   unlocated: string[];
   cachedAt?: number;
   error?: string;
+  /** Consommation de tokens mesurée en continu pour cette analyse. */
+  usage?: TokenUsage;
   /** Métadonnées spécifiques à l'analyse d'une vidéo YouTube. */
   isVideo?: boolean;
   videoChunkRange?: { startSec: number; endSec: number };

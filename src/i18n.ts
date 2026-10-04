@@ -175,6 +175,21 @@ export interface UiStrings {
   youtubeTimelineMarkersLabel: string;
   youtubeTimeBadge: (time: string) => string;
 
+  // Tokens
+  tokenUsageLabel: string;
+  tokenIn: (n: string) => string;
+  tokenOut: (n: string) => string;
+  tokenTotal: (n: string) => string;
+  tokenCached: string;
+  tokensSectionTitle: string;
+  tokensPeriodLabel: string;
+  tokensAllTimeLabel: string;
+  tokensMonthlyResetLabel: string;
+  tokensResetDisabled: string;
+  tokensResetDayOption: (day: number) => string;
+  tokensResetBtn: string;
+  tokensResetSuccess: string;
+
   // Erreurs providers
   providerErrors: Record<ProviderErrorCode, (detail?: string) => string>;
 }
@@ -387,6 +402,20 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     youtubeAutoResumeDurationLabel: "Délai avant reprise automatique (secondes)",
     youtubeTimelineMarkersLabel: "Afficher les marqueurs et zones analysées sur la barre de lecture YouTube",
     youtubeTimeBadge: (time) => `▶ ${time}`,
+
+    tokenUsageLabel: "Tokens :",
+    tokenIn: (n) => `${n} in`,
+    tokenOut: (n) => `${n} out`,
+    tokenTotal: (n) => `(${n} total)`,
+    tokenCached: "0 token (cache)",
+    tokensSectionTitle: "Consommation de tokens",
+    tokensPeriodLabel: "Période en cours",
+    tokensAllTimeLabel: "Cumul total (depuis l'installation)",
+    tokensMonthlyResetLabel: "Réinitialisation mensuelle",
+    tokensResetDisabled: "Désactivée (cumul continu)",
+    tokensResetDayOption: (day) => `Le ${day} de chaque mois`,
+    tokensResetBtn: "Remettre à zéro le compteur (RAZ)",
+    tokensResetSuccess: "Compteur de période réinitialisé.",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Refus du modèle : ${detail}` : "Le modèle a refusé d'analyser ce contenu."),
@@ -609,6 +638,20 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     youtubeTimelineMarkersLabel: "Show markers and analyzed zones on YouTube scrubber bar",
     youtubeTimeBadge: (time) => `▶ ${time}`,
 
+    tokenUsageLabel: "Tokens:",
+    tokenIn: (n) => `${n} in`,
+    tokenOut: (n) => `${n} out`,
+    tokenTotal: (n) => `(${n} total)`,
+    tokenCached: "0 tokens (cached)",
+    tokensSectionTitle: "Token Usage",
+    tokensPeriodLabel: "Current Period",
+    tokensAllTimeLabel: "All-Time Total",
+    tokensMonthlyResetLabel: "Monthly Reset",
+    tokensResetDisabled: "Disabled (continuous accumulation)",
+    tokensResetDayOption: (day) => `${day}${day === 1 ? "st" : day === 2 ? "nd" : day === 3 ? "rd" : "th"} of each month`,
+    tokensResetBtn: "Reset Period Counter (Zero Out)",
+    tokensResetSuccess: "Period counter reset.",
+
     providerErrors: {
       refusal: (detail) => (detail ? `Model refusal: ${detail}` : "The model refused to analyze this content."),
       max_tokens: () => "Response truncated (max_tokens reached). Reduce chunk size in options.",
@@ -829,6 +872,20 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     youtubeAutoResumeDurationLabel: "Tiempo antes de reanudar automáticamente (segundos)",
     youtubeTimelineMarkersLabel: "Mostrar marcadores y zonas analizadas en la barra de YouTube",
     youtubeTimeBadge: (time) => `▶ ${time}`,
+
+    tokenUsageLabel: "Tokens:",
+    tokenIn: (n) => `${n} entrada`,
+    tokenOut: (n) => `${n} salida`,
+    tokenTotal: (n) => `(${n} total)`,
+    tokenCached: "0 tokens (en caché)",
+    tokensSectionTitle: "Consumo de tokens",
+    tokensPeriodLabel: "Período actual",
+    tokensAllTimeLabel: "Total acumulado",
+    tokensMonthlyResetLabel: "Reinicio mensual",
+    tokensResetDisabled: "Desactivado (acumulación continua)",
+    tokensResetDayOption: (day) => `Día ${day} de cada mes`,
+    tokensResetBtn: "Restablecer contador (puesta a cero)",
+    tokensResetSuccess: "Contador de período restablecido.",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rechazo del modelo: ${detail}` : "El modelo rechazó analizar este contenido."),
@@ -1051,6 +1108,20 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     youtubeTimelineMarkersLabel: "Markierungen und analysierte Zonen auf YouTube-Leiste anzeigen",
     youtubeTimeBadge: (time) => `▶ ${time}`,
 
+    tokenUsageLabel: "Tokens:",
+    tokenIn: (n) => `${n} in`,
+    tokenOut: (n) => `${n} out`,
+    tokenTotal: (n) => `(${n} gesamt)`,
+    tokenCached: "0 Tokens (Cache)",
+    tokensSectionTitle: "Token-Verbrauch",
+    tokensPeriodLabel: "Aktueller Zeitraum",
+    tokensAllTimeLabel: "Gesamtverbrauch",
+    tokensMonthlyResetLabel: "Monatliches Zurücksetzen",
+    tokensResetDisabled: "Deaktiviert (fortlaufende Erfassung)",
+    tokensResetDayOption: (day) => `Am ${day}. jedes Monats`,
+    tokensResetBtn: "Zähler zurücksetzen (Nullstellung)",
+    tokensResetSuccess: "Zähler für aktuellen Zeitraum zurückgesetzt.",
+
     providerErrors: {
       refusal: (detail) => (detail ? `Ablehnung durch das Modell: ${detail}` : "Das Modell hat die Analyse dieses Inhalts abgelehnt."),
       max_tokens: () => "Antwort abgeschnitten (max_tokens erreicht). Reduzieren Sie die Blockgröße in den Optionen.",
@@ -1271,6 +1342,20 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     youtubeAutoResumeDurationLabel: "Attesa prima della ripresa automatica (secondi)",
     youtubeTimelineMarkersLabel: "Mostra marcatori e zone analizzate sulla barra di YouTube",
     youtubeTimeBadge: (time) => `▶ ${time}`,
+
+    tokenUsageLabel: "Token:",
+    tokenIn: (n) => `${n} in`,
+    tokenOut: (n) => `${n} out`,
+    tokenTotal: (n) => `(${n} totale)`,
+    tokenCached: "0 token (cache)",
+    tokensSectionTitle: "Consumo di token",
+    tokensPeriodLabel: "Periodo corrente",
+    tokensAllTimeLabel: "Totale complessivo",
+    tokensMonthlyResetLabel: "Ripristino mensile",
+    tokensResetDisabled: "Disattivato (accumulo continuo)",
+    tokensResetDayOption: (day) => `Il ${day} di ogni mese`,
+    tokensResetBtn: "Azzera contatore (reset)",
+    tokensResetSuccess: "Contatore del periodo azzerato.",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rifiuto del modello: ${detail}` : "Il modello ha rifiutato di analizzare questo contenuto."),

@@ -9,6 +9,7 @@ import { chromeAiProvider } from "./providers/chrome-ai";
 import { geminiProvider } from "./providers/gemini";
 import { openAiCompatibleProvider } from "./providers/openai-compatible";
 import type { LlmProvider, StreamCallbacks } from "./providers/types";
+import type { TokenUsage } from "./tokens";
 import {
   enforceAnnotationSourcePolicy,
   enforceSourcePolicy,
@@ -36,6 +37,7 @@ export interface AnalyzeCallbacks {
   onProgress?: (p: Progress) => void;
   onSummary?: (summary: string, isComplete: boolean) => void;
   onAnnotation?: (annotation: Annotation) => void;
+  onUsage?: (usage: TokenUsage) => void;
 }
 
 export async function analyzeArticle(
@@ -52,9 +54,30 @@ export async function analyzeArticle(
   let done = 0;
   cb.onProgress?.({ phase: "analyzing", done, total: chunks.length });
 
+  const chunkUsages = new Map<number, TokenUsage>();
+  let consolidationUsage: TokenUsage | undefined;
+
+  const emitUsage = () => {
+    let inTok = 0;
+    let outTok = 0;
+    for (const u of chunkUsages.values()) {
+      inTok += u.inputTokens;
+      outTok += u.outputTokens;
+    }
+    if (consolidationUsage) {
+      inTok += consolidationUsage.inputTokens;
+      outTok += consolidationUsage.outputTokens;
+    }
+    cb.onUsage?.({
+      inputTokens: inTok,
+      outputTokens: outTok,
+      totalTokens: inTok + outTok,
+    });
+  };
+
   const parts = await mapLimit(chunks, CONCURRENCY, async (text, index) => {
     const onStream: StreamCallbacks | undefined =
-      cb.onSummary || cb.onAnnotation
+      cb.onSummary || cb.onAnnotation || cb.onUsage
         ? {
             onSummary: (summary, isComplete) => {
               if (chunks.length === 1) {
@@ -66,6 +89,10 @@ export async function analyzeArticle(
               const safe = !webSearch ? enforceAnnotationSourcePolicy(a, undefined) : a;
               cb.onAnnotation?.({ ...safe, id });
             },
+            onUsage: (usage) => {
+              chunkUsages.set(index, usage);
+              emitUsage();
+            },
           }
         : undefined;
 
@@ -74,6 +101,10 @@ export async function analyzeArticle(
       config,
       signal,
     );
+    if (result.usage) {
+      chunkUsages.set(index, result.usage);
+      emitUsage();
+    }
     const analysis = enforceSourcePolicy(validateAnalysis(result.raw), webSearch ? result.searchedUrls : undefined);
     cb.onProgress?.({ phase: "analyzing", done: ++done, total: chunks.length });
     return analysis;
@@ -85,6 +116,12 @@ export async function analyzeArticle(
     try {
       const partialSummaries = parts.map((p) => p.summary.trim()).filter(Boolean);
       if (partialSummaries.length > 1) {
+        const onUsageCb = cb.onUsage
+          ? (usage: TokenUsage) => {
+              consolidationUsage = usage;
+              emitUsage();
+            }
+          : undefined;
         merged.summary = await provider.consolidateSummary(
           article.title,
           partialSummaries,
@@ -92,6 +129,7 @@ export async function analyzeArticle(
           config,
           signal,
           cb.onSummary ? (text) => cb.onSummary?.(text, false) : undefined,
+          ...(onUsageCb ? [onUsageCb] : []),
         );
         cb.onSummary?.(merged.summary, true);
       }
