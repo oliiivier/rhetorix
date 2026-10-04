@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { CaptionTrackMeta, YouTubeJson3Response } from "../src/youtube/types";
 import {
   cleanCueText,
+  extractCaptionTracksFromHtml,
   formatTimestamp,
   parseJson3Transcript,
+  parseXmlTranscript,
+  parseTranscriptResponse,
   selectOriginalCaptionTrack,
   sliceTranscript,
   transcriptToExtracted,
@@ -159,5 +162,77 @@ describe("formatTimestamp", () => {
   it("formate en HH:MM:SS pour les durées au-delà d'une heure", () => {
     expect(formatTimestamp(3600)).toBe("01:00:00");
     expect(formatTimestamp(3723)).toBe("01:02:03");
+  });
+});
+
+describe("parseXmlTranscript", () => {
+  it("parse le format srv3 (<p t=\"ms\" d=\"ms\"><s>...</s></p>)", () => {
+    const xml = `<?xml version="1.0" encoding="utf-8" ?><timedtext format="3">
+<head><wp id="1"/></head>
+<body>
+<p t="4480" d="5800"><s ac="0">Et</s><s t="160" ac="0"> alors,</s></p>
+<p t="10500" d="3200">monsieur le pr&eacute;sident</p>
+</body></timedtext>`;
+
+    const transcript = parseXmlTranscript(xml, "vid123", "fr");
+    expect(transcript.videoId).toBe("vid123");
+    expect(transcript.lang).toBe("fr");
+    expect(transcript.durationMs).toBe(13700);
+    expect(transcript.cues).toHaveLength(2);
+    expect(transcript.cues[0]!.text).toBe("Et alors,");
+    expect(transcript.cues[0]!.startMs).toBe(4480);
+    expect(transcript.cues[0]!.endMs).toBe(10280);
+    expect(transcript.cues[1]!.text).toBe("monsieur le président");
+    expect(transcript.fullText).toBe("Et alors, monsieur le président");
+  });
+
+  it("parse le format classique (<text start=\"s\" dur=\"s\">)", () => {
+    const xml = `<transcript>
+<text start="1.5" dur="3.0">Premi&egrave;re phrase</text>
+<text start="5.0" dur="2.5">Deuxi&egrave;me phrase</text>
+</transcript>`;
+
+    const transcript = parseXmlTranscript(xml, "vid456", "fr");
+    expect(transcript.cues).toHaveLength(2);
+    expect(transcript.cues[0]!.text).toBe("Première phrase");
+    expect(transcript.cues[0]!.startMs).toBe(1500);
+    expect(transcript.cues[0]!.endMs).toBe(4500);
+    expect(transcript.cues[1]!.text).toBe("Deuxième phrase");
+    expect(transcript.cues[1]!.startMs).toBe(5000);
+    expect(transcript.cues[1]!.endMs).toBe(7500);
+  });
+});
+
+describe("parseTranscriptResponse", () => {
+  it("détecte automatiquement le format JSON3", () => {
+    const jsonStr = JSON.stringify({
+      events: [
+        { tStartMs: 1000, dDurationMs: 2000, segs: [{ utf8: "Bonjour" }] },
+      ],
+    });
+    const transcript = parseTranscriptResponse(jsonStr, "v1", "fr");
+    expect(transcript.cues).toHaveLength(1);
+    expect(transcript.cues[0]!.text).toBe("Bonjour");
+  });
+
+  it("détecte automatiquement le format XML", () => {
+    const xml = `<timedtext><p t="2000" d="3000">Salut</p></timedtext>`;
+    const transcript = parseTranscriptResponse(xml, "v2", "fr");
+    expect(transcript.cues).toHaveLength(1);
+    expect(transcript.cues[0]!.text).toBe("Salut");
+  });
+});
+
+describe("extractCaptionTracksFromHtml", () => {
+  it("extrait le tableau captionTracks avec crochets imbriqués", () => {
+    const html = `<div>Prefix</div><script>var ytInitialPlayerResponse = {"captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[{"baseUrl":"https://yt/timedtext?v=123","languageCode":"fr","kind":"asr"}]}}};</script><div>Suffix</div>`;
+    const tracks = extractCaptionTracksFromHtml(html);
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0]!.languageCode).toBe("fr");
+    expect(tracks[0]!.kind).toBe("asr");
+  });
+
+  it("retourne un tableau vide si captionTracks est absent", () => {
+    expect(extractCaptionTracksFromHtml("<html><body>Pas de sous-titres</body></html>")).toEqual([]);
   });
 });

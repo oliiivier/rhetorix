@@ -48,6 +48,74 @@ export function selectOriginalCaptionTrack(tracks: CaptionTrackMeta[]): CaptionT
 }
 
 /**
+ * Extrait les captionTracks depuis une chaîne HTML (recherche de "captionTracks": [ ... ] avec équilibrage de crochets).
+ */
+export function extractCaptionTracksFromHtml(html: string): CaptionTrackMeta[] {
+  const idx = html.indexOf('"captionTracks":');
+  if (idx === -1) return [];
+  const start = html.indexOf("[", idx);
+  if (start === -1) return [];
+
+  let count = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < html.length; i++) {
+    const char = html[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (char === "\\") {
+      escape = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (!inString) {
+      if (char === "[") count++;
+      else if (char === "]") {
+        count--;
+        if (count === 0) {
+          try {
+            return JSON.parse(html.slice(start, i + 1)) as CaptionTrackMeta[];
+          } catch {
+            return [];
+          }
+        }
+      }
+    }
+  }
+  return [];
+}
+
+const NAMED_HTML_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  eacute: "é",
+  egrave: "è",
+  ecirc: "ê",
+  euml: "ë",
+  agrave: "à",
+  acirc: "â",
+  auml: "ä",
+  ugrave: "ù",
+  ucirc: "û",
+  uuml: "ü",
+  icirc: "î",
+  iuml: "ï",
+  ocirc: "ô",
+  ouml: "ö",
+  ccedil: "ç",
+  nbsp: " ",
+};
+
+/**
  * Nettoie une chaîne de caractères issue de sous-titres (retrait des balises, entités HTML, retours à la ligne).
  */
 export function cleanCueText(text: string): string {
@@ -57,6 +125,14 @@ export function cleanCueText(text: string): string {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&([a-zA-Z]+);/g, (match, entity: string) => {
+      const lower = entity.toLowerCase();
+      return NAMED_HTML_ENTITIES[lower] || match;
+    })
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
     .replace(/\n+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -109,6 +185,106 @@ export function parseJson3Transcript(json: YouTubeJson3Response, videoId: string
     cues,
     fullText,
   };
+}
+
+/**
+ * Parse la réponse XML de timedtext YouTube (formats srv3 <p t="ms" d="ms"> ou classique <text start="s" dur="s">).
+ */
+export function parseXmlTranscript(xml: string, videoId: string, lang = ""): VideoTranscript {
+  const cues: TranscriptCue[] = [];
+  let fullText = "";
+  let durationMs = 0;
+
+  // 1. Format srv3 (<p t="ms" d="ms">...<s>...</s>...</p>)
+  const pRegex = /<p\s+t="(\d+)"\s+d="(\d+)"[^>]*>([\s\S]*?)<\/p>/g;
+  let match: RegExpExecArray | null;
+  let hasP = false;
+
+  while ((match = pRegex.exec(xml)) !== null) {
+    hasP = true;
+    const startStr = match[1];
+    const durStr = match[2];
+    const inner = match[3] ?? "";
+    if (!startStr || !durStr) continue;
+
+    const startMs = parseInt(startStr, 10);
+    const durMs = parseInt(durStr, 10);
+    const endMs = startMs + durMs;
+    if (endMs > durationMs) durationMs = endMs;
+
+    const sRegex = /<s[^>]*>([^<]*)<\/s>/g;
+    let sMatch: RegExpExecArray | null;
+    let text = "";
+    while ((sMatch = sRegex.exec(inner)) !== null) {
+      text += sMatch[1] ?? "";
+    }
+    if (!text) {
+      text = inner.replace(/<[^>]+>/g, "");
+    }
+    text = cleanCueText(text);
+    if (!text) continue;
+
+    if (fullText.length > 0 && !fullText.endsWith(" ") && !text.startsWith(" ")) {
+      fullText += " ";
+    }
+    const charStart = fullText.length;
+    fullText += text;
+    const charEnd = fullText.length;
+
+    cues.push({ startMs, endMs, text, charStart, charEnd });
+  }
+
+  // 2. Format classique (<text start="sec" dur="sec">)
+  if (!hasP) {
+    const textRegex = /<text\s+start="([\d.]+)"\s+dur="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g;
+    while ((match = textRegex.exec(xml)) !== null) {
+      const startStr = match[1];
+      const durStr = match[2];
+      const rawText = match[3] ?? "";
+      if (!startStr || !durStr) continue;
+
+      const startMs = Math.round(parseFloat(startStr) * 1000);
+      const durMs = Math.round(parseFloat(durStr) * 1000);
+      const endMs = startMs + durMs;
+      if (endMs > durationMs) durationMs = endMs;
+
+      const text = cleanCueText(rawText.replace(/<[^>]+>/g, ""));
+      if (!text) continue;
+
+      if (fullText.length > 0 && !fullText.endsWith(" ") && !text.startsWith(" ")) {
+        fullText += " ";
+      }
+      const charStart = fullText.length;
+      fullText += text;
+      const charEnd = fullText.length;
+
+      cues.push({ startMs, endMs, text, charStart, charEnd });
+    }
+  }
+
+  return {
+    videoId,
+    lang,
+    durationMs,
+    cues,
+    fullText,
+  };
+}
+
+/**
+ * Décode une réponse brute de transcription (JSON3 ou XML) de façon polymorphe et tolérante.
+ */
+export function parseTranscriptResponse(rawText: string, videoId: string, lang = ""): VideoTranscript {
+  const trimmed = rawText.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const json = JSON.parse(trimmed) as YouTubeJson3Response;
+      if (json.events && json.events.length > 0) {
+        return parseJson3Transcript(json, videoId, lang);
+      }
+    } catch {}
+  }
+  return parseXmlTranscript(trimmed, videoId, lang);
 }
 
 /**

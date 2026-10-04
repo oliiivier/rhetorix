@@ -125,7 +125,7 @@ function showIdle(isWebPage = true): void {
     setStatus(strings().internalPageNotice);
     analyzeBtn.disabled = true;
   }
-  analyzeBtn.textContent = strings().analyzeBtn;
+  applyI18n();
 }
 
 function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
@@ -473,7 +473,7 @@ function renderSnapshot(s: RunSnapshot): void {
       updateFilterCounts([]);
       if (s.status === "cancelled") setStatus(t.cancelledStatus);
       else setStatus(s.error ?? "", true);
-      analyzeBtn.textContent = states.has(s.tabId) ? t.reanalyzeBtn : t.analyzeBtn;
+      applyI18n();
       return;
   }
 }
@@ -482,6 +482,7 @@ function renderSnapshot(s: RunSnapshot): void {
 async function showTab(tabId: number): Promise<void> {
   const tab = await ext.tabs.get(tabId).catch(() => null);
   currentTabUrl = tab?.url;
+  applyI18n();
   const isWebPage = isAnalyzableUrl(currentTabUrl);
 
   const state = states.get(tabId);
@@ -590,6 +591,7 @@ ext.tabs.onActivated.addListener(({ tabId, windowId: w }) => {
 ext.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (tabId === currentTabId && (info.url || tab?.url)) {
     currentTabUrl = info.url || tab?.url;
+    applyI18n();
   }
   if (info.status !== "loading") {
     if (tabId === currentTabId && !states.has(tabId) && !runningTabs.has(tabId)) {

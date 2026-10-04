@@ -9,6 +9,7 @@ import { YouTubeOverlay } from "./youtube/youtube-overlay";
 import { YouTubePlayerController } from "./youtube/youtube-player";
 import {
   parseJson3Transcript,
+  parseTranscriptResponse,
   selectOriginalCaptionTrack,
   sliceTranscript,
   transcriptToExtracted,
@@ -37,41 +38,148 @@ let cachedTranscript: VideoTranscript | null = null;
 let currentVideoId: string | null = null;
 
 /**
- * Récupère les métadonnées de sous-titres (captionTracks) depuis l'environnement de la page.
+ * Extrait les captionTracks depuis une chaîne HTML (recherche équilibrée de "captionTracks": [ ... ]).
  */
-function extractCaptionTracks(): CaptionTrackMeta[] {
-  // 1. Essai direct via la variable globale si accessible
-  if (window.ytInitialPlayerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
-    return window.ytInitialPlayerResponse.captions.playerCaptionsTracklistRenderer.captionTracks;
+export function extractCaptionTracksFromHtml(html: string): CaptionTrackMeta[] {
+  const idx = html.indexOf('"captionTracks":');
+  if (idx === -1) return [];
+  const start = html.indexOf("[", idx);
+  if (start === -1) return [];
+
+  let count = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < html.length; i++) {
+    const char = html[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (char === "\\") {
+      escape = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (!inString) {
+      if (char === "[") count++;
+      else if (char === "]") {
+        count--;
+        if (count === 0) {
+          try {
+            return JSON.parse(html.slice(start, i + 1)) as CaptionTrackMeta[];
+          } catch {
+            return [];
+          }
+        }
+      }
+    }
+  }
+  return [];
+}
+
+/**
+ * Récupère les métadonnées de sous-titres (captionTracks) par plusieurs stratégies complémentaires.
+ */
+async function fetchCaptionTracks(videoId: string): Promise<CaptionTrackMeta[]> {
+  // Stratégie 1 : InnerTube API avec client Android (la plus robuste, sans PoToken / exp=xpe et persistante en navigation SPA)
+  try {
+    const resp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "com.google.android.youtube/20.10.38 (Linux; U; Android 14)",
+      },
+      body: JSON.stringify({
+        context: {
+          client: {
+            clientName: "ANDROID",
+            clientVersion: "20.10.38",
+          },
+        },
+        videoId,
+      }),
+    });
+    if (resp.ok) {
+      const data = (await resp.json()) as {
+        captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: CaptionTrackMeta[] } };
+      };
+      const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+      if (Array.isArray(tracks) && tracks.length > 0) {
+        return tracks;
+      }
+    }
+  } catch (err) {
+    console.warn("Rhetorix: InnerTube player fetch failed, trying fallback:", err);
   }
 
-  // 2. Recherche dans les balises <script> de la page HTML
+  // Stratégie 2 : Téléchargement direct de la page de la vidéo (même origine, contient ytInitialPlayerResponse)
+  try {
+    const pageResp = await fetch(`https://www.youtube.com/watch?v=${videoId}`, { credentials: "omit" });
+    if (pageResp.ok) {
+      const html = await pageResp.text();
+      const tracks = extractCaptionTracksFromHtml(html);
+      if (tracks.length > 0) return tracks;
+    }
+  } catch (err) {
+    console.warn("Rhetorix: watch page fetch fallback failed:", err);
+  }
+
+  // Stratégie 3 : Recherche dans les balises <script> du DOM actuel
   const scripts = document.querySelectorAll("script");
   for (const s of scripts) {
     const text = s.textContent || "";
     if (text.includes("captionTracks")) {
-      const match = text.match(/"captionTracks":\s*(\[.*?\])/);
-      if (match && match[1]) {
-        try {
-          return JSON.parse(match[1]) as CaptionTrackMeta[];
-        } catch {}
-      }
+      const tracks = extractCaptionTracksFromHtml(text);
+      if (tracks.length > 0) return tracks;
     }
+  }
+
+  // Stratégie 4 : Propriété globale si disponible
+  if (window.ytInitialPlayerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
+    return window.ytInitialPlayerResponse.captions.playerCaptionsTracklistRenderer.captionTracks;
   }
 
   return [];
 }
 
 /**
- * Télécharge la transcription JSON3 depuis l'URL timedtext de YouTube.
+ * Télécharge le contenu brut de la transcription (XML srv3 ou JSON3) depuis YouTube.
  */
-async function fetchTranscriptJson3(baseUrl: string): Promise<unknown> {
-  const url = baseUrl.includes("fmt=json3") ? baseUrl : `${baseUrl}&fmt=json3`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Échec de récupération des sous-titres (HTTP ${res.status})`);
-  }
-  return res.json();
+async function fetchTranscriptRaw(baseUrl: string): Promise<string> {
+  // 1. Tenter avec l'URL brute (format XML timedtext standard renvoyé par Android)
+  try {
+    const res = await fetch(baseUrl);
+    if (res.ok) {
+      const text = await res.text();
+      if (text && text.trim().length > 0) return text;
+    }
+  } catch {}
+
+  // 2. Si vide ou échec, tenter avec &fmt=srv3 (XML format 3)
+  try {
+    const srv3Url = baseUrl.includes("fmt=") ? baseUrl : `${baseUrl}&fmt=srv3`;
+    const res = await fetch(srv3Url);
+    if (res.ok) {
+      const text = await res.text();
+      if (text && text.trim().length > 0) return text;
+    }
+  } catch {}
+
+  // 3. Tenter avec &fmt=json3
+  try {
+    const json3Url = baseUrl.includes("fmt=") ? baseUrl : `${baseUrl}&fmt=json3`;
+    const res = await fetch(json3Url);
+    if (res.ok) {
+      const text = await res.text();
+      if (text && text.trim().length > 0) return text;
+    }
+  } catch {}
+
+  throw new Error("La transcription retournée par YouTube est vide.");
 }
 
 /**
@@ -160,7 +268,7 @@ async function handleExtract(startSec = 0, durationSec = 900): Promise<YouTubeEx
 
   // Si déjà en cache mémoire pour la même vidéo
   if (!cachedTranscript || cachedTranscript.videoId !== videoId) {
-    const tracks = extractCaptionTracks();
+    const tracks = await fetchCaptionTracks(videoId);
     const originalTrack = selectOriginalCaptionTrack(tracks);
 
     if (!originalTrack || !originalTrack.baseUrl) {
@@ -172,8 +280,11 @@ async function handleExtract(startSec = 0, durationSec = 900): Promise<YouTubeEx
     }
 
     try {
-      const rawJson = (await fetchTranscriptJson3(originalTrack.baseUrl)) as Parameters<typeof parseJson3Transcript>[0];
-      cachedTranscript = parseJson3Transcript(rawJson, videoId, originalTrack.languageCode);
+      const rawText = await fetchTranscriptRaw(originalTrack.baseUrl);
+      cachedTranscript = parseTranscriptResponse(rawText, videoId, originalTrack.languageCode);
+      if (cachedTranscript.cues.length === 0) {
+        throw new Error("Aucun segment de transcription n'a pu être extrait.");
+      }
     } catch (err) {
       return {
         ok: false,
@@ -259,7 +370,7 @@ function initYouTube(): void {
   ensurePlayerAndOverlay();
 }
 
-if (!window.__rhetorix_youtube) {
+if (typeof window !== "undefined" && !window.__rhetorix_youtube) {
   window.__rhetorix_youtube = true;
   initYouTube();
 }
