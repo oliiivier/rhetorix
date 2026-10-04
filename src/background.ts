@@ -7,7 +7,7 @@ import { isConfigured, loadConfig, providerOrigin, type Config } from "./config"
 import { ext } from "./ext";
 import { getUiStrings } from "./i18n";
 import type { BackgroundToPanel, PanelToBackground, RunSnapshot } from "./messages";
-import { cancelRun, forgetTab, getSnapshot, isRunning, runAnalysis, sendToTab } from "./runner";
+import { cancelRun, forgetTab, getSnapshot, isRunning, loadCachedRun, runAnalysis, sendToTab } from "./runner";
 import { CATEGORIES } from "./taxonomy";
 
 interface FirefoxSidebarAction {
@@ -69,11 +69,23 @@ ext.runtime.onMessage.addListener((msg: PanelToBackground, sender, sendResponse)
       sendResponse(null);
       break;
     case "get-state":
-      sendResponse(getSnapshot(msg.tabId));
-      break;
+      void (async () => {
+        let snap = getSnapshot(msg.tabId);
+        if (!snap) {
+          const tab = await ext.tabs.get(msg.tabId).catch(() => null);
+          snap = await loadCachedRun(msg.tabId, tab?.url);
+        }
+        sendResponse(snap);
+      })();
+      return true;
     case "open-sidepanel":
       if (sidebarAction) {
-        sidebarAction.open().catch(() => sidebarAction.toggle().catch(() => {}));
+        void (async () => {
+          const alreadyOpen = sidebarAction.isOpen ? await sidebarAction.isOpen().catch(() => false) : false;
+          if (!alreadyOpen) {
+            await sidebarAction.open().catch(() => sidebarAction.toggle().catch(() => {}));
+          }
+        })();
       } else if (ext.sidePanel) {
         const openChromeSidePanel = async () => {
           let winId = sender.tab?.windowId;

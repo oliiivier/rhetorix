@@ -3,7 +3,7 @@
 // (desktop) et les bulles (mobile) ne sont que des vues de l'état publié ici.
 
 import { analyzeArticle } from "./analyze";
-import { getCached, putCached, sha256 } from "./cache";
+import { getCached, getCachedByUrl, putCached, sha256 } from "./cache";
 import { isConfigured, loadConfig, resolveLanguage, type DisplayMode } from "./config";
 import { ext } from "./ext";
 import { formatErrorMessage, getUiStrings } from "./i18n";
@@ -29,6 +29,56 @@ const runs = new Map<number, Run>();
 
 export function getSnapshot(tabId: number): RunSnapshot | null {
   return runs.get(tabId)?.snapshot ?? null;
+}
+
+export async function loadCachedRun(tabId: number, url: string | undefined): Promise<RunSnapshot | null> {
+  if (!url || !/^https?:\/\//i.test(url)) return null;
+
+  const existing = runs.get(tabId)?.snapshot;
+  if (existing && existing.status !== "error") {
+    return existing;
+  }
+
+  const cached = await getCachedByUrl(url);
+  if (!cached || !cached.analysis) {
+    return null;
+  }
+
+  const config = await loadConfig();
+  const lang = resolveLanguage(config);
+
+  let unlocated: string[] = [];
+  try {
+    await inject(tabId, "access_error");
+    const res = await sendToTab<HighlightResult>(tabId, {
+      type: "highlight",
+      annotations: cached.analysis.annotations,
+      displayMode: config.displayMode,
+      lang,
+    });
+    unlocated = res.unlocated ?? [];
+  } catch {
+    // Si l'injection échoue, l'analyse reste consultable dans le panneau
+  }
+
+  const snapshot: RunSnapshot = {
+    tabId,
+    url,
+    status: "done",
+    phase: "consolidating",
+    done: 1,
+    total: 1,
+    summary: cached.analysis.summary,
+    clickbaitGap: cached.analysis.clickbait_gap,
+    blindSpot: cached.analysis.blind_spot,
+    annotations: cached.analysis.annotations,
+    unlocated,
+    cachedAt: cached.createdAt,
+  };
+
+  const controller = new AbortController();
+  runs.set(tabId, { snapshot, controller });
+  return snapshot;
 }
 
 export function isRunning(tabId: number): boolean {

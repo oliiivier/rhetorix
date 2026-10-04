@@ -32,14 +32,16 @@ const mockAnalyze = vi.fn();
 vi.mock("../src/analyze", () => ({ analyzeArticle: (...args: unknown[]) => mockAnalyze(...args) }));
 
 const mockGetCached = vi.fn();
+const mockGetCachedByUrl = vi.fn();
 const mockPutCached = vi.fn();
 vi.mock("../src/cache", () => ({
   sha256: async () => "hash",
   getCached: (...args: unknown[]) => mockGetCached(...args),
+  getCachedByUrl: (...args: unknown[]) => mockGetCachedByUrl(...args),
   putCached: (...args: unknown[]) => mockPutCached(...args),
 }));
 
-const { runAnalysis, cancelRun, forgetTab, getSnapshot } = await import("../src/runner");
+const { runAnalysis, cancelRun, forgetTab, getSnapshot, loadCachedRun } = await import("../src/runner");
 
 function annotation(id: string): Annotation {
   return {
@@ -158,5 +160,50 @@ describe("runAnalysis (script de fond, D9)", () => {
     const final = await runAnalysis(8, undefined, { force: false }, () => {});
     expect(final.status).toBe("error");
     expect(tabMessages).toHaveLength(0);
+  });
+
+  describe("loadCachedRun", () => {
+    it("renvoie null si l'URL est absente ou non web", async () => {
+      expect(await loadCachedRun(10, undefined)).toBeNull();
+      expect(await loadCachedRun(10, "about:blank")).toBeNull();
+      expect(mockGetCachedByUrl).not.toHaveBeenCalled();
+    });
+
+    it("renvoie null si la page n'est pas en cache", async () => {
+      mockGetCachedByUrl.mockResolvedValueOnce(null);
+      const res = await loadCachedRun(11, "https://ex.test/uncached");
+      expect(res).toBeNull();
+      expect(mockGetCachedByUrl).toHaveBeenCalledWith("https://ex.test/uncached");
+      expect(mockAnalyze).not.toHaveBeenCalled();
+    });
+
+    it("charge et renvoie l'analyse en cache sans appeler le LLM", async () => {
+      const cachedAnalysis = {
+        summary: "Résumé en cache",
+        clickbait_gap: "Décalage titre",
+        blind_spot: "Angle mort",
+        annotations: [annotation("c1")],
+      };
+      mockGetCachedByUrl.mockResolvedValueOnce({
+        analysis: cachedAnalysis,
+        textHash: "h1",
+        provider: "openai",
+        model: "gpt-4o",
+        lang: "fr",
+        createdAt: 123456789,
+      });
+
+      const res = await loadCachedRun(12, "https://ex.test/cached-article");
+      expect(res).not.toBeNull();
+      expect(res?.status).toBe("done");
+      expect(res?.summary).toBe("Résumé en cache");
+      expect(res?.clickbaitGap).toBe("Décalage titre");
+      expect(res?.blindSpot).toBe("Angle mort");
+      expect(res?.cachedAt).toBe(123456789);
+      expect(res?.annotations).toHaveLength(1);
+      expect(mockAnalyze).not.toHaveBeenCalled();
+      expect(tabMessages.some((m) => m.type === "highlight")).toBe(true);
+      expect(getSnapshot(12)).toEqual(res);
+    });
   });
 });

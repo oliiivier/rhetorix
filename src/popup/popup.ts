@@ -228,14 +228,29 @@ async function analyze(force: boolean): Promise<void> {
 
 async function openSidepanel(): Promise<void> {
   // En Firefox, l'API sidebarAction peut être appelée directement dans le gestionnaire de clic
-  const ffSidebar = (globalThis as { browser?: { sidebarAction?: { open(): Promise<void>; toggle(): Promise<void> } } })
-    .browser?.sidebarAction;
+  const ffSidebar = (globalThis as {
+    browser?: {
+      sidebarAction?: {
+        open(): Promise<void>;
+        toggle(): Promise<void>;
+        isOpen?(details?: { windowId?: number }): Promise<boolean>;
+      };
+    };
+  }).browser?.sidebarAction;
+
   if (ffSidebar) {
-    await ffSidebar.open().catch(() => ffSidebar.toggle().catch(() => {}));
+    try {
+      const alreadyOpen = ffSidebar.isOpen ? await ffSidebar.isOpen().catch(() => false) : false;
+      if (!alreadyOpen) {
+        await ffSidebar.open().catch(() => ffSidebar.toggle().catch(() => {}));
+      }
+    } catch {
+      await sendToBackground({ type: "open-sidepanel", tabId: currentTabId });
+    }
   } else {
     await sendToBackground({ type: "open-sidepanel", tabId: currentTabId });
   }
-  window.close();
+  setTimeout(() => window.close(), 150);
 }
 
 async function init(): Promise<void> {

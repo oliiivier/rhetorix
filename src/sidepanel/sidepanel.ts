@@ -494,7 +494,7 @@ ext.tabs.onUpdated.addListener((tabId, info, tab) => {
   }
   if (info.status !== "loading") {
     if (tabId === currentTabId && !states.has(tabId) && !runningTabs.has(tabId)) {
-      showIdle(isAnalyzableUrl(currentTabUrl));
+      void showTab(tabId);
     }
     return;
   }
@@ -524,10 +524,6 @@ void (async () => {
   config = await loadConfig();
   modeSelect.value = config.displayMode ?? "both";
   applyI18n();
-  if (config.displayMode === "inline") {
-    void sendToBackground({ type: "close-sidebar" });
-    window.close();
-  }
   windowId = (await ext.windows.getCurrent()).id;
   const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab?.id;

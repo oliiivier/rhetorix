@@ -50,6 +50,18 @@ export async function getCached(url: string, fp: CacheFingerprint): Promise<Cach
   return entry;
 }
 
+export async function getCachedByUrl(url: string): Promise<CacheEntry | null> {
+  try {
+    const key = PREFIX + normalizeUrl(url);
+    const entry = (await ext.storage.local.get(key))[key] as CacheEntry | undefined;
+    if (!entry) return null;
+    await touch(key);
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
 export async function putCached(url: string, entry: CacheEntry): Promise<void> {
   const key = PREFIX + normalizeUrl(url);
   await ext.storage.local.set({ [key]: entry });
