@@ -2,6 +2,7 @@
   "name": "rhetorix",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Extension Chromium MV3 d'analyse rhétorique d'articles par LLM",
   "type": "module",
   "scripts": {
