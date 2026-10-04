@@ -18,6 +18,7 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 
 ## Reste à préciser
 
+- **Évolutions du moteur d'analyse** : constats et pistes (contexte global pour les articles découpés, vérification factuelle séparée, cache, robustesse, mesure de la qualité) recensés dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). Aucune piste n'est décidée ; les questions à trancher sont listées en fin de document.
 - **Firefox pour Android (D9), à tester sur un appareil réel** (`npx web-ext run -t firefox-android`) :
   - le script de fond est maintenu actif pendant l'analyse par un appel d'API toutes les 20 s ; il faut vérifier que Firefox Android ne le suspend pas pendant un appel LLM long ;
   - l'octroi d'`activeTab` et la demande de permission depuis `action.onClicked` ;
