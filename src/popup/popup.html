@@ -1,38 +1,112 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" class="popup-html">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Rhetorix</title>
+    <style>
+      html.popup-html,
+      body.popup-page {
+        width: 380px;
+        min-height: 420px;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        background: #16181c;
+        color: #e6e8eb;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      @media (prefers-color-scheme: light) {
+        html.popup-html,
+        body.popup-page {
+          background: #f6f7f9;
+          color: #1c1f24;
+        }
+      }
+    </style>
     <link rel="stylesheet" href="ui.css" />
   </head>
-  <body class="popup">
-    <header class="toolbar">
-      <h1>Rhetorix</h1>
-      <button id="options" class="icon" type="button" title="Options" aria-label="Options">⚙</button>
-    </header>
+  <body class="popup-page">
+    <div class="popup-container">
+      <header class="popup-header">
+        <div class="popup-brand">
+          <img src="icons/icon-32.png" alt="Rhetorix" width="22" height="22" class="popup-brand-icon" />
+          <div class="popup-brand-titles">
+            <h1 class="popup-brand-title">Rhetorix</h1>
+            <span class="popup-brand-subtitle" id="brand-subtitle">Esprit critique & rhétorique</span>
+          </div>
+        </div>
+        <button id="options" class="popup-icon-btn" type="button" title="Options" aria-label="Options">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </header>
 
-    <main class="popup-body">
-      <div class="field">
-        <label for="display-mode" id="mode-label">Mode d'affichage</label>
-        <select id="display-mode" class="mode-select">
-          <option value="inline" id="opt-inline">Bulles au survol uniquement</option>
-          <option value="both" id="opt-both">Combiné (panneau et bulles)</option>
-          <option value="sidepanel" id="opt-sidepanel">Panneau latéral uniquement</option>
-        </select>
-      </div>
+      <main class="popup-main">
+        <!-- Carte de contexte de page -->
+        <section class="popup-card page-card" id="page-card">
+          <div class="page-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </div>
+          <div class="page-card-details">
+            <div class="page-card-host" id="page-host">Chargement…</div>
+            <div class="page-card-title" id="page-title"></div>
+          </div>
+        </section>
 
-      <div class="popup-actions">
-        <button id="analyze" class="primary" type="button">Analyser la page</button>
-        <button id="cancel" type="button" hidden>Annuler</button>
-      </div>
+        <!-- Action principale -->
+        <section class="popup-actions-group">
+          <button id="analyze" class="popup-primary-btn" type="button">
+            <span class="btn-icon" id="analyze-icon">⚡</span>
+            <span id="analyze-text">Analyser la page</span>
+          </button>
+          <button id="cancel" class="popup-cancel-btn" type="button" hidden>Annuler</button>
+        </section>
 
-      <p id="status" class="status" role="status" aria-live="polite"></p>
+        <!-- État d'avancement / message -->
+        <div id="status-container" class="popup-status-box" hidden>
+          <div id="spinner" class="popup-spinner" hidden></div>
+          <p id="status" class="popup-status-msg" role="status" aria-live="polite"></p>
+        </div>
 
-      <div id="results-summary" class="popup-summary" hidden>
-        <div class="popup-badges" id="badges"></div>
-      </div>
-    </main>
+        <!-- Carte Résultats (affichée après analyse) -->
+        <section id="results-card" class="popup-card results-card" hidden>
+          <div class="results-header">
+            <span class="results-heading" id="results-heading">Résultats de l'analyse</span>
+          </div>
+          <div id="results-summary" class="results-summary-content" hidden></div>
+          <div id="results-extras" class="results-extras-content" hidden></div>
+          <div class="results-badges" id="badges"></div>
+          <button id="open-panel-btn" class="popup-panel-btn" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="15" y1="3" x2="15" y2="21"></line>
+            </svg>
+            <span id="open-panel-text">Ouvrir le panneau détaillé</span>
+            <span class="arrow">→</span>
+          </button>
+        </section>
+
+        <!-- Sélecteur de mode -->
+        <section class="popup-card mode-card">
+          <div class="mode-header">
+            <label for="display-mode" id="mode-label" class="mode-label">Mode d'affichage</label>
+          </div>
+          <select id="display-mode" class="popup-select">
+            <option value="inline" id="opt-inline">Bulles au survol uniquement</option>
+            <option value="both" id="opt-both">Combiné (panneau et bulles)</option>
+            <option value="sidepanel" id="opt-sidepanel">Panneau latéral uniquement</option>
+          </select>
+          <p id="mode-tip" class="mode-tip">Survolez les passages surlignés dans la page pour afficher les explications et sources.</p>
+        </section>
+      </main>
+    </div>
 
     <script src="popup.js"></script>
   </body>

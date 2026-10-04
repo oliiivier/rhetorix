@@ -48,6 +48,13 @@ export interface UiStrings {
   severities: Record<Severity, string>;
   factStatuses: Record<FactStatus, string>;
 
+  // Popover (icône d'extension)
+  brandSubtitle: string;
+  activePageLabel: string;
+  analysisResultsHeading: string;
+  openPanelDetails: string;
+  inlineModeTip: string;
+
   // Options
   optionsTitle: string;
   displayModeLabel: string;
@@ -212,6 +219,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       misleading: "Trompeur",
       unverified: "Non vérifié",
     },
+
+    brandSubtitle: "Esprit critique & rhétorique",
+    activePageLabel: "Page active",
+    analysisResultsHeading: "Résultats de l'analyse",
+    openPanelDetails: "Ouvrir le panneau détaillé",
+    inlineModeTip: "Survolez les passages surlignés dans la page pour afficher les explications et sources.",
 
     optionsTitle: "Rhetorix — Options",
     displayModeLabel: "Mode d'affichage",
@@ -409,6 +422,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       unverified: "Unverified",
     },
 
+    brandSubtitle: "Critical thinking & rhetoric",
+    activePageLabel: "Active page",
+    analysisResultsHeading: "Analysis results",
+    openPanelDetails: "Open detailed side panel",
+    inlineModeTip: "Hover over highlighted passages in the page to view explanations and sources.",
+
     optionsTitle: "Rhetorix — Options",
     displayModeLabel: "Display mode",
     displayModeHint: "Choose whether annotations appear as hover bubbles over the text, in the side panel, or both.",
@@ -604,6 +623,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       misleading: "Engañoso",
       unverified: "No verificado",
     },
+
+    brandSubtitle: "Pensamiento crítico y retórica",
+    activePageLabel: "Página activa",
+    analysisResultsHeading: "Resultados del análisis",
+    openPanelDetails: "Abrir el panel detallado",
+    inlineModeTip: "Pase el cursor sobre los textos resaltados en la página para ver explicaciones y fuentes.",
 
     optionsTitle: "Rhetorix — Opciones",
     displayModeLabel: "Modo de visualización",
@@ -801,6 +826,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       unverified: "Nicht überprüft",
     },
 
+    brandSubtitle: "Kritisches Denken & Rhetorik",
+    activePageLabel: "Aktive Seite",
+    analysisResultsHeading: "Analyseergebnisse",
+    openPanelDetails: "Detail-Seitenleiste öffnen",
+    inlineModeTip: "Fahren Sie mit der Maus über hervorgehobene Textstellen, um Erklärungen und Quellen anzuzeigen.",
+
     optionsTitle: "Rhetorix — Optionen",
     displayModeLabel: "Anzeigemodus",
     displayModeHint: "Wählen Sie, ob Anmerkungen als Hover-Blasen über dem Text, in der Seitenleiste oder in beiden angezeigt werden.",
@@ -996,6 +1027,12 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       misleading: "Fuorviante",
       unverified: "Non verificato",
     },
+
+    brandSubtitle: "Pensiero critico e retorica",
+    activePageLabel: "Pagina attiva",
+    analysisResultsHeading: "Risultati dell'analisi",
+    openPanelDetails: "Apri il pannello dettagliato",
+    inlineModeTip: "Passa il mouse sui passaggi evidenziati nella pagina per visualizzare spiegazioni e fonti.",
 
     optionsTitle: "Rhetorix — Opzioni",
     displayModeLabel: "Modalità di visualizzazione",

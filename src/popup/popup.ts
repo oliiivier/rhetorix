@@ -1,5 +1,6 @@
-// Popover de l'icône d'extension : permet de lancer l'analyse en mode bulles au survol,
-// d'ajuster le mode d'affichage et d'accéder aux paramètres sans ouvrir le panneau latéral.
+// Popover moderne de l'icône d'extension (style card compact, inspiré de Proton Pass).
+// Permet de piloter l'analyse, de visualiser l'état de la page active,
+// de consulter le résumé et de basculer de mode sans encombrer la page.
 
 import { isConfigured, loadConfig, providerOrigin, saveConfig, type Config, type DisplayMode } from "../config";
 import { ext } from "../ext";
@@ -8,18 +9,33 @@ import type { BackgroundToPanel, PanelToBackground, RunSnapshot } from "../messa
 import { CATEGORIES } from "../taxonomy";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const analyzeBtn = $<HTMLButtonElement>("analyze");
-const cancelBtn = $<HTMLButtonElement>("cancel");
-const modeSelect = $<HTMLSelectElement>("display-mode");
-const statusEl = $<HTMLParagraphElement>("status");
+
+const brandSubtitleEl = $<HTMLSpanElement>("brand-subtitle");
 const optionsBtn = $<HTMLButtonElement>("options");
-const modeLabel = $<HTMLLabelElement>("mode-label");
+const pageHostEl = $<HTMLDivElement>("page-host");
+const pageTitleEl = $<HTMLDivElement>("page-title");
+const analyzeBtn = $<HTMLButtonElement>("analyze");
+const analyzeIcon = $<HTMLSpanElement>("analyze-icon");
+const analyzeText = $<HTMLSpanElement>("analyze-text");
+const cancelBtn = $<HTMLButtonElement>("cancel");
+const statusContainer = $<HTMLDivElement>("status-container");
+const spinner = $<HTMLDivElement>("spinner");
+const statusEl = $<HTMLParagraphElement>("status");
+const resultsCard = $<HTMLElement>("results-card");
+const resultsHeading = $<HTMLSpanElement>("results-heading");
 const resultsSummary = $<HTMLDivElement>("results-summary");
+const resultsExtras = $<HTMLDivElement>("results-extras");
 const badgesEl = $<HTMLDivElement>("badges");
+const openPanelBtn = $<HTMLButtonElement>("open-panel-btn");
+const openPanelText = $<HTMLSpanElement>("open-panel-text");
+const modeLabel = $<HTMLLabelElement>("mode-label");
+const modeSelect = $<HTMLSelectElement>("display-mode");
+const modeTip = $<HTMLParagraphElement>("mode-tip");
 
 let config: Config | null = null;
 let currentTabId: number | undefined;
 let currentTabUrl: string | undefined;
+let isAnalysisDone = false;
 
 function strings() {
   return getUiStrings(config ?? undefined);
@@ -27,27 +43,59 @@ function strings() {
 
 function applyI18n(): void {
   const t = strings();
-  modeLabel.textContent = t.displayModeLabel;
+  brandSubtitleEl.textContent = t.brandSubtitle;
   optionsBtn.title = t.optionsBtnTitle;
   optionsBtn.setAttribute("aria-label", t.optionsBtnTitle);
   cancelBtn.textContent = t.cancelBtn;
+  openPanelText.textContent = t.openPanelDetails;
+  resultsHeading.textContent = t.analysisResultsHeading;
+  modeLabel.textContent = t.displayModeLabel;
+  modeTip.textContent = t.inlineModeTip;
+
   const optBoth = $("opt-both");
   if (optBoth) optBoth.textContent = t.displayModes.both;
   const optInline = $("opt-inline");
   if (optInline) optInline.textContent = t.displayModes.inline;
   const optSidepanel = $("opt-sidepanel");
   if (optSidepanel) optSidepanel.textContent = t.displayModes.sidepanel;
+
+  updateAnalyzeButtonLabel(false);
+}
+
+function updateAnalyzeButtonLabel(running: boolean): void {
+  const t = strings();
+  if (running) {
+    analyzeIcon.textContent = "⟳";
+    analyzeText.textContent = t.analyzingStatus;
+  } else if (isAnalysisDone) {
+    analyzeIcon.textContent = "🔄";
+    analyzeText.textContent = t.reanalyzeBtn;
+  } else {
+    analyzeIcon.textContent = "⚡";
+    analyzeText.textContent = t.analyzeBtn;
+  }
 }
 
 function setStatus(text: string, isError = false): void {
+  if (!text) {
+    statusContainer.hidden = true;
+    statusEl.textContent = "";
+    statusEl.classList.remove("error");
+    return;
+  }
+  statusContainer.hidden = false;
   statusEl.textContent = text;
   statusEl.classList.toggle("error", isError);
-  statusEl.hidden = !text;
 }
 
 function setRunningUi(running: boolean): void {
   analyzeBtn.disabled = running;
   cancelBtn.hidden = !running;
+  spinner.hidden = !running;
+  updateAnalyzeButtonLabel(running);
+  if (running) {
+    statusContainer.hidden = false;
+  }
 }
 
 function statusText(s: RunSnapshot): string {
@@ -60,33 +108,66 @@ function statusText(s: RunSnapshot): string {
 function renderSnapshot(s: RunSnapshot | null): void {
   const t = strings();
   if (!s || s.status === "error" || s.status === "cancelled") {
+    isAnalysisDone = false;
     setRunningUi(false);
-    resultsSummary.hidden = true;
+    resultsCard.hidden = true;
     badgesEl.replaceChildren();
+    resultsSummary.replaceChildren();
+    resultsExtras.replaceChildren();
+
     if (s?.status === "cancelled") {
       setStatus(t.cancelledStatus);
     } else if (s?.error) {
       setStatus(s.error, true);
     } else {
-      setStatus(t.idleStatus);
+      setStatus("");
     }
-    analyzeBtn.textContent = t.analyzeBtn;
     return;
   }
 
   if (s.status === "running") {
+    isAnalysisDone = false;
     setRunningUi(true);
     setStatus(statusText(s));
-    resultsSummary.hidden = true;
+    resultsCard.hidden = true;
     return;
   }
 
   if (s.status === "done") {
+    isAnalysisDone = true;
     setRunningUi(false);
-    analyzeBtn.textContent = t.reanalyzeBtn;
-    resultsSummary.hidden = false;
+    resultsCard.hidden = false;
     badgesEl.replaceChildren();
+    resultsSummary.replaceChildren();
+    resultsExtras.replaceChildren();
 
+    // Résumé global / posture
+    if (s.summary) {
+      resultsSummary.hidden = false;
+      resultsSummary.textContent = s.summary;
+    } else {
+      resultsSummary.hidden = true;
+    }
+
+    // Signaux complémentaires : clickbait et angle mort
+    let hasExtras = false;
+    if (s.clickbaitGap) {
+      hasExtras = true;
+      const chip = document.createElement("div");
+      chip.className = "results-extra-item clickbait";
+      chip.textContent = `⚠️ ${t.clickbaitHeading} : ${s.clickbaitGap}`;
+      resultsExtras.append(chip);
+    }
+    if (s.blindSpot) {
+      hasExtras = true;
+      const chip = document.createElement("div");
+      chip.className = "results-extra-item blind-spot";
+      chip.textContent = `👁️ ${t.blindSpotHeading} : ${s.blindSpot}`;
+      resultsExtras.append(chip);
+    }
+    resultsExtras.hidden = !hasExtras;
+
+    // Badges par catégorie
     const counts = {
       sophism: s.annotations.filter((a) => a.category === "sophism").length,
       bias: s.annotations.filter((a) => a.category === "bias").length,
@@ -145,6 +226,18 @@ async function analyze(force: boolean): Promise<void> {
   await sendToBackground({ type: "analyze-tab", tabId: currentTabId, force });
 }
 
+async function openSidepanel(): Promise<void> {
+  // En Firefox, l'API sidebarAction peut être appelée directement dans le gestionnaire de clic
+  const ffSidebar = (globalThis as { browser?: { sidebarAction?: { open(): Promise<void>; toggle(): Promise<void> } } })
+    .browser?.sidebarAction;
+  if (ffSidebar) {
+    await ffSidebar.open().catch(() => ffSidebar.toggle().catch(() => {}));
+  } else {
+    await sendToBackground({ type: "open-sidepanel", tabId: currentTabId });
+  }
+  window.close();
+}
+
 async function init(): Promise<void> {
   config = await loadConfig();
   applyI18n();
@@ -154,6 +247,16 @@ async function init(): Promise<void> {
   if (tab?.id === undefined) return;
   currentTabId = tab.id;
   currentTabUrl = tab.url;
+
+  if (tab.url) {
+    try {
+      const u = new URL(tab.url);
+      pageHostEl.textContent = u.hostname || tab.url;
+    } catch {
+      pageHostEl.textContent = tab.url;
+    }
+  }
+  pageTitleEl.textContent = tab.title || "";
 
   if (!isAnalyzableUrl(tab.url)) {
     analyzeBtn.disabled = true;
@@ -166,8 +269,7 @@ async function init(): Promise<void> {
 }
 
 analyzeBtn.addEventListener("click", () => {
-  const isDone = analyzeBtn.textContent === strings().reanalyzeBtn;
-  void analyze(isDone);
+  void analyze(isAnalysisDone);
 });
 
 cancelBtn.addEventListener("click", () => {
@@ -181,6 +283,10 @@ optionsBtn.addEventListener("click", () => {
   window.close();
 });
 
+openPanelBtn.addEventListener("click", () => {
+  void openSidepanel();
+});
+
 modeSelect.addEventListener("change", async () => {
   if (!config) return;
   const newMode = modeSelect.value as DisplayMode;
@@ -192,9 +298,8 @@ modeSelect.addEventListener("change", async () => {
   }
 
   if (newMode !== "inline") {
-    // L'utilisateur quitte le mode bulles seules : on ouvre le panneau latéral et on ferme le popup
-    await sendToBackground({ type: "open-sidepanel", tabId: currentTabId });
-    window.close();
+    // L'utilisateur choisit d'activer le panneau latéral : on l'ouvre immédiatement et on ferme le popup
+    await openSidepanel();
   }
 });
 

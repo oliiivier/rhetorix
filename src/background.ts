@@ -75,10 +75,21 @@ ext.runtime.onMessage.addListener((msg: PanelToBackground, sender, sendResponse)
       if (sidebarAction) {
         sidebarAction.open().catch(() => sidebarAction.toggle().catch(() => {}));
       } else if (ext.sidePanel) {
-        const windowId = sender.tab?.windowId;
-        if (windowId !== undefined) {
-          ext.sidePanel.open({ windowId }).catch(() => {});
-        }
+        const openChromeSidePanel = async () => {
+          let winId = sender.tab?.windowId;
+          if (winId === undefined && msg.tabId !== undefined) {
+            const tab = await ext.tabs.get(msg.tabId).catch(() => null);
+            winId = tab?.windowId;
+          }
+          if (winId === undefined) {
+            const currentWin = await ext.windows.getCurrent().catch(() => null);
+            winId = currentWin?.id;
+          }
+          if (winId !== undefined) {
+            await ext.sidePanel.open({ windowId: winId }).catch(() => {});
+          }
+        };
+        void openChromeSidePanel();
       }
       sendResponse(null);
       break;
