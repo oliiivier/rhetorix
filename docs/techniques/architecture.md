@@ -204,4 +204,23 @@ Règles pour le code :
 - **`permissions.request` doit être appelé avant tout `await`** dans le gestionnaire d'événement : Firefox perd sinon le geste utilisateur et refuse la demande.
 - **`activeTab`** ne s'obtient qu'au clic sur l'icône. Sous Firefox, le panneau peut aussi être ouvert depuis le menu des barres latérales, sans ce clic : l'injection échoue alors, et le panneau demande à l'utilisateur de cliquer sur l'icône.
 - **Pas de minification** : la revue d'addons.mozilla.org exige un code lisible ou les sources.
-- **Lint Firefox** : `npx web-ext lint -s dist/firefox`. Les deux avertissements `innerHTML` restants viennent de Readability, qui travaille sur une copie de la page.
+- **Lint Firefox** : `npm run lint:firefox` (`web-ext lint -s dist/firefox`). Deux avertissements `UNSAFE_VAR_ASSIGNMENT` sont attendus (voir ci-dessous).
+
+### Avertissements `innerHTML` de Readability
+
+`web-ext lint` signale deux affectations à `innerHTML` dans `content-script.js`. Elles proviennent de `@mozilla/readability`, embarqué par esbuild, et non du code de Rhetorix :
+
+| Code de Readability | Rôle | Origine du HTML |
+|---|---|---|
+| `page.innerHTML = pageCacheHtml` | Restaure le HTML sauvegardé avant de relancer l'extraction avec des critères assouplis | HTML de la page, sauvegardé par Readability |
+| `tmp.innerHTML = noscript.innerHTML` | Récupère les images à chargement différé placées dans des `<noscript>` | Contenu `<noscript>` de la page |
+
+Ces affectations sont sans risque :
+
+- Readability travaille sur une copie de la page (`document.cloneNode(true)`, `src/content-script.ts`) : ce document n'est pas affiché, ses scripts ne s'exécutent pas et la page visible n'est jamais modifiée ;
+- le HTML réinjecté vient de la page elle-même ; aucune réponse du LLM ni donnée externe n'y passe ;
+- le code de Rhetorix n'utilise pas `innerHTML` (voir CLAUDE.md, « Sécurité et Shadow DOM »).
+
+Readability n'est pas modifié, pour pouvoir le mettre à jour simplement. Lors d'une soumission sur addons.mozilla.org, joindre aux notes destinées aux relecteurs :
+
+> The two `UNSAFE_VAR_ASSIGNMENT` (innerHTML) warnings in `content-script.js` come from the bundled, unmodified `@mozilla/readability` library (the engine of Firefox Reader View). Readability runs on a detached clone of the page (`document.cloneNode(true)`), so no script executes and the live page is never modified; the HTML it re-assigns is the page's own markup, never LLM output or remote data. The extension's own code never uses innerHTML: all LLM and page content is inserted with `textContent` and DOM nodes.
