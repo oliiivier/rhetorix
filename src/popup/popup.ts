@@ -226,31 +226,18 @@ async function analyze(force: boolean): Promise<void> {
   await sendToBackground({ type: "analyze-tab", tabId: currentTabId, force });
 }
 
-async function openSidepanel(): Promise<void> {
-  // En Firefox, l'API sidebarAction peut être appelée directement dans le gestionnaire de clic
-  const ffSidebar = (globalThis as {
-    browser?: {
-      sidebarAction?: {
-        open(): Promise<void>;
-        toggle(): Promise<void>;
-        isOpen?(details?: { windowId?: number }): Promise<boolean>;
-      };
-    };
-  }).browser?.sidebarAction;
-
-  if (ffSidebar) {
-    try {
-      const alreadyOpen = ffSidebar.isOpen ? await ffSidebar.isOpen().catch(() => false) : false;
-      if (!alreadyOpen) {
-        await ffSidebar.open().catch(() => ffSidebar.toggle().catch(() => {}));
-      }
-    } catch {
-      await sendToBackground({ type: "open-sidepanel", tabId: currentTabId });
-    }
+function triggerOpenSidebar(): void {
+  // En Firefox, sidebarAction.open() requiert impérativement d'être appelé de façon
+  // synchrone au tout début du gestionnaire d'événement (contexte de geste utilisateur).
+  const ffSidebar = (globalThis as { browser?: { sidebarAction?: { open(): Promise<void> } } }).browser?.sidebarAction;
+  if (ffSidebar?.open) {
+    ffSidebar.open().catch((err) => {
+      console.warn("ffSidebar.open() fallback:", err);
+      void sendToBackground({ type: "open-sidepanel", tabId: currentTabId });
+    });
   } else {
-    await sendToBackground({ type: "open-sidepanel", tabId: currentTabId });
+    void sendToBackground({ type: "open-sidepanel", tabId: currentTabId });
   }
-  setTimeout(() => window.close(), 150);
 }
 
 async function init(): Promise<void> {
@@ -299,23 +286,40 @@ optionsBtn.addEventListener("click", () => {
 });
 
 openPanelBtn.addEventListener("click", () => {
-  void openSidepanel();
+  // 1. Déclenchement synchrone immédiat pour garantir le geste utilisateur
+  triggerOpenSidebar();
+
+  // 2. Bascule automatique dans le mode "Bulles & panneau à la demande" si on était en bulles seules
+  void (async () => {
+    if (config?.displayMode === "inline") {
+      config = { ...config, displayMode: "both" };
+      await saveConfig(config);
+      if (currentTabId !== undefined) {
+        void ext.tabs.sendMessage(currentTabId, { type: "set-display-mode", displayMode: "both" }).catch(() => {});
+      }
+    }
+    setTimeout(() => window.close(), 150);
+  })();
 });
 
-modeSelect.addEventListener("change", async () => {
+modeSelect.addEventListener("change", () => {
   if (!config) return;
   const newMode = modeSelect.value as DisplayMode;
   config = { ...config, displayMode: newMode };
-  await saveConfig(config);
-
-  if (currentTabId !== undefined) {
-    void ext.tabs.sendMessage(currentTabId, { type: "set-display-mode", displayMode: newMode }).catch(() => {});
-  }
 
   if (newMode !== "inline") {
-    // L'utilisateur choisit d'activer le panneau latéral : on l'ouvre immédiatement et on ferme le popup
-    await openSidepanel();
+    triggerOpenSidebar();
   }
+
+  void (async () => {
+    await saveConfig(config!);
+    if (currentTabId !== undefined) {
+      void ext.tabs.sendMessage(currentTabId, { type: "set-display-mode", displayMode: newMode }).catch(() => {});
+    }
+    if (newMode !== "inline") {
+      setTimeout(() => window.close(), 150);
+    }
+  })();
 });
 
 ext.runtime.onMessage.addListener((msg: BackgroundToPanel) => {

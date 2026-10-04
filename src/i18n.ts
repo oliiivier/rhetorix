@@ -191,13 +191,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacyNotice: "Le texte de l'article est envoyé au fournisseur LLM configuré.",
     filterAll: "Tous",
     displayModes: {
-      both: "Combiné (panneau et bulles)",
+      both: "Bulles & panneau à la demande",
       inline: "Bulles au survol uniquement",
       sidepanel: "Panneau latéral uniquement",
     },
     inlineModeNotice: "Mode bulles au survol actif. Survolez les passages surlignés dans la page pour consulter les analyses.",
     closeSidebarBtn: "Fermer le panneau",
-    switchBothBtn: "Passer en mode combiné",
+    switchBothBtn: "Passer en mode bulles & panneau à la demande",
     categories: {
       sophism: "Sophisme",
       bias: "Biais",
@@ -228,7 +228,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
 
     optionsTitle: "Rhetorix — Options",
     displayModeLabel: "Mode d'affichage",
-    displayModeHint: "Choisissez si les annotations s'affichent sous forme de bulles au survol du texte, dans le panneau latéral, ou les deux.",
+    displayModeHint: "Choisissez si les annotations s'affichent sous forme de bulles au survol avec panneau à la demande, en bulles seules, ou uniquement dans le panneau latéral.",
     providerLabel: "Fournisseur",
     endpointLabel: "Endpoint",
     endpointHint: "URL de base de l'API ; <code>/chat/completions</code> y est ajouté.",
@@ -393,13 +393,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacyNotice: "Article text is sent to the configured LLM provider.",
     filterAll: "All",
     displayModes: {
-      both: "Combined (panel & hover bubbles)",
+      both: "Bubbles & on-demand panel",
       inline: "Hover bubbles only",
       sidepanel: "Side panel only",
     },
     inlineModeNotice: "Hover bubbles mode active. Hover over highlighted text in the page to view analyses.",
     closeSidebarBtn: "Close panel",
-    switchBothBtn: "Switch to combined mode",
+    switchBothBtn: "Switch to bubbles & on-demand panel",
     categories: {
       sophism: "Fallacy",
       bias: "Bias",
@@ -430,7 +430,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
 
     optionsTitle: "Rhetorix — Options",
     displayModeLabel: "Display mode",
-    displayModeHint: "Choose whether annotations appear as hover bubbles over the text, in the side panel, or both.",
+    displayModeHint: "Choose whether annotations appear as hover bubbles with an on-demand side panel, hover bubbles only, or side panel only.",
     providerLabel: "Provider",
     endpointLabel: "Endpoint",
     endpointHint: "API base URL; <code>/chat/completions</code> is appended.",
@@ -595,13 +595,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacyNotice: "El texto del artículo se envía al proveedor LLM configurado.",
     filterAll: "Todos",
     displayModes: {
-      both: "Combinado (panel y burbujas)",
+      both: "Burbujas y panel a petición",
       inline: "Solo burbujas al pasar el cursor",
       sidepanel: "Solo panel lateral",
     },
     inlineModeNotice: "Modo burbujas activo. Pase el cursor sobre el texto resaltado en la página para ver los análisis.",
     closeSidebarBtn: "Cerrar panel",
-    switchBothBtn: "Cambiar a modo combinado",
+    switchBothBtn: "Cambiar a burbujas y panel a petición",
     categories: {
       sophism: "Falacia",
       bias: "Sesgo",
@@ -632,7 +632,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
 
     optionsTitle: "Rhetorix — Opciones",
     displayModeLabel: "Modo de visualización",
-    displayModeHint: "Elija si las anotaciones se muestran como burbujas al pasar el cursor sobre el texto, en el panel lateral o ambos.",
+    displayModeHint: "Elija si las anotaciones se muestran como burbujas con panel lateral a petición, solo burbujas, o solo en el panel lateral.",
     providerLabel: "Proveedor",
     endpointLabel: "Endpoint",
     endpointHint: "URL base de la API; se añade <code>/chat/completions</code>.",
@@ -797,13 +797,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacyNotice: "Der Artikeltext wird an den konfigurierten LLM-Anbieter gesendet.",
     filterAll: "Alle",
     displayModes: {
-      both: "Kombiniert (Panel & Hover-Blasen)",
+      both: "Hover-Blasen & Panel auf Abruf",
       inline: "Nur Hover-Blasen",
       sidepanel: "Nur Seitenleiste",
     },
     inlineModeNotice: "Hover-Blasen-Modus aktiv. Bewegen Sie den Mauszeiger über hervorgehobenen Text auf der Seite, um Analysen anzuzeigen.",
     closeSidebarBtn: "Panel schließen",
-    switchBothBtn: "In kombinierten Modus wechseln",
+    switchBothBtn: "Zu Blasen & Panel auf Abruf wechseln",
     categories: {
       sophism: "Trugschluss",
       bias: "Verzerrung",
@@ -834,7 +834,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
 
     optionsTitle: "Rhetorix — Optionen",
     displayModeLabel: "Anzeigemodus",
-    displayModeHint: "Wählen Sie, ob Anmerkungen als Hover-Blasen über dem Text, in der Seitenleiste oder in beiden angezeigt werden.",
+    displayModeHint: "Wählen Sie, ob Anmerkungen als Hover-Blasen mit Panel auf Abruf, nur als Hover-Blasen oder nur in der Seitenleiste angezeigt werden.",
     providerLabel: "Anbieter",
     endpointLabel: "Endpunkt",
     endpointHint: "Basis-URL der API; <code>/chat/completions</code> wird angehängt.",
@@ -999,13 +999,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     privacyNotice: "Il testo dell'articolo viene inviato al fornitore LLM configurato.",
     filterAll: "Tutti",
     displayModes: {
-      both: "Combinato (pannello e fumetti)",
+      both: "Fumetti e pannello su richiesta",
       inline: "Solo fumetti al passaggio del mouse",
       sidepanel: "Solo pannello laterale",
     },
-    inlineModeNotice: "Modalità fumetti attiva. Passa il cursore sul testo evidenziato nella pagina per visualizzare le analisi.",
+    inlineModeNotice: "Modalità fumetti attiva. Passa il cursore sul testo evidenziato nella pagina per visualizzare le analyses.",
     closeSidebarBtn: "Chiudi pannello",
-    switchBothBtn: "Passa alla modalità combinata",
+    switchBothBtn: "Passa a fumetti e pannello su richiesta",
     categories: {
       sophism: "Fallacia",
       bias: "Bias",
@@ -1036,7 +1036,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
 
     optionsTitle: "Rhetorix — Opzioni",
     displayModeLabel: "Modalità di visualizzazione",
-    displayModeHint: "Scegli se visualizzare le annotazioni come fumetti al passaggio del mouse sul testo, nel pannello laterale o entrambi.",
+    displayModeHint: "Scegli se visualizzare le annotazioni come fumetti con pannello su richiesta, solo fumetti, o solo nel pannello laterale.",
     providerLabel: "Fornitore",
     endpointLabel: "Endpoint",
     endpointHint: "URL base dell'API; <code>/chat/completions</code> viene aggiunto automaticamente.",
