@@ -11,6 +11,7 @@ import type { ExtractResult, HighlightResult, PanelToContent, RunSnapshot, YouTu
 import { recordTokenUsage, type TokenUsage } from "./tokens";
 import { isYouTubeWatchUrl } from "./youtube/youtube-detector";
 import { matchAnnotationsToCues } from "./youtube/youtube-matcher";
+import type { TimeRange, VideoAnnotation } from "./youtube/types";
 
 /** Sans activité d'API, le script de fond est suspendu au bout d'environ 30 s. */
 const KEEPALIVE_MS = 20_000;
@@ -51,6 +52,104 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
 
   const config = await loadConfig();
   const lang = resolveLanguage(config);
+  const t = getUiStrings(config);
+
+  const isYouTube = Boolean(url && isYouTubeWatchUrl(url));
+  if (isYouTube) {
+    try {
+      await injectYouTube(tabId, t.accessErrorStatus);
+    } catch {}
+
+    let videoAnnotations = cached.videoAnnotations;
+    let analyzedRanges: TimeRange[] = cached.analyzedRanges ?? [];
+    let videoChunkRange = cached.videoChunkRange;
+    let videoTotalDuration = cached.videoTotalDuration;
+
+    // Si les videoAnnotations sont absentes ou non alignées (cache historique),
+    // on extrait la transcription de la vidéo pour ré-aligner les cues et timestamps !
+    const needsAlignment =
+      !videoAnnotations ||
+      videoAnnotations.length === 0 ||
+      videoAnnotations.every((a) => a.startTime === undefined || a.startTime < 0);
+
+    if (needsAlignment) {
+      try {
+        const startSec = 0;
+        const durationSec = (config.youtubeChunkMinutes || 15) * 60;
+        const extracted = await sendToTab<YouTubeExtractResult>(tabId, {
+          type: "youtube-extract",
+          startSec,
+          durationSec,
+        });
+        if (extracted?.ok) {
+          videoAnnotations = matchAnnotationsToCues(cached.analysis.annotations, extracted.slice.cues, 0);
+          const range: TimeRange = { startSec: extracted.slice.startSec, endSec: extracted.slice.endSec };
+          analyzedRanges = [range];
+          videoChunkRange = range;
+          videoTotalDuration = extracted.transcript.durationMs / 1000;
+          await putCached(url, {
+            ...cached,
+            isVideo: true,
+            videoAnnotations,
+            analyzedRanges,
+            videoChunkRange,
+            videoTotalDuration,
+          });
+        }
+      } catch (err) {
+        console.warn("Rhetorix: could not align cached video annotations:", err);
+      }
+    }
+
+    const annotationsToUse = videoAnnotations ?? cached.analysis.annotations;
+
+    try {
+      await sendToTab(tabId, {
+        type: "youtube-set-options",
+        options: {
+          minDisplayDuration: config.youtubeMinDisplayDuration,
+          pauseMode: config.youtubePauseMode,
+          autoResume: config.youtubeAutoResume,
+          autoResumeDuration: config.youtubeAutoResumeDuration,
+        },
+      });
+
+      if (videoAnnotations) {
+        await sendToTab(tabId, {
+          type: "youtube-highlight",
+          annotations: videoAnnotations,
+          analyzedRanges,
+          lang,
+        });
+      }
+    } catch {}
+
+    const snapshot: RunSnapshot = {
+      tabId,
+      url,
+      status: "done",
+      phase: "consolidating",
+      done: 1,
+      total: 1,
+      summary: cached.analysis.summary,
+      clickbaitGap: cached.analysis.clickbait_gap,
+      blindSpot: cached.analysis.blind_spot,
+      annotations: annotationsToUse,
+      unlocated: videoAnnotations
+        ? videoAnnotations.filter((a) => a.startTime < 0).map((a) => a.id)
+        : [],
+      cachedAt: cached.createdAt,
+      usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+      isVideo: true,
+      videoChunkRange,
+      videoTotalDuration,
+      analyzedRanges,
+    };
+
+    const controller = new AbortController();
+    runs.set(tabId, { snapshot, controller });
+    return snapshot;
+  }
 
   let unlocated: string[] = [];
   try {
@@ -180,8 +279,11 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
 
       const article = extracted.extracted;
       const lang = resolveLanguage(config);
+      const videoUrl = url!;
       const chunkTag = opts.youtubeFull ? "full" : `${startSec}-${durationSec}`;
-      const cacheUrl = `${url}#chunk=${chunkTag}`;
+      const cacheUrl = opts.youtubeFull
+        ? `${videoUrl}${videoUrl.includes("?") ? "&" : "?"}rhetorix_chunk=full`
+        : (startSec === 0 ? videoUrl : `${videoUrl}${videoUrl.includes("?") ? "&" : "?"}rhetorix_chunk=${chunkTag}`);
       const fingerprint = {
         textHash: await sha256(article.paragraphs.join("\n\n")),
         provider: config.provider,
@@ -215,7 +317,6 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
             publish();
           },
         });
-        await putCached(cacheUrl, { ...fingerprint, analysis, createdAt: Date.now() });
         if (currentUsage) {
           await recordTokenUsage(currentUsage);
         }
@@ -224,13 +325,24 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
       }
 
       const videoAnnotations = matchAnnotationsToCues(analysis.annotations, extracted.slice.cues, 0);
-      const analyzedRange = { startSec: extracted.slice.startSec, endSec: extracted.slice.endSec };
+      const analyzedRange: TimeRange = { startSec: extracted.slice.startSec, endSec: extracted.slice.endSec };
 
       await sendToTab(tabId, {
         type: "youtube-highlight",
         annotations: videoAnnotations,
         analyzedRanges: [analyzedRange],
         lang,
+      });
+
+      await putCached(cacheUrl, {
+        ...fingerprint,
+        analysis,
+        createdAt: cached?.createdAt ?? Date.now(),
+        isVideo: true,
+        videoAnnotations,
+        analyzedRanges: [analyzedRange],
+        videoChunkRange: analyzedRange,
+        videoTotalDuration: extracted.transcript.durationMs / 1000,
       });
 
       Object.assign(snapshot, {

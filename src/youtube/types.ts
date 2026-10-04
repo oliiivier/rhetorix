@@ -56,6 +56,12 @@ export interface VideoAnnotation extends Annotation {
   chunkIndex?: number;
 }
 
+/** Intervalle temporel en secondes [début, fin]. */
+export interface TimeRange {
+  startSec: number;
+  endSec: number;
+}
+
 /** Résultat de l'alignement d'une citation sur des cues horodatées. */
 export interface CueMatchResult {
   startTime: number; // en secondes

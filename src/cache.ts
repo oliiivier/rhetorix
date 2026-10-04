@@ -1,6 +1,7 @@
 // Cache des analyses par URL dans storage.local (décision D7, architecture §8).
 
 import type { Analysis } from "./schema";
+import type { TimeRange, VideoAnnotation } from "./youtube/types";
 import { ext } from "./ext";
 
 export interface CacheEntry {
@@ -10,9 +11,14 @@ export interface CacheEntry {
   model: string;
   lang: string;
   createdAt: number;
+  isVideo?: boolean;
+  videoAnnotations?: VideoAnnotation[];
+  analyzedRanges?: TimeRange[];
+  videoChunkRange?: TimeRange;
+  videoTotalDuration?: number;
 }
 
-export type CacheFingerprint = Omit<CacheEntry, "analysis" | "createdAt">;
+export type CacheFingerprint = Omit<CacheEntry, "analysis" | "createdAt" | "isVideo" | "videoAnnotations" | "analyzedRanges" | "videoChunkRange" | "videoTotalDuration">;
 
 const PREFIX = "cache:";
 const INDEX_KEY = "cache-index";
@@ -54,9 +60,20 @@ export async function getCachedByUrl(url: string): Promise<CacheEntry | null> {
   try {
     const key = PREFIX + normalizeUrl(url);
     const entry = (await ext.storage.local.get(key))[key] as CacheEntry | undefined;
-    if (!entry) return null;
-    await touch(key);
-    return entry;
+    if (entry) {
+      await touch(key);
+      return entry;
+    }
+    const index = await readIndex();
+    const candidateKey = index.find((k) => k.startsWith(key + "&rhetorix_chunk=") || k.startsWith(key + "?rhetorix_chunk="));
+    if (candidateKey) {
+      const chunkEntry = (await ext.storage.local.get(candidateKey))[candidateKey] as CacheEntry | undefined;
+      if (chunkEntry) {
+        await touch(candidateKey);
+        return chunkEntry;
+      }
+    }
+    return null;
   } catch {
     return null;
   }

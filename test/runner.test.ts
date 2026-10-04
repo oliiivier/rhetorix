@@ -258,5 +258,91 @@ describe("runAnalysis (script de fond, D9)", () => {
       expect(tabMessages.some((m) => m.type === "highlight")).toBe(true);
       expect(getSnapshot(12)).toEqual(res);
     });
+
+    it("charge et renvoie l'analyse d'une vidéo YouTube en cache avec alignement temporel", async () => {
+      const cachedAnalysis = {
+        summary: "Résumé YouTube en cache",
+        clickbait_gap: null,
+        blind_spot: null,
+        annotations: [{ ...annotation("yt-c1"), exact_quote: "citation ann-yt-1" }],
+      };
+      mockGetCachedByUrl.mockResolvedValueOnce({
+        analysis: cachedAnalysis,
+        textHash: "h-yt",
+        provider: "openai",
+        model: "gpt-4o",
+        lang: "fr",
+        createdAt: 999999999,
+        isVideo: true,
+        videoAnnotations: [
+          {
+            ...annotation("yt-c1"),
+            exact_quote: "citation ann-yt-1",
+            startTime: 42.5,
+            endTime: 48.0,
+          },
+        ],
+        analyzedRanges: [{ startSec: 0, endSec: 900 }],
+        videoChunkRange: { startSec: 0, endSec: 900 },
+        videoTotalDuration: 1200,
+      });
+
+      const res = await loadCachedRun(13, "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+      expect(res).not.toBeNull();
+      expect(res?.status).toBe("done");
+      expect(res?.isVideo).toBe(true);
+      expect(res?.videoChunkRange).toEqual({ startSec: 0, endSec: 900 });
+      expect(res?.annotations[0]).toMatchObject({ startTime: 42.5, endTime: 48.0 });
+      expect(tabMessages.some((m) => m.type === "youtube-highlight")).toBe(true);
+      expect(tabMessages.some((m) => m.type === "youtube-set-options")).toBe(true);
+    });
+
+    it("ré-aligne dynamiquement une analyse YouTube en cache sans videoAnnotations", async () => {
+      youtubeExtractResponse = {
+        ok: true,
+        extracted: {
+          title: "Vidéo Test",
+          lang: "fr",
+          paragraphs: ["citation ann-yt-1 dans la transcription."],
+        },
+        slice: {
+          index: 0,
+          startSec: 0,
+          endSec: 900,
+          cues: [{ text: "citation ann-yt-1 dans la transcription.", startMs: 15000, endMs: 20000 }],
+        },
+        transcript: {
+          videoId: "dQw4w9WgXcQ",
+          language: "fr",
+          durationMs: 1200000,
+          cues: [],
+        },
+      };
+
+      const cachedAnalysis = {
+        summary: "Analyse brute sans timestamps",
+        clickbait_gap: null,
+        blind_spot: null,
+        annotations: [{ ...annotation("yt-c2"), exact_quote: "citation ann-yt-1" }],
+      };
+      mockGetCachedByUrl.mockResolvedValueOnce({
+        analysis: cachedAnalysis,
+        textHash: "h-yt2",
+        provider: "openai",
+        model: "gpt-4o",
+        lang: "fr",
+        createdAt: 888888888,
+      });
+
+      const res = await loadCachedRun(14, "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+      expect(res).not.toBeNull();
+      expect(res?.status).toBe("done");
+      expect(res?.isVideo).toBe(true);
+      expect(res?.annotations[0]?.id).toBe("yt-c2");
+      // startTime doit être aligné à 15s (15000 ms)
+      expect((res?.annotations[0] as any).startTime).toBe(15);
+      expect(mockPutCached).toHaveBeenCalled();
+      expect(tabMessages.some((m) => m.type === "youtube-highlight")).toBe(true);
+    });
   });
 });

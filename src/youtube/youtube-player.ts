@@ -71,6 +71,7 @@ export class YouTubePlayerController {
   }
 
   public attach(video: HTMLVideoElement, container?: HTMLElement | null): void {
+    if (this.videoEl === video && !this.isDestroyed) return;
     this.detach();
     this.videoEl = video;
     this.containerEl = container ?? video.closest("#movie_player") ?? video.parentElement;
@@ -118,9 +119,10 @@ export class YouTubePlayerController {
   }
 
   public seekTo(timeSec: number, autoPlay = true): void {
-    if (!this.videoEl) return;
+    if (!this.videoEl || !Number.isFinite(timeSec)) return;
     this.cancelAutoResume();
-    this.videoEl.currentTime = Math.max(0, timeSec);
+    const target = Math.max(0, timeSec);
+    this.videoEl.currentTime = target;
     if (autoPlay) {
       void this.videoEl.play().catch(() => {});
     }
