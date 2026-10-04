@@ -17,6 +17,7 @@ Après une modification, lancer `typecheck`, `test` et `build`.
 ## Documentation de référence
 
 - [docs/fonctionnelles/specification.md](docs/fonctionnelles/specification.md) : le PRD, qui fait foi pour le comportement ;
+- [docs/fonctionnelles/spec-youtube.md](docs/fonctionnelles/spec-youtube.md) : spécifications fonctionnelles pour le module YouTube et la synchronisation vidéo ;
 - [docs/techniques/architecture.md](docs/techniques/architecture.md) : composants, messages, providers, cache, compatibilité des navigateurs ;
 - [docs/fonctionnelles/points-ouverts.md](docs/fonctionnelles/points-ouverts.md) : les décisions prises (D1 à D8) et les points restant à préciser. Ne pas trancher implicitement un point ouvert : demander, ou documenter le choix fait.
 
