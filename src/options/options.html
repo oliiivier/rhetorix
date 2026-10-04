@@ -112,6 +112,48 @@
           <span class="hint" id="max-chunk-hint">Au-delà, l'article est découpé par paragraphes et analysé en plusieurs appels.</span>
         </label>
 
+        <div class="field-block" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px;">
+          <h2 id="heading-youtube" style="font-size: 15px; margin: 0 0 6px 0;">YouTube</h2>
+
+          <label>
+            <span id="lbl-yt-chunk-minutes">Durée d'une tranche d'analyse (minutes)</span>
+            <input type="number" name="youtubeChunkMinutes" min="5" max="60" step="5" />
+          </label>
+
+          <label>
+            <span id="lbl-yt-min-display">Durée minimale d'affichage des infobulles (secondes)</span>
+            <input type="number" name="youtubeMinDisplayDuration" min="2" max="30" step="1" />
+          </label>
+
+          <label>
+            <span id="lbl-yt-pause-mode">Mode de pause</span>
+            <select name="youtubePauseMode">
+              <option value="none" id="opt-yt-pause-none">Ne pas interrompre</option>
+              <option value="pause_start" id="opt-yt-pause-start">Pause au début du passage</option>
+              <option value="pause_after" id="opt-yt-pause-after">Pause à la fin du passage</option>
+            </select>
+          </label>
+
+          <div id="yt-autoresume-field">
+            <label class="checkbox">
+              <input type="checkbox" name="youtubeAutoResume" />
+              <span id="lbl-yt-auto-resume">Reprise automatique après pause</span>
+            </label>
+          </div>
+
+          <label id="yt-autoresume-duration-field">
+            <span id="lbl-yt-auto-resume-duration">Durée du compte à rebours de reprise (secondes)</span>
+            <input type="number" name="youtubeAutoResumeDuration" min="2" max="15" step="1" />
+          </label>
+
+          <div id="yt-markers-field">
+            <label class="checkbox">
+              <input type="checkbox" name="youtubeShowTimelineMarkers" />
+              <span id="lbl-yt-timeline-markers">Afficher les marqueurs sur la barre de progression</span>
+            </label>
+          </div>
+        </div>
+
         <div class="row">
           <button id="btn-save" class="primary" type="submit">Enregistrer</button>
           <span id="form-status" role="status"></span>

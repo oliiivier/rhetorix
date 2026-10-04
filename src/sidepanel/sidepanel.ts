@@ -8,6 +8,9 @@ import { getUiStrings } from "../i18n";
 import type { BackgroundToPanel, ContentToPanel, PanelToBackground, PanelToContent, RunSnapshot } from "../messages";
 import type { Analysis, Annotation } from "../schema";
 import { labelDef, type Category } from "../taxonomy";
+import { isYouTubeWatchUrl } from "../youtube/youtube-detector";
+import { formatTimestamp } from "../youtube/youtube-transcript";
+import type { VideoAnnotation } from "../youtube/types";
 
 interface TabState {
   url: string | undefined;
@@ -18,6 +21,7 @@ interface TabState {
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const analyzeBtn = $<HTMLButtonElement>("analyze");
+const analyzeFullBtn = $<HTMLButtonElement>("analyze-full");
 const cancelBtn = $<HTMLButtonElement>("cancel");
 const modeSelect = $<HTMLSelectElement>("display-mode");
 const statusEl = $<HTMLParagraphElement>("status");
@@ -62,7 +66,16 @@ function updateDisplayModeBanner(): void {
 function applyI18n(): void {
   const t = strings();
   const hasAnalysis = currentTabId !== undefined && states.has(currentTabId);
-  analyzeBtn.textContent = hasAnalysis ? t.reanalyzeBtn : t.analyzeBtn;
+  const isYouTube = Boolean(currentTabUrl && isYouTubeWatchUrl(currentTabUrl));
+
+  if (isYouTube) {
+    analyzeBtn.textContent = hasAnalysis ? t.youtubeChunkReadyBtn : t.youtubeAnalyzeChunkBtn;
+    analyzeFullBtn.textContent = t.youtubeAnalyzeFullBtn;
+    analyzeFullBtn.hidden = hasAnalysis;
+  } else {
+    analyzeBtn.textContent = hasAnalysis ? t.reanalyzeBtn : t.analyzeBtn;
+    analyzeFullBtn.hidden = true;
+  }
   cancelBtn.textContent = t.cancelBtn;
   const optBtn = $("options");
   optBtn.title = t.optionsBtnTitle;
@@ -156,9 +169,26 @@ function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
     }
   }
 
+  const va = a as VideoAnnotation;
+  const timeBadge = q<HTMLElement>(".time-badge");
+  if (timeBadge && va.startTime !== undefined && va.startTime >= 0) {
+    timeBadge.textContent = t.youtubeTimeBadge(formatTimestamp(va.startTime));
+    timeBadge.hidden = false;
+    timeBadge.addEventListener("click", (e) => {
+      e.stopPropagation();
+      activate();
+    });
+  } else if (timeBadge) {
+    timeBadge.hidden = true;
+  }
+
   const activate = () => {
     selectCard(a.id, false);
-    if (!unlocated && currentTabId !== undefined) void send(currentTabId, { type: "focus", id: a.id });
+    if (va.startTime !== undefined && va.startTime >= 0 && currentTabId !== undefined) {
+      void send(currentTabId, { type: "youtube-seek", timeSec: va.startTime, autoPlay: true });
+    } else if (!unlocated && currentTabId !== undefined) {
+      void send(currentTabId, { type: "focus", id: a.id });
+    }
   };
   li.addEventListener("click", (e) => {
     if ((e.target as Element).closest("a, summary")) return;
@@ -311,8 +341,50 @@ function analyze(force: boolean): void {
   })();
 }
 
+function analyzeYouTube(isFull: boolean): void {
+  const t = strings();
+  if (!config || !isConfigured(config)) {
+    setStatus(t.needConfigStatus, true);
+    void ext.runtime.openOptionsPage();
+    return;
+  }
+  const origins = ["https://*/*", "http://*/*"];
+  const origin = providerOrigin(config);
+  if (origin && !origins.includes(origin)) {
+    origins.push(origin);
+  }
+  const permission = ext.permissions.request({ origins }).catch(() => false);
+
+  void (async () => {
+    const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id === undefined) return;
+    currentTabId = tab.id;
+    currentTabUrl = tab.url;
+
+    if (!(await permission)) {
+      setStatus(t.apiPermissionError, true);
+      return;
+    }
+    setRunningUi(true);
+    if (isFull) {
+      await sendToBackground({ type: "analyze-youtube-full", tabId: tab.id, force: true });
+    } else {
+      await sendToBackground({ type: "analyze-youtube-chunk", tabId: tab.id, startSec: 0, force: true });
+    }
+  })();
+}
+
 function statusText(s: RunSnapshot): string {
   const t = strings();
+  if (s.isVideo && s.phase === "analyzing") {
+    if (s.videoChunkRange) {
+      return t.youtubeAnalyzingChunkStatus(
+        formatTimestamp(s.videoChunkRange.startSec),
+        formatTimestamp(s.videoChunkRange.endSec),
+      );
+    }
+    return t.youtubeAnalyzingFullStatus;
+  }
   if (s.phase === "extracting") return t.extractingStatus;
   if (s.phase === "consolidating") return t.consolidatingStatus;
   return s.total > 1 ? t.analyzingPartStatus(s.done, s.total) : t.analyzingStatus;
@@ -430,8 +502,17 @@ async function showTab(tabId: number): Promise<void> {
 // ---------- Événements ----------
 
 analyzeBtn.addEventListener("click", () => {
-  const hasAnalysis = currentTabId !== undefined && states.has(currentTabId);
-  analyze(hasAnalysis);
+  const isYouTube = Boolean(currentTabUrl && isYouTubeWatchUrl(currentTabUrl));
+  if (isYouTube) {
+    const hasAnalysis = currentTabId !== undefined && states.has(currentTabId);
+    analyzeYouTube(hasAnalysis);
+  } else {
+    const hasAnalysis = currentTabId !== undefined && states.has(currentTabId);
+    analyze(hasAnalysis);
+  }
+});
+analyzeFullBtn?.addEventListener("click", () => {
+  analyzeYouTube(true);
 });
 cancelBtn.addEventListener("click", () => {
   if (currentTabId !== undefined) void sendToBackground({ type: "cancel", tabId: currentTabId });
@@ -471,7 +552,25 @@ filtersEl.addEventListener("click", (e) => {
 $("options").addEventListener("click", () => void ext.runtime.openOptionsPage());
 
 ext.runtime.onMessage.addListener((msg: ContentToPanel | BackgroundToPanel, sender) => {
-  if (msg.type === "annotation-clicked" && sender.tab?.id === currentTabId) selectCard(msg.id, true);
+  if (msg.type === "annotation-clicked" && currentTabId !== undefined && sender.tab?.id === currentTabId) selectCard(msg.id, true);
+  if (msg.type === "youtube-time-update" && currentTabId !== undefined && sender.tab?.id === currentTabId) {
+    const currentTime = msg.currentTime;
+    const state = states.get(currentTabId);
+    if (state) {
+      const activeAnn = state.analysis.annotations.find((a) => {
+        const va = a as VideoAnnotation;
+        return (
+          va.startTime !== undefined &&
+          va.startTime >= 0 &&
+          currentTime >= va.startTime &&
+          currentTime <= Math.max(va.endTime, va.startTime + 6)
+        );
+      });
+      if (activeAnn) {
+        selectCard(activeAnn.id, false);
+      }
+    }
+  }
   if (msg.type === "run-update") {
     const s = msg.snapshot;
     if (s.status === "running") runningTabs.add(s.tabId);

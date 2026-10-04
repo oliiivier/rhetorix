@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Config } from "../src/config";
+import { DEFAULT_CONFIG, type Config } from "../src/config";
 import type { PanelToContent, RunSnapshot } from "../src/messages";
 import type { Annotation } from "../src/schema";
 
 const tabMessages: PanelToContent[] = [];
 let extractResponse: unknown;
+let youtubeExtractResponse: unknown;
 let config: Config;
 
 vi.mock("../src/ext", () => ({
@@ -16,6 +17,9 @@ vi.mock("../src/ext", () => ({
         tabMessages.push(msg);
         if (msg.type === "extract") return extractResponse;
         if (msg.type === "highlight") return { unlocated: ["ann-2"] };
+        if (msg.type === "youtube-extract") return youtubeExtractResponse;
+        if (msg.type === "youtube-set-options") return { ok: true };
+        if (msg.type === "youtube-highlight") return { ok: true };
         return null;
       }),
     },
@@ -61,6 +65,7 @@ describe("runAnalysis (script de fond, D9)", () => {
     tabMessages.length = 0;
     extractResponse = { ok: true, article: { title: "T", lang: "fr", paragraphs: ["Un paragraphe."] } };
     config = {
+      ...DEFAULT_CONFIG,
       provider: "openai-compatible",
       apiKey: "",
       model: "m",
@@ -160,6 +165,54 @@ describe("runAnalysis (script de fond, D9)", () => {
     const final = await runAnalysis(8, undefined, { force: false }, () => {});
     expect(final.status).toBe("error");
     expect(tabMessages).toHaveLength(0);
+  });
+
+  it("gère l'analyse d'une vidéo YouTube par tranche", async () => {
+    youtubeExtractResponse = {
+      ok: true,
+      extracted: {
+        title: "Vidéo Test",
+        lang: "fr",
+        paragraphs: ["citation ann-yt-1 dans la transcription."],
+      },
+      slice: {
+        index: 0,
+        startSec: 0,
+        endSec: 900,
+        cues: [{ text: "citation ann-yt-1 dans la transcription.", startMs: 10000, durationMs: 5000 }],
+      },
+      transcript: {
+        videoId: "dQw4w9WgXcQ",
+        language: "fr",
+        isGenerated: false,
+        durationMs: 1200000,
+        cues: [],
+      },
+    };
+
+    mockAnalyze.mockImplementation(async (_article, _config, _signal, cb) => {
+      cb.onSummary("Résumé YouTube", true);
+      const ann = annotation("ann-yt-1");
+      ann.exact_quote = "citation ann-yt-1";
+      cb.onAnnotation(ann);
+      return {
+        summary: "Résumé YouTube",
+        clickbait_gap: null,
+        blind_spot: null,
+        annotations: [ann],
+      };
+    });
+
+    const final = await runAnalysis(9, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", { force: false }, () => {});
+
+    expect(final.status).toBe("done");
+    expect(final.isVideo).toBe(true);
+    expect(final.summary).toBe("Résumé YouTube");
+    expect(final.annotations).toHaveLength(1);
+    expect(final.videoChunkRange).toEqual({ startSec: 0, endSec: 900 });
+    expect(tabMessages.some((m) => m.type === "youtube-set-options")).toBe(true);
+    expect(tabMessages.some((m) => m.type === "youtube-extract")).toBe(true);
+    expect(tabMessages.some((m) => m.type === "youtube-highlight")).toBe(true);
   });
 
   describe("loadCachedRun", () => {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Config } from "../src/config";
+import { DEFAULT_CONFIG, type Config } from "../src/config";
 import type { Extracted } from "../src/messages";
 import type { Annotation } from "../src/schema";
 
@@ -25,6 +25,7 @@ describe("analyzeArticle", () => {
   });
 
   const baseConfig: Config = {
+    ...DEFAULT_CONFIG,
     provider: "openai-compatible",
     apiKey: "test-key",
     model: "test-model",

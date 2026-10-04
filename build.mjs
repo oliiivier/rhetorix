@@ -10,6 +10,7 @@ const pkg = JSON.parse(await readFile("package.json", "utf8"));
 const entryPoints = {
   background: "src/background.ts",
   "content-script": "src/content-script.ts",
+  "content-script-youtube": "src/content-script-youtube.ts",
   sidepanel: "src/sidepanel/sidepanel.ts",
   options: "src/options/options.ts",
   popup: "src/popup/popup.ts",

@@ -195,6 +195,22 @@ button.filter-btn.badge.active {
 
 .card-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .card .label { font-weight: 600; }
+.card .time-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--border);
+  color: var(--text);
+  cursor: pointer;
+}
+.card .time-badge:hover {
+  background: var(--accent);
+  color: #fff;
+}
 .card .severity { margin-left: auto; font-size: 12px; color: var(--muted); }
 .card.severity-high .severity { color: var(--danger); font-weight: 600; }
 

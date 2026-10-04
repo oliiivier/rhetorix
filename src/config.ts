@@ -4,6 +4,7 @@ import { ext } from "./ext";
 
 export type ProviderId = "anthropic" | "openai-compatible" | "gemini" | "chrome-ai";
 export type DisplayMode = "sidepanel" | "inline" | "both";
+export type YouTubePauseMode = "none" | "pause_start" | "pause_after";
 
 export interface Config {
   provider: ProviderId;
@@ -19,6 +20,18 @@ export interface Config {
   maxChunkTokens: number;
   /** Mode d'affichage : panneau latéral, bulles au survol ou les deux. */
   displayMode: DisplayMode;
+  /** Durée d'une tranche d'analyse YouTube par défaut (en minutes, défaut: 15). */
+  youtubeChunkMinutes: number;
+  /** Durée minimale d'affichage des infobulles sur YouTube (en secondes, défaut: 6). */
+  youtubeMinDisplayDuration: number;
+  /** Mode de pause automatique de la vidéo sur YouTube. */
+  youtubePauseMode: YouTubePauseMode;
+  /** Reprise automatique après pause sur YouTube (auto-resume). */
+  youtubeAutoResume: boolean;
+  /** Durée du compte à rebours de reprise automatique (en secondes, défaut: 5). */
+  youtubeAutoResumeDuration: number;
+  /** Afficher les marqueurs et zones analysées sur la barre de progression YouTube. */
+  youtubeShowTimelineMarkers: boolean;
 }
 
 export const DEFAULT_MODELS: Record<ProviderId, string> = {
@@ -37,6 +50,12 @@ export const DEFAULT_CONFIG: Config = {
   webSearch: true,
   maxChunkTokens: 8_000,
   displayMode: "both",
+  youtubeChunkMinutes: 15,
+  youtubeMinDisplayDuration: 6,
+  youtubePauseMode: "none",
+  youtubeAutoResume: true,
+  youtubeAutoResumeDuration: 5,
+  youtubeShowTimelineMarkers: true,
 };
 
 const KEY = "config";

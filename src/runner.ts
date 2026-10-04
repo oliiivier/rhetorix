@@ -7,7 +7,9 @@ import { getCached, getCachedByUrl, putCached, sha256 } from "./cache";
 import { isConfigured, loadConfig, resolveLanguage, type DisplayMode } from "./config";
 import { ext } from "./ext";
 import { formatErrorMessage, getUiStrings } from "./i18n";
-import type { ExtractResult, HighlightResult, PanelToContent, RunSnapshot } from "./messages";
+import type { ExtractResult, HighlightResult, PanelToContent, RunSnapshot, YouTubeExtractResult } from "./messages";
+import { isYouTubeWatchUrl } from "./youtube/youtube-detector";
+import { matchAnnotationsToCues } from "./youtube/youtube-matcher";
 
 /** Sans activité d'API, le script de fond est suspendu au bout d'environ 30 s. */
 const KEEPALIVE_MS = 20_000;
@@ -23,6 +25,8 @@ export interface RunOptions {
   force: boolean;
   /** Impose un mode d'affichage (mobile : bulles seules). Sinon, celui de la configuration. */
   displayMode?: DisplayMode;
+  youtubeChunkStartSec?: number;
+  youtubeFull?: boolean;
 }
 
 const runs = new Map<number, Run>();
@@ -108,6 +112,14 @@ async function inject(tabId: number, accessError: string): Promise<void> {
   }
 }
 
+async function injectYouTube(tabId: number, accessError: string): Promise<void> {
+  try {
+    await ext.scripting.executeScript({ target: { tabId }, files: ["content-script-youtube.js"] });
+  } catch {
+    throw new Error(accessError);
+  }
+}
+
 export async function runAnalysis(tabId: number, url: string | undefined, opts: RunOptions, onUpdate: UpdateListener): Promise<RunSnapshot> {
   forgetTab(tabId);
   const controller = new AbortController();
@@ -136,60 +148,147 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
     if (!isConfigured(config)) throw new Error(t.needConfigStatus);
     publish();
     if (url && !/^https?:\/\//i.test(url)) throw new Error(t.accessErrorStatus);
-    await inject(tabId, t.accessErrorStatus);
-    const extracted = await sendToTab<ExtractResult>(tabId, { type: "extract" });
-    if (!extracted.ok) {
-      if (extracted.errorCode === "no_article") throw new Error(t.extractNoArticleError);
-      if (extracted.errorCode === "empty_article") throw new Error(t.extractEmptyArticleError);
-      throw new Error(extracted.error);
-    }
-    const article = extracted.article;
-    const lang = resolveLanguage(config);
-    const fingerprint = {
-      textHash: await sha256(article.paragraphs.join("\n\n")),
-      provider: config.provider,
-      model: config.model,
-      lang,
-    };
-    const cached = !opts.force && url ? await getCached(url, fingerprint) : null;
-    let analysis = cached?.analysis;
-    if (!analysis) {
-      snapshot.phase = "analyzing";
-      publish();
-      analysis = await analyzeArticle(article, config, controller.signal, {
-        onProgress: ({ phase, done, total }) => {
-          snapshot.phase = phase ?? "analyzing";
-          snapshot.done = done;
-          snapshot.total = total;
-          publish();
-        },
-        onSummary: (summary) => {
-          snapshot.summary = summary;
-          publish();
-        },
-        onAnnotation: (a) => {
-          snapshot.annotations.push(a);
-          publish();
+
+    const isYouTube = Boolean(url && isYouTubeWatchUrl(url));
+    if (isYouTube) {
+      await injectYouTube(tabId, t.accessErrorStatus);
+      await sendToTab(tabId, {
+        type: "youtube-set-options",
+        options: {
+          minDisplayDuration: config.youtubeMinDisplayDuration,
+          pauseMode: config.youtubePauseMode,
+          autoResume: config.youtubeAutoResume,
+          autoResumeDuration: config.youtubeAutoResumeDuration,
         },
       });
-      if (url) await putCached(url, { ...fingerprint, analysis, createdAt: Date.now() });
-    }
 
-    const { unlocated } = await sendToTab<HighlightResult>(tabId, {
-      type: "highlight",
-      annotations: analysis.annotations,
-      displayMode: opts.displayMode ?? config.displayMode,
-      lang,
-    });
-    Object.assign(snapshot, {
-      status: "done",
-      summary: analysis.summary,
-      clickbaitGap: analysis.clickbait_gap,
-      blindSpot: analysis.blind_spot,
-      annotations: analysis.annotations,
-      unlocated,
-      cachedAt: cached?.createdAt,
-    } satisfies Partial<RunSnapshot>);
+      const startSec = opts.youtubeChunkStartSec ?? 0;
+      const durationSec = opts.youtubeFull ? 999999 : (config.youtubeChunkMinutes || 15) * 60;
+
+      const extracted = await sendToTab<YouTubeExtractResult>(tabId, {
+        type: "youtube-extract",
+        startSec,
+        durationSec,
+      });
+
+      if (!extracted.ok) {
+        throw new Error(extracted.error);
+      }
+
+      const article = extracted.extracted;
+      const lang = resolveLanguage(config);
+      const chunkTag = opts.youtubeFull ? "full" : `${startSec}-${durationSec}`;
+      const cacheUrl = `${url}#chunk=${chunkTag}`;
+      const fingerprint = {
+        textHash: await sha256(article.paragraphs.join("\n\n")),
+        provider: config.provider,
+        model: config.model,
+        lang,
+      };
+
+      const cached = !opts.force ? await getCached(cacheUrl, fingerprint) : null;
+      let analysis = cached?.analysis;
+      if (!analysis) {
+        snapshot.phase = "analyzing";
+        publish();
+        analysis = await analyzeArticle(article, config, controller.signal, {
+          onProgress: ({ phase, done, total }) => {
+            snapshot.phase = phase ?? "analyzing";
+            snapshot.done = done;
+            snapshot.total = total;
+            publish();
+          },
+          onSummary: (summary) => {
+            snapshot.summary = summary;
+            publish();
+          },
+          onAnnotation: (a) => {
+            snapshot.annotations.push(a);
+            publish();
+          },
+        });
+        await putCached(cacheUrl, { ...fingerprint, analysis, createdAt: Date.now() });
+      }
+
+      const videoAnnotations = matchAnnotationsToCues(analysis.annotations, extracted.slice.cues, 0);
+      const analyzedRange = { startSec: extracted.slice.startSec, endSec: extracted.slice.endSec };
+
+      await sendToTab(tabId, {
+        type: "youtube-highlight",
+        annotations: videoAnnotations,
+        analyzedRanges: [analyzedRange],
+        lang,
+      });
+
+      Object.assign(snapshot, {
+        status: "done",
+        summary: analysis.summary,
+        clickbaitGap: analysis.clickbait_gap,
+        blindSpot: analysis.blind_spot,
+        annotations: videoAnnotations,
+        unlocated: videoAnnotations.filter((a) => a.startTime < 0).map((a) => a.id),
+        cachedAt: cached?.createdAt,
+        isVideo: true,
+        videoChunkRange: analyzedRange,
+        videoTotalDuration: extracted.transcript.durationMs / 1000,
+        analyzedRanges: [analyzedRange],
+      } satisfies Partial<RunSnapshot>);
+    } else {
+      await inject(tabId, t.accessErrorStatus);
+      const extracted = await sendToTab<ExtractResult>(tabId, { type: "extract" });
+      if (!extracted.ok) {
+        if (extracted.errorCode === "no_article") throw new Error(t.extractNoArticleError);
+        if (extracted.errorCode === "empty_article") throw new Error(t.extractEmptyArticleError);
+        throw new Error(extracted.error);
+      }
+      const article = extracted.article;
+      const lang = resolveLanguage(config);
+      const fingerprint = {
+        textHash: await sha256(article.paragraphs.join("\n\n")),
+        provider: config.provider,
+        model: config.model,
+        lang,
+      };
+      const cached = !opts.force && url ? await getCached(url, fingerprint) : null;
+      let analysis = cached?.analysis;
+      if (!analysis) {
+        snapshot.phase = "analyzing";
+        publish();
+        analysis = await analyzeArticle(article, config, controller.signal, {
+          onProgress: ({ phase, done, total }) => {
+            snapshot.phase = phase ?? "analyzing";
+            snapshot.done = done;
+            snapshot.total = total;
+            publish();
+          },
+          onSummary: (summary) => {
+            snapshot.summary = summary;
+            publish();
+          },
+          onAnnotation: (a) => {
+            snapshot.annotations.push(a);
+            publish();
+          },
+        });
+        if (url) await putCached(url, { ...fingerprint, analysis, createdAt: Date.now() });
+      }
+
+      const { unlocated } = await sendToTab<HighlightResult>(tabId, {
+        type: "highlight",
+        annotations: analysis.annotations,
+        displayMode: opts.displayMode ?? config.displayMode,
+        lang,
+      });
+      Object.assign(snapshot, {
+        status: "done",
+        summary: analysis.summary,
+        clickbaitGap: analysis.clickbait_gap,
+        blindSpot: analysis.blind_spot,
+        annotations: analysis.annotations,
+        unlocated,
+        cachedAt: cached?.createdAt,
+      } satisfies Partial<RunSnapshot>);
+    }
   } catch (err) {
     snapshot.annotations = [];
     if (controller.signal.aborted) snapshot.status = "cancelled";

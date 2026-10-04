@@ -1,5 +1,5 @@
 import { clearCache } from "../cache";
-import { DEFAULT_MODELS, loadConfig, providerOrigin, saveConfig, type Config, type DisplayMode, type ProviderId } from "../config";
+import { DEFAULT_MODELS, loadConfig, providerOrigin, saveConfig, type Config, type DisplayMode, type ProviderId, type YouTubePauseMode } from "../config";
 import { ext } from "../ext";
 import { getUiStrings } from "../i18n";
 import { FALLBACK_MODELS, fetchAvailableModels, type ModelOption } from "../providers/models";
@@ -63,6 +63,18 @@ function applyOptionsI18n(lang: string): void {
   setTxt("clear-cache", t.clearCacheBtn);
   setTxt("heading-privacy", t.privacySectionTitle);
   setTxt("privacy-text", t.privacyText);
+
+  // YouTube
+  setTxt("heading-youtube", t.youtubeSectionTitle);
+  setTxt("lbl-yt-chunk-minutes", t.youtubeChunkMinutesLabel);
+  setTxt("lbl-yt-min-display", t.youtubeMinDisplayLabel);
+  setTxt("lbl-yt-pause-mode", t.youtubePauseModeLabel);
+  setTxt("opt-yt-pause-none", t.youtubePauseModeNone);
+  setTxt("opt-yt-pause-start", t.youtubePauseModeStart);
+  setTxt("opt-yt-pause-after", t.youtubePauseModeAfter);
+  setTxt("lbl-yt-auto-resume", t.youtubeAutoResumeLabel);
+  setTxt("lbl-yt-auto-resume-duration", t.youtubeAutoResumeDurationLabel);
+  setTxt("lbl-yt-timeline-markers", t.youtubeTimelineMarkersLabel);
 
   // Onglets et Guide
   setTxt("tab-label-settings", t.tabSettings);
@@ -294,6 +306,12 @@ function readForm(): Config {
     displayMode: field<HTMLSelectElement>("displayMode").value as DisplayMode,
     webSearch: field<HTMLInputElement>("webSearch").checked,
     maxChunkTokens: Math.max(2000, Number(field<HTMLInputElement>("maxChunkTokens").value) || 8_000),
+    youtubeChunkMinutes: Math.max(5, Math.min(60, Number(field<HTMLInputElement>("youtubeChunkMinutes").value) || 15)),
+    youtubeMinDisplayDuration: Math.max(2, Math.min(30, Number(field<HTMLInputElement>("youtubeMinDisplayDuration").value) || 6)),
+    youtubePauseMode: (field<HTMLSelectElement>("youtubePauseMode")?.value || "none") as YouTubePauseMode,
+    youtubeAutoResume: field<HTMLInputElement>("youtubeAutoResume").checked,
+    youtubeAutoResumeDuration: Math.max(2, Math.min(15, Number(field<HTMLInputElement>("youtubeAutoResumeDuration").value) || 5)),
+    youtubeShowTimelineMarkers: field<HTMLInputElement>("youtubeShowTimelineMarkers").checked,
   };
 }
 
@@ -306,6 +324,12 @@ function fillForm(c: Config): void {
   field<HTMLSelectElement>("displayMode").value = c.displayMode ?? "both";
   field<HTMLInputElement>("webSearch").checked = c.webSearch;
   field<HTMLInputElement>("maxChunkTokens").value = String(c.maxChunkTokens);
+  field<HTMLInputElement>("youtubeChunkMinutes").value = String(c.youtubeChunkMinutes ?? 15);
+  field<HTMLInputElement>("youtubeMinDisplayDuration").value = String(c.youtubeMinDisplayDuration ?? 6);
+  field<HTMLSelectElement>("youtubePauseMode").value = c.youtubePauseMode ?? "none";
+  field<HTMLInputElement>("youtubeAutoResume").checked = c.youtubeAutoResume ?? true;
+  field<HTMLInputElement>("youtubeAutoResumeDuration").value = String(c.youtubeAutoResumeDuration ?? 5);
+  field<HTMLInputElement>("youtubeShowTimelineMarkers").checked = c.youtubeShowTimelineMarkers ?? true;
   populateModelSelect(FALLBACK_MODELS[c.provider] || []);
   setCustomModelMode(false, c.language);
   applyOptionsI18n(c.language);

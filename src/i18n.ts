@@ -155,6 +155,26 @@ export interface UiStrings {
   guideTaxonomyHeading: string;
   guideTaxonomyIntro: string;
 
+  // YouTube
+  youtubeSectionTitle: string;
+  youtubeAnalyzeChunkBtn: string;
+  youtubeAnalyzeFullBtn: string;
+  youtubeAnalyzingChunkStatus: (start: string, end: string) => string;
+  youtubeAnalyzingFullStatus: string;
+  youtubeChunkReadyBtn: string;
+  youtubeNoTranscriptError: string;
+  youtubeChunkLabel: (current: number, total: number, start: string, end: string) => string;
+  youtubeChunkMinutesLabel: string;
+  youtubeMinDisplayLabel: string;
+  youtubePauseModeLabel: string;
+  youtubePauseModeNone: string;
+  youtubePauseModeStart: string;
+  youtubePauseModeAfter: string;
+  youtubeAutoResumeLabel: string;
+  youtubeAutoResumeDurationLabel: string;
+  youtubeTimelineMarkersLabel: string;
+  youtubeTimeBadge: (time: string) => string;
+
   // Erreurs providers
   providerErrors: Record<ProviderErrorCode, (detail?: string) => string>;
 }
@@ -348,6 +368,25 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     guideTaxonomyHeading: "Répertoire des sophismes et biais",
     guideTaxonomyIntro:
       "Consultez les définitions complètes des catégories de sophismes, biais cognitifs et allégations répertoriés par Rhetorix :",
+
+    youtubeSectionTitle: "Vidéos & YouTube",
+    youtubeAnalyzeChunkBtn: "⚡ Analyser (15 min)",
+    youtubeAnalyzeFullBtn: "⚡ Analyser toute la vidéo",
+    youtubeAnalyzingChunkStatus: (start, end) => `⏳ Analyse en cours (${start} - ${end})...`,
+    youtubeAnalyzingFullStatus: "⏳ Analyse intégrale de la vidéo en cours...",
+    youtubeChunkReadyBtn: "⚡ Analyser toute la vidéo",
+    youtubeNoTranscriptError: "Aucune transcription disponible pour cette vidéo.",
+    youtubeChunkLabel: (current, total, start, end) => `Tranche ${current}/${total} (${start} - ${end})`,
+    youtubeChunkMinutesLabel: "Durée de tranche d'analyse (minutes)",
+    youtubeMinDisplayLabel: "Durée minimale d'affichage de la bulle (secondes)",
+    youtubePauseModeLabel: "Comportement de pause automatique",
+    youtubePauseModeNone: "Ne pas stopper la vidéo",
+    youtubePauseModeStart: "Mettre en pause avant le passage",
+    youtubePauseModeAfter: "Mettre en pause après le passage",
+    youtubeAutoResumeLabel: "Reprise automatique après pause (compte à rebours)",
+    youtubeAutoResumeDurationLabel: "Délai avant reprise automatique (secondes)",
+    youtubeTimelineMarkersLabel: "Afficher les marqueurs et zones analysées sur la barre de lecture YouTube",
+    youtubeTimeBadge: (time) => `▶ ${time}`,
 
     providerErrors: {
       refusal: (detail) => (detail ? `Refus du modèle : ${detail}` : "Le modèle a refusé d'analyser ce contenu."),
@@ -551,6 +590,25 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     guideTaxonomyIntro:
       "Explore the complete definitions of all fallacy, bias, and claim categories cataloged by Rhetorix:",
 
+    youtubeSectionTitle: "Videos & YouTube",
+    youtubeAnalyzeChunkBtn: "⚡ Analyze (15 min)",
+    youtubeAnalyzeFullBtn: "⚡ Analyze entire video",
+    youtubeAnalyzingChunkStatus: (start, end) => `⏳ Analyzing slice (${start} - ${end})...`,
+    youtubeAnalyzingFullStatus: "⏳ Analyzing full video...",
+    youtubeChunkReadyBtn: "⚡ Analyze entire video",
+    youtubeNoTranscriptError: "No transcript available for this video.",
+    youtubeChunkLabel: (current, total, start, end) => `Slice ${current}/${total} (${start} - ${end})`,
+    youtubeChunkMinutesLabel: "Analysis slice duration (minutes)",
+    youtubeMinDisplayLabel: "Minimum popover display duration (seconds)",
+    youtubePauseModeLabel: "Automatic video pause behavior",
+    youtubePauseModeNone: "Do not stop playback",
+    youtubePauseModeStart: "Pause before segment",
+    youtubePauseModeAfter: "Pause after segment",
+    youtubeAutoResumeLabel: "Auto-resume playback after pause (countdown)",
+    youtubeAutoResumeDurationLabel: "Delay before auto-resume (seconds)",
+    youtubeTimelineMarkersLabel: "Show markers and analyzed zones on YouTube scrubber bar",
+    youtubeTimeBadge: (time) => `▶ ${time}`,
+
     providerErrors: {
       refusal: (detail) => (detail ? `Model refusal: ${detail}` : "The model refused to analyze this content."),
       max_tokens: () => "Response truncated (max_tokens reached). Reduce chunk size in options.",
@@ -752,6 +810,25 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     guideTaxonomyHeading: "Repertorio de falacias y sesgos",
     guideTaxonomyIntro:
       "Consulte las definiciones completas de las categorías de falacias, sesgos y hechos catalogadas por Rhetorix:",
+
+    youtubeSectionTitle: "Vídeos y YouTube",
+    youtubeAnalyzeChunkBtn: "⚡ Analizar (15 min)",
+    youtubeAnalyzeFullBtn: "⚡ Analizar todo el vídeo",
+    youtubeAnalyzingChunkStatus: (start, end) => `⏳ Analizando fragmento (${start} - ${end})...`,
+    youtubeAnalyzingFullStatus: "⏳ Analizando el vídeo completo...",
+    youtubeChunkReadyBtn: "⚡ Analizar todo el vídeo",
+    youtubeNoTranscriptError: "No hay transcripción disponible para este vídeo.",
+    youtubeChunkLabel: (current, total, start, end) => `Tramo ${current}/${total} (${start} - ${end})`,
+    youtubeChunkMinutesLabel: "Duración del tramo de análisis (minutos)",
+    youtubeMinDisplayLabel: "Duración mínima del aviso (segundos)",
+    youtubePauseModeLabel: "Comportamiento de pausa automática",
+    youtubePauseModeNone: "No pausar el vídeo",
+    youtubePauseModeStart: "Pausar antes del pasaje",
+    youtubePauseModeAfter: "Pausar después del pasaje",
+    youtubeAutoResumeLabel: "Reanudación automática tras pausa (cuenta atrás)",
+    youtubeAutoResumeDurationLabel: "Tiempo antes de reanudar automáticamente (segundos)",
+    youtubeTimelineMarkersLabel: "Mostrar marcadores y zonas analizadas en la barra de YouTube",
+    youtubeTimeBadge: (time) => `▶ ${time}`,
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rechazo del modelo: ${detail}` : "El modelo rechazó analizar este contenido."),
@@ -955,6 +1032,25 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     guideTaxonomyIntro:
       "Detaillierte Definitionen aller Kategorien von Fehlschlüssen und Verzerrungen:",
 
+    youtubeSectionTitle: "Videos & YouTube",
+    youtubeAnalyzeChunkBtn: "⚡ Analysieren (15 Min.)",
+    youtubeAnalyzeFullBtn: "⚡ Gesamtes Video analysieren",
+    youtubeAnalyzingChunkStatus: (start, end) => `⏳ Abschnitt (${start} - ${end}) wird analysiert...`,
+    youtubeAnalyzingFullStatus: "⏳ Gesamtes Video wird analysiert...",
+    youtubeChunkReadyBtn: "⚡ Gesamtes Video analysieren",
+    youtubeNoTranscriptError: "Kein Transkript für dieses Video verfügbar.",
+    youtubeChunkLabel: (current, total, start, end) => `Abschnitt ${current}/${total} (${start} - ${end})`,
+    youtubeChunkMinutesLabel: "Abschnittsdauer (Minuten)",
+    youtubeMinDisplayLabel: "Mindestanzeigedauer des Hinweises (Sekunden)",
+    youtubePauseModeLabel: "Automatisches Pausenverhalten",
+    youtubePauseModeNone: "Wiedergabe nicht anhalten",
+    youtubePauseModeStart: "Vor dem Abschnitt pausieren",
+    youtubePauseModeAfter: "Nach dem Abschnitt pausieren",
+    youtubeAutoResumeLabel: "Automatische Fortsetzung nach Pause (Countdown)",
+    youtubeAutoResumeDurationLabel: "Verzögerung vor automatischer Fortsetzung (Sekunden)",
+    youtubeTimelineMarkersLabel: "Markierungen und analysierte Zonen auf YouTube-Leiste anzeigen",
+    youtubeTimeBadge: (time) => `▶ ${time}`,
+
     providerErrors: {
       refusal: (detail) => (detail ? `Ablehnung durch das Modell: ${detail}` : "Das Modell hat die Analyse dieses Inhalts abgelehnt."),
       max_tokens: () => "Antwort abgeschnitten (max_tokens erreicht). Reduzieren Sie die Blockgröße in den Optionen.",
@@ -1156,6 +1252,25 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     guideTaxonomyHeading: "Repertorio delle fallacie e dei bias",
     guideTaxonomyIntro:
       "Consulta le definizioni complete delle categorie censite da Rhetorix:",
+
+    youtubeSectionTitle: "Video & YouTube",
+    youtubeAnalyzeChunkBtn: "⚡ Analizza (15 min)",
+    youtubeAnalyzeFullBtn: "⚡ Analizza tutto il video",
+    youtubeAnalyzingChunkStatus: (start, end) => `⏳ Analisi della sezione (${start} - ${end}) in corso...`,
+    youtubeAnalyzingFullStatus: "⏳ Analisi dell'intero video in corso...",
+    youtubeChunkReadyBtn: "⚡ Analizza tutto il video",
+    youtubeNoTranscriptError: "Nessuna trascrizione disponibile per questo video.",
+    youtubeChunkLabel: (current, total, start, end) => `Tranche ${current}/${total} (${start} - ${end})`,
+    youtubeChunkMinutesLabel: "Durata della tranche di analisi (minuti)",
+    youtubeMinDisplayLabel: "Durata minima della notifica (secondi)",
+    youtubePauseModeLabel: "Comportamento di pausa automatica",
+    youtubePauseModeNone: "Non interrompere il video",
+    youtubePauseModeStart: "Metti in pausa prima del passaggio",
+    youtubePauseModeAfter: "Metti in pausa dopo il passaggio",
+    youtubeAutoResumeLabel: "Ripresa automatica dopo la pausa (conto alla rovescia)",
+    youtubeAutoResumeDurationLabel: "Attesa prima della ripresa automatica (secondi)",
+    youtubeTimelineMarkersLabel: "Mostra marcatori e zone analizzate sulla barra di YouTube",
+    youtubeTimeBadge: (time) => `▶ ${time}`,
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rifiuto del modello: ${detail}` : "Il modello ha rifiutato di analizzare questo contenuto."),

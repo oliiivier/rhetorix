@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Config } from "../src/config";
+import { DEFAULT_CONFIG, type Config } from "../src/config";
 import { anthropicProvider, createAnthropicClient } from "../src/providers/anthropic";
 import { chromeAiProvider } from "../src/providers/chrome-ai";
 import { geminiProvider } from "../src/providers/gemini";
@@ -7,6 +7,7 @@ import { openAiCompatibleProvider } from "../src/providers/openai-compatible";
 
 describe("geminiProvider", () => {
   const baseConfig: Config = {
+    ...DEFAULT_CONFIG,
     provider: "gemini",
     apiKey: "test-gemini-key",
     model: "gemini-2.5-flash",
@@ -48,6 +49,7 @@ describe("geminiProvider", () => {
 
 describe("openAiCompatibleProvider", () => {
   const baseConfig: Config = {
+    ...DEFAULT_CONFIG,
     provider: "openai-compatible",
     apiKey: "test-key",
     model: "sonar",
@@ -85,6 +87,7 @@ describe("openAiCompatibleProvider", () => {
 
 describe("chromeAiProvider", () => {
   const baseConfig: Config = {
+    ...DEFAULT_CONFIG,
     provider: "chrome-ai",
     apiKey: "",
     model: "gemini-nano",

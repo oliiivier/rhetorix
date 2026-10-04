@@ -64,6 +64,18 @@ ext.runtime.onMessage.addListener((msg: PanelToBackground, sender, sendResponse)
       void ext.tabs.get(msg.tabId).then((tab) => runAnalysis(msg.tabId, tab.url, { force: msg.force }, broadcast));
       sendResponse(null);
       break;
+    case "analyze-youtube-chunk":
+      void ext.tabs.get(msg.tabId).then((tab) =>
+        runAnalysis(msg.tabId, tab.url, { force: Boolean(msg.force), youtubeChunkStartSec: msg.startSec }, broadcast),
+      );
+      sendResponse(null);
+      break;
+    case "analyze-youtube-full":
+      void ext.tabs.get(msg.tabId).then((tab) =>
+        runAnalysis(msg.tabId, tab.url, { force: Boolean(msg.force), youtubeFull: true }, broadcast),
+      );
+      sendResponse(null);
+      break;
     case "cancel":
       cancelRun(msg.tabId);
       sendResponse(null);

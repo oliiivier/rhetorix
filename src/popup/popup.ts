@@ -7,6 +7,7 @@ import { ext } from "../ext";
 import { getUiStrings } from "../i18n";
 import type { BackgroundToPanel, PanelToBackground, RunSnapshot } from "../messages";
 import { CATEGORIES } from "../taxonomy";
+import { isYouTubeWatchUrl } from "../youtube/youtube-detector";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -64,15 +65,16 @@ function applyI18n(): void {
 
 function updateAnalyzeButtonLabel(running: boolean): void {
   const t = strings();
+  const isYouTube = Boolean(currentTabUrl && isYouTubeWatchUrl(currentTabUrl));
   if (running) {
-    analyzeIcon.textContent = "⟳";
+    analyzeIcon.textContent = isYouTube ? "⏳" : "⟳";
     analyzeText.textContent = t.analyzingStatus;
   } else if (isAnalysisDone) {
     analyzeIcon.textContent = "🔄";
     analyzeText.textContent = t.reanalyzeBtn;
   } else {
     analyzeIcon.textContent = "⚡";
-    analyzeText.textContent = t.analyzeBtn;
+    analyzeText.textContent = isYouTube ? t.youtubeAnalyzeChunkBtn : t.analyzeBtn;
   }
 }
 
@@ -249,6 +251,7 @@ async function init(): Promise<void> {
   if (tab?.id === undefined) return;
   currentTabId = tab.id;
   currentTabUrl = tab.url;
+  updateAnalyzeButtonLabel(false);
 
   if (tab.url) {
     try {

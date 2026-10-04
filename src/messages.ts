@@ -1,8 +1,8 @@
-// Messages entre le panneau latéral, le script de fond et le content script (architecture §6).
-
 import type { DisplayMode } from "./config";
 import type { Annotation, FactStatus, Severity, Source } from "./schema";
 import type { Category } from "./taxonomy";
+import type { TimeRange, YouTubePlayerOptions } from "./youtube/youtube-player";
+import type { VideoAnnotation, VideoTranscript, VideoTranscriptSlice } from "./youtube/types";
 
 export interface HighlightItem {
   id: string;
@@ -25,9 +25,18 @@ export type PanelToContent =
   | { type: "focus"; id: string }
   | { type: "clear" }
   /** Message bref affiché dans la page quand il n'y a pas de panneau (mobile, D9). */
-  | { type: "toast"; text: string; isError?: boolean; durationMs?: number };
+  | { type: "toast"; text: string; isError?: boolean; durationMs?: number }
+  /** Commandes spécifiques à YouTube. */
+  | { type: "youtube-detect" }
+  | { type: "youtube-extract"; startSec?: number; durationSec?: number }
+  | { type: "youtube-highlight"; annotations: VideoAnnotation[]; analyzedRanges: TimeRange[]; lang?: string }
+  | { type: "youtube-seek"; timeSec: number; autoPlay?: boolean }
+  | { type: "youtube-set-options"; options: Partial<YouTubePlayerOptions> };
 
-export type ContentToPanel = { type: "annotation-clicked"; id: string };
+export type ContentToPanel =
+  | { type: "annotation-clicked"; id: string }
+  | { type: "youtube-time-update"; currentTime: number; duration: number }
+  | { type: "youtube-seek-outside"; targetTime: number };
 
 export interface Extracted {
   title: string;
@@ -40,6 +49,11 @@ export type ExtractErrorCode = "no_article" | "empty_article";
 export type ExtractResult =
   | { ok: true; article: Extracted }
   | { ok: false; error: string; errorCode?: ExtractErrorCode };
+
+export type YouTubeExtractResult =
+  | { ok: true; transcript: VideoTranscript; slice: VideoTranscriptSlice; extracted: Extracted }
+  | { ok: false; error: string; errorCode?: string };
+
 export interface HighlightResult {
   unlocated: string[];
 }
@@ -66,13 +80,22 @@ export interface RunSnapshot {
   unlocated: string[];
   cachedAt?: number;
   error?: string;
+  /** Métadonnées spécifiques à l'analyse d'une vidéo YouTube. */
+  isVideo?: boolean;
+  videoChunkRange?: { startSec: number; endSec: number };
+  videoTotalDuration?: number;
+  analyzedRanges?: TimeRange[];
+  activeTimeSec?: number;
 }
 
 export type PanelToBackground =
   | { type: "analyze-tab"; tabId: number; force: boolean }
+  | { type: "analyze-youtube-chunk"; tabId: number; startSec: number; force?: boolean }
+  | { type: "analyze-youtube-full"; tabId: number; force?: boolean }
   | { type: "cancel"; tabId: number }
   | { type: "get-state"; tabId: number }
   | { type: "open-sidepanel"; tabId?: number }
   | { type: "close-sidebar" };
 
 export type BackgroundToPanel = { type: "run-update"; snapshot: RunSnapshot };
+
