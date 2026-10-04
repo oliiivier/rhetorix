@@ -14,6 +14,9 @@
           <button type="button" class="nav-tab active" id="tab-btn-settings" role="tab" aria-selected="true" aria-controls="panel-settings">
             ⚙️ <span id="tab-label-settings">Paramètres</span>
           </button>
+          <button type="button" class="nav-tab" id="tab-btn-tokens" role="tab" aria-selected="false" aria-controls="panel-tokens">
+            ⚡ <span id="tab-label-tokens">Consommation & Quotas</span>
+          </button>
           <button type="button" class="nav-tab" id="tab-btn-guide" role="tab" aria-selected="false" aria-controls="panel-guide">
             📖 <span id="tab-label-guide">Capacités & Charte</span>
           </button>
@@ -168,53 +171,111 @@
         </div>
       </section>
 
-      <section id="section-tokens">
-        <h2 id="heading-tokens">Consommation de tokens</h2>
-        <div class="tokens-stats-card">
-          <div class="tokens-stats-grid">
-            <div class="tokens-stat-item">
-              <span class="tokens-stat-label" id="lbl-tokens-period">Période en cours</span>
-              <span class="tokens-stat-value" id="val-tokens-period">0</span>
-              <span class="tokens-stat-detail" id="detail-tokens-period">0 in · 0 out</span>
+        <section>
+          <h2 id="heading-privacy">Confidentialité</h2>
+          <p id="privacy-text">
+            Le texte des articles analysés est envoyé au fournisseur configuré ci-dessus, et à lui seul.
+            Rhetorix ne dispose d'aucun serveur.
+          </p>
+        </section>
+      </div>
+
+      <!-- ONGLET 2 : CONSOMMATION & QUOTAS -->
+      <div id="panel-tokens" role="tabpanel" aria-labelledby="tab-btn-tokens" hidden>
+        <p id="tokens-tab-intro" class="tokens-intro"></p>
+
+        <section class="tokens-card-section">
+          <h2 id="heading-tokens">Consommation de tokens</h2>
+          <div class="tokens-stats-card">
+            <div class="tokens-stats-grid">
+              <div class="tokens-stat-item">
+                <span class="tokens-stat-label" id="lbl-tokens-period">Période en cours</span>
+                <span class="tokens-stat-value" id="val-tokens-period">0</span>
+                <span class="tokens-stat-detail" id="detail-tokens-period">0 in · 0 out</span>
+              </div>
+              <div class="tokens-stat-item">
+                <span class="tokens-stat-label" id="lbl-tokens-alltime">Cumul total (depuis l'installation)</span>
+                <span class="tokens-stat-value" id="val-tokens-alltime">0</span>
+                <span class="tokens-stat-detail" id="detail-tokens-alltime">0 in · 0 out</span>
+              </div>
             </div>
-            <div class="tokens-stat-item">
-              <span class="tokens-stat-label" id="lbl-tokens-alltime">Cumul total (depuis l'installation)</span>
-              <span class="tokens-stat-value" id="val-tokens-alltime">0</span>
-              <span class="tokens-stat-detail" id="detail-tokens-alltime">0 in · 0 out</span>
+
+            <div class="tokens-settings-row">
+              <label>
+                <span id="lbl-monthly-reset">Réinitialisation mensuelle</span>
+                <select id="monthly-reset-day">
+                  <option value="0" id="opt-reset-disabled">Désactivée (cumul continu)</option>
+                  <option value="1">Le 1er de chaque mois</option>
+                  <option value="5">Le 5 de chaque mois</option>
+                  <option value="10">Le 10 de chaque mois</option>
+                  <option value="15">Le 15 de chaque mois</option>
+                  <option value="20">Le 20 de chaque mois</option>
+                  <option value="25">Le 25 de chaque mois</option>
+                  <option value="28">Le 28 de chaque mois</option>
+                </select>
+              </label>
+              <p id="tokens-monthly-hint" class="hint"></p>
+            </div>
+
+            <div class="row">
+              <button id="btn-reset-tokens" type="button">Remettre à zéro le compteur (RAZ)</button>
+              <span id="tokens-reset-status" role="status"></span>
             </div>
           </div>
+        </section>
 
-          <div class="tokens-settings-row">
-            <label>
-              <span id="lbl-monthly-reset">Réinitialisation mensuelle</span>
-              <select id="monthly-reset-day">
-                <option value="0" id="opt-reset-disabled">Désactivée (cumul continu)</option>
-                <option value="1">Le 1er de chaque mois</option>
-                <option value="5">Le 5 de chaque mois</option>
-                <option value="10">Le 10 de chaque mois</option>
-                <option value="15">Le 15 de chaque mois</option>
-                <option value="20">Le 20 de chaque mois</option>
-                <option value="25">Le 25 de chaque mois</option>
-                <option value="28">Le 28 de chaque mois</option>
-              </select>
-            </label>
+        <!-- Section Quotas & Fournisseurs -->
+        <section class="quotas-help-section">
+          <h2 id="heading-quotas-help">Vérifier vos quotas selon votre fournisseur</h2>
+          <div class="quotas-grid">
+            <div class="quota-card">
+              <div class="quota-card-header">
+                <span class="quota-provider-badge">Google Gemini</span>
+                <a href="https://aistudio.google.com/app/plan_information" target="_blank" rel="noopener noreferrer" class="link-btn">
+                  Tableau de bord Google AI Studio ↗
+                </a>
+              </div>
+              <div class="quota-card-body">
+                <p><strong>Tier Gratuit (Free Tier) :</strong> 15 requêtes/minute (RPM), 1 million de tokens/minute (TPM) et 1 500 requêtes/jour (RPD).</p>
+                <p><strong>Note sur l'erreur 503 :</strong> <em>« This model is currently experiencing high demand »</em> signale une surcharge ponctuelle des serveurs Google et <strong>non</strong> un dépassement de vos quotas (qui renverrait l'erreur 429 / RESOURCE_EXHAUSTED). Patientez quelques instants ou optez pour un modèle alternatif comme Gemini 1.5 Flash ou Gemini 2.5 Flash.</p>
+              </div>
+            </div>
+
+            <div class="quota-card">
+              <div class="quota-card-header">
+                <span class="quota-provider-badge">Anthropic Claude</span>
+                <a href="https://console.anthropic.com/settings/limits" target="_blank" rel="noopener noreferrer" class="link-btn">
+                  Console Anthropic (Limites & Crédits) ↗
+                </a>
+              </div>
+              <div class="quota-card-body">
+                <p>Consultez vos crédits prépayés restants et vos seuils de débit (Tier 1 à 4) directement sur votre espace développeur Anthropic.</p>
+              </div>
+            </div>
+
+            <div class="quota-card">
+              <div class="quota-card-header">
+                <span class="quota-provider-badge">OpenAI / OpenRouter / Mistral</span>
+                <a href="https://platform.openai.com/usage" target="_blank" rel="noopener noreferrer" class="link-btn">
+                  Tableau de bord OpenAI ↗
+                </a>
+              </div>
+              <div class="quota-card-body">
+                <p>Pour OpenAI, OpenRouter ou Mistral, vérifiez votre consommation de crédits et vos limites RPM/TPM sur l'espace développeur de votre fournisseur.</p>
+              </div>
+            </div>
+
+            <div class="quota-card">
+              <div class="quota-card-header">
+                <span class="quota-provider-badge">Chrome Built-in AI & Ollama (Local)</span>
+              </div>
+              <div class="quota-card-body">
+                <p><strong>100% Hors-ligne et Gratuit :</strong> L'inférence s'exécute directement sur votre ordinateur (NPU/GPU/CPU). Aucun quota, aucun coût, aucune limite de requêtes.</p>
+              </div>
+            </div>
           </div>
-
-          <div class="row">
-            <button id="btn-reset-tokens" type="button">Remettre à zéro le compteur (RAZ)</button>
-            <span id="tokens-reset-status" role="status"></span>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <h2 id="heading-privacy">Confidentialité</h2>
-        <p id="privacy-text">
-          Le texte des articles analysés est envoyé au fournisseur configuré ci-dessus, et à lui seul.
-          Rhetorix ne dispose d'aucun serveur.
-        </p>
-      </section>
-    </div>
+        </section>
+      </div>
 
     <!-- ONGLET 2 : GUIDE & CHARTE DE COULEUR -->
     <div id="panel-guide" role="tabpanel" aria-labelledby="tab-btn-guide" hidden>

@@ -62,14 +62,18 @@
       </section>
     </main>
 
-    <div id="token-bar" class="token-bar" hidden>
-      <span class="token-icon" aria-hidden="true">⚡</span>
-      <span id="token-label" class="token-label">Tokens :</span>
-      <span id="token-in" class="token-in"></span>
-      <span id="token-dot" class="token-dot">·</span>
-      <span id="token-out" class="token-out"></span>
-      <span id="token-total" class="token-total"></span>
-      <span id="token-cached" class="token-cached" hidden></span>
+    <div id="token-bar" class="token-bar">
+      <div class="token-bar-info">
+        <span class="token-icon" aria-hidden="true">⚡</span>
+        <span id="token-label" class="token-label">Tokens :</span>
+        <span id="token-in" class="token-in"></span>
+        <span id="token-dot" class="token-dot" hidden>·</span>
+        <span id="token-out" class="token-out"></span>
+        <span id="token-total" class="token-total"></span>
+        <span id="token-cached" class="token-cached" hidden></span>
+        <span id="token-idle" class="token-idle">—</span>
+      </div>
+      <button id="token-options-btn" class="token-options-btn" type="button" title="Consommation de tokens et quotas">📊</button>
     </div>
 
     <footer id="privacy-footer" class="privacy">Le texte de l'article est envoyé au fournisseur LLM configuré.</footer>

@@ -181,7 +181,10 @@ export interface UiStrings {
   tokenOut: (n: string) => string;
   tokenTotal: (n: string) => string;
   tokenCached: string;
+  tokenIdle: string;
+  tabTokens: string;
   tokensSectionTitle: string;
+  tokensTabIntro: string;
   tokensPeriodLabel: string;
   tokensAllTimeLabel: string;
   tokensMonthlyResetLabel: string;
@@ -189,6 +192,8 @@ export interface UiStrings {
   tokensResetDayOption: (day: number) => string;
   tokensResetBtn: string;
   tokensResetSuccess: string;
+  monthlyResetHint: string;
+  quotasHelpHeading: string;
 
   // Erreurs providers
   providerErrors: Record<ProviderErrorCode, (detail?: string) => string>;
@@ -408,7 +413,10 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokenOut: (n) => `${n} out`,
     tokenTotal: (n) => `(${n} total)`,
     tokenCached: "0 token (cache)",
+    tokenIdle: "— (en attente d'analyse)",
+    tabTokens: "Consommation & Quotas",
     tokensSectionTitle: "Consommation de tokens",
+    tokensTabIntro: "Mesure précise et locale des tokens d'entrée et de sortie consommés lors de vos analyses.",
     tokensPeriodLabel: "Période en cours",
     tokensAllTimeLabel: "Cumul total (depuis l'installation)",
     tokensMonthlyResetLabel: "Réinitialisation mensuelle",
@@ -416,6 +424,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokensResetDayOption: (day) => `Le ${day} de chaque mois`,
     tokensResetBtn: "Remettre à zéro le compteur (RAZ)",
     tokensResetSuccess: "Compteur de période réinitialisé.",
+    monthlyResetHint: "Le compteur de période se remet à zéro automatiquement à la date choisie.",
+    quotasHelpHeading: "Vérifier vos quotas selon votre fournisseur",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Refus du modèle : ${detail}` : "Le modèle a refusé d'analyser ce contenu."),
@@ -643,7 +653,10 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokenOut: (n) => `${n} out`,
     tokenTotal: (n) => `(${n} total)`,
     tokenCached: "0 tokens (cached)",
+    tokenIdle: "— (awaiting analysis)",
+    tabTokens: "Token Usage & Quotas",
     tokensSectionTitle: "Token Usage",
+    tokensTabIntro: "Precise local measurement of input and output tokens consumed during your analyses.",
     tokensPeriodLabel: "Current Period",
     tokensAllTimeLabel: "All-Time Total",
     tokensMonthlyResetLabel: "Monthly Reset",
@@ -651,6 +664,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokensResetDayOption: (day) => `${day}${day === 1 ? "st" : day === 2 ? "nd" : day === 3 ? "rd" : "th"} of each month`,
     tokensResetBtn: "Reset Period Counter (Zero Out)",
     tokensResetSuccess: "Period counter reset.",
+    monthlyResetHint: "The period counter resets automatically on the chosen date.",
+    quotasHelpHeading: "Check your quotas by provider",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Model refusal: ${detail}` : "The model refused to analyze this content."),
@@ -878,7 +893,10 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokenOut: (n) => `${n} salida`,
     tokenTotal: (n) => `(${n} total)`,
     tokenCached: "0 tokens (en caché)",
+    tokenIdle: "— (en espera de análisis)",
+    tabTokens: "Consumo y cuotas",
     tokensSectionTitle: "Consumo de tokens",
+    tokensTabIntro: "Medición precisa y local de los tokens de entrada y salida consumidos durante sus análisis.",
     tokensPeriodLabel: "Período actual",
     tokensAllTimeLabel: "Total acumulado",
     tokensMonthlyResetLabel: "Reinicio mensual",
@@ -886,6 +904,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokensResetDayOption: (day) => `Día ${day} de cada mes`,
     tokensResetBtn: "Restablecer contador (puesta a cero)",
     tokensResetSuccess: "Contador de período restablecido.",
+    monthlyResetHint: "El contador de período se restablece automáticamente en la fecha seleccionada.",
+    quotasHelpHeading: "Verificar sus cuotas según el proveedor",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rechazo del modelo: ${detail}` : "El modelo rechazó analizar este contenido."),
@@ -1113,7 +1133,10 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokenOut: (n) => `${n} out`,
     tokenTotal: (n) => `(${n} gesamt)`,
     tokenCached: "0 Tokens (Cache)",
+    tokenIdle: "— (wartet auf Analyse)",
+    tabTokens: "Token-Verbrauch & Kontingente",
     tokensSectionTitle: "Token-Verbrauch",
+    tokensTabIntro: "Präzise lokale Messung der bei Ihren Analysen verbrauchten Eingabe- und Ausgabe-Tokens.",
     tokensPeriodLabel: "Aktueller Zeitraum",
     tokensAllTimeLabel: "Gesamtverbrauch",
     tokensMonthlyResetLabel: "Monatliches Zurücksetzen",
@@ -1121,6 +1144,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokensResetDayOption: (day) => `Am ${day}. jedes Monats`,
     tokensResetBtn: "Zähler zurücksetzen (Nullstellung)",
     tokensResetSuccess: "Zähler für aktuellen Zeitraum zurückgesetzt.",
+    monthlyResetHint: "Der Zähler für den Zeitraum wird am gewählten Datum automatisch zurückgesetzt.",
+    quotasHelpHeading: "Kontingente je nach Anbieter prüfen",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Ablehnung durch das Modell: ${detail}` : "Das Modell hat die Analyse dieses Inhalts abgelehnt."),
@@ -1348,7 +1373,10 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokenOut: (n) => `${n} out`,
     tokenTotal: (n) => `(${n} totale)`,
     tokenCached: "0 token (cache)",
+    tokenIdle: "— (in attesa di analisi)",
+    tabTokens: "Consumo e quote",
     tokensSectionTitle: "Consumo di token",
+    tokensTabIntro: "Misurazione precisa e locale dei token di input e output consumati durante le analisi.",
     tokensPeriodLabel: "Periodo corrente",
     tokensAllTimeLabel: "Totale complessivo",
     tokensMonthlyResetLabel: "Ripristino mensile",
@@ -1356,6 +1384,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     tokensResetDayOption: (day) => `Il ${day} di ogni mese`,
     tokensResetBtn: "Azzera contatore (reset)",
     tokensResetSuccess: "Contatore del periodo azzerato.",
+    monthlyResetHint: "Il contatore del periodo si azzera automaticamente alla data selezionata.",
+    quotasHelpHeading: "Controlla le tue quote in base al provider",
 
     providerErrors: {
       refusal: (detail) => (detail ? `Rifiuto del modello: ${detail}` : "Il modello ha rifiutato di analizzare questo contenuto."),

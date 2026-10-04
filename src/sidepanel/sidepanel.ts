@@ -96,6 +96,12 @@ function applyI18n(): void {
   if (blindHeading) blindHeading.textContent = t.blindSpotHeading;
   const privacy = $("privacy-footer");
   if (privacy) privacy.textContent = t.privacyNotice;
+  const tokenLbl = $("token-label");
+  if (tokenLbl) tokenLbl.textContent = t.tokenUsageLabel;
+  const tokenOptBtn = $("token-options-btn");
+  if (tokenOptBtn) tokenOptBtn.title = t.tabTokens;
+  const idleEl = $("token-idle");
+  if (idleEl && !idleEl.hidden) idleEl.textContent = t.tokenIdle;
   updateDisplayModeBanner();
 }
 
@@ -137,12 +143,6 @@ function renderTokenUsage(usage: TokenUsage | undefined, isCached = false): void
   const t = strings();
   const lang = currentLang();
 
-  if (!usage || (usage.totalTokens === 0 && !isCached)) {
-    bar.hidden = true;
-    return;
-  }
-
-  bar.hidden = false;
   const lbl = $("token-label");
   if (lbl) lbl.textContent = t.tokenUsageLabel;
 
@@ -151,6 +151,30 @@ function renderTokenUsage(usage: TokenUsage | undefined, isCached = false): void
   const outEl = $("token-out");
   const totalEl = $("token-total");
   const cachedEl = $("token-cached");
+  const idleEl = $("token-idle");
+
+  if (!usage) {
+    if (inEl) inEl.textContent = "";
+    if (dotEl) dotEl.hidden = true;
+    if (outEl) outEl.textContent = "";
+    if (totalEl) totalEl.textContent = "";
+    if (isCached) {
+      if (cachedEl) {
+        cachedEl.textContent = t.tokenCached;
+        cachedEl.hidden = false;
+      }
+      if (idleEl) idleEl.hidden = true;
+    } else {
+      if (cachedEl) cachedEl.hidden = true;
+      if (idleEl) {
+        idleEl.textContent = t.tokenIdle;
+        idleEl.hidden = false;
+      }
+    }
+    return;
+  }
+
+  if (idleEl) idleEl.hidden = true;
 
   if (isCached && usage.totalTokens === 0) {
     if (inEl) inEl.textContent = "";
@@ -169,6 +193,10 @@ function renderTokenUsage(usage: TokenUsage | undefined, isCached = false): void
     if (cachedEl) cachedEl.hidden = true;
   }
 }
+
+$("token-options-btn")?.addEventListener("click", () => {
+  void ext.tabs.create({ url: ext.runtime.getURL("options.html#tokens") });
+});
 
 function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
   const t = strings();
@@ -675,6 +703,10 @@ void (async () => {
   const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab?.id;
   currentTabUrl = tab?.url;
-  if (!isConfigured(config)) setStatus(strings().needConfigStatus);
-  else if (currentTabId !== undefined) await showTab(currentTabId);
+  if (!isConfigured(config)) {
+    setStatus(strings().needConfigStatus);
+    renderTokenUsage(undefined);
+  } else if (currentTabId !== undefined) {
+    await showTab(currentTabId);
+  }
 })();

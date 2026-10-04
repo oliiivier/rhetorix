@@ -75,6 +75,7 @@ a { color: var(--accent); }
 }
 .panel h1 { font-size: 16px; margin: 0; }
 .panel .actions { display: flex; gap: 6px; }
+body.panel { padding-bottom: 38px; }
 .panel main { padding: 12px; }
 .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 8px 0 4px; }
 
@@ -907,7 +908,7 @@ body.popup-page {
 .token-bar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 6px;
   padding: 6px 12px;
   background: var(--surface);
@@ -915,6 +916,23 @@ body.popup-page {
   font-size: 11px;
   color: var(--muted);
   line-height: 1.4;
+}
+
+.panel .token-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.token-bar-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
 }
 
 .token-bar .token-icon {
@@ -941,6 +959,27 @@ body.popup-page {
 .token-bar .token-cached {
   color: var(--muted);
   font-style: italic;
+}
+
+.token-bar .token-idle {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.token-options-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 4px;
+  color: var(--muted);
+}
+.token-options-btn:hover {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text);
 }
 
 .popup-token-bar {
@@ -985,6 +1024,17 @@ body.popup-page {
 }
 
 /* Section Consommation de tokens dans Options */
+.tokens-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.tokens-card-section {
+  margin-bottom: 24px;
+}
+
 .tokens-stats-card {
   display: flex;
   flex-direction: column;
@@ -1035,4 +1085,53 @@ body.popup-page {
   flex-direction: column;
   gap: 6px;
 }
+
+/* Quotas & Fournisseurs */
+.quotas-help-section {
+  margin-top: 24px;
+}
+
+.quotas-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.quota-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.quota-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.quota-provider-badge {
+  font-weight: 600;
+  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.quota-card-body p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.quota-card-body strong {
+  color: var(--text);
+}
+
 

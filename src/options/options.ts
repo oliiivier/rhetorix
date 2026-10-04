@@ -62,12 +62,17 @@ function applyOptionsI18n(lang: string): void {
   setTxt("btn-save", t.saveBtn);
   setTxt("heading-cache", t.cacheSectionTitle);
   setTxt("clear-cache", t.clearCacheBtn);
+  setTxt("tab-label-tokens", t.tabTokens);
+  setTxt("tokens-tab-intro", t.tokensTabIntro);
+  setTxt("heading-tokens-tab", t.tabTokens);
   setTxt("heading-tokens", t.tokensSectionTitle);
   setTxt("lbl-tokens-period", t.tokensPeriodLabel);
   setTxt("lbl-tokens-alltime", t.tokensAllTimeLabel);
   setTxt("lbl-monthly-reset", t.tokensMonthlyResetLabel);
   setTxt("opt-reset-disabled", t.tokensResetDisabled);
+  setTxt("tokens-monthly-hint", t.monthlyResetHint);
   setTxt("btn-reset-tokens", t.tokensResetBtn);
+  setTxt("heading-quotas-help", t.quotasHelpHeading);
 
   const selectResetDay = document.getElementById("monthly-reset-day") as HTMLSelectElement | null;
   if (selectResetDay) {
@@ -571,30 +576,45 @@ if (btnResetTokens) {
   });
 }
 
-function switchTab(tab: "settings" | "guide"): void {
+function switchTab(tab: "settings" | "tokens" | "guide"): void {
   const isSettings = tab === "settings";
+  const isTokens = tab === "tokens";
+  const isGuide = tab === "guide";
+
   const btnSettings = document.getElementById("tab-btn-settings");
+  const btnTokens = document.getElementById("tab-btn-tokens");
   const btnGuide = document.getElementById("tab-btn-guide");
+
   const panelSettings = document.getElementById("panel-settings");
+  const panelTokens = document.getElementById("panel-tokens");
   const panelGuide = document.getElementById("panel-guide");
 
   btnSettings?.classList.toggle("active", isSettings);
   btnSettings?.setAttribute("aria-selected", String(isSettings));
-  btnGuide?.classList.toggle("active", !isSettings);
-  btnGuide?.setAttribute("aria-selected", String(!isSettings));
+  btnTokens?.classList.toggle("active", isTokens);
+  btnTokens?.setAttribute("aria-selected", String(isTokens));
+  btnGuide?.classList.toggle("active", isGuide);
+  btnGuide?.setAttribute("aria-selected", String(isGuide));
 
   if (panelSettings) panelSettings.hidden = !isSettings;
-  if (panelGuide) panelGuide.hidden = isSettings;
+  if (panelTokens) {
+    panelTokens.hidden = !isTokens;
+    if (isTokens) void refreshTokensDisplay();
+  }
+  if (panelGuide) panelGuide.hidden = !isGuide;
 
   if (window.history.replaceState) {
-    window.history.replaceState(null, "", isSettings ? "#settings" : "#guide");
+    window.history.replaceState(null, "", `#${tab}`);
   }
 }
 
 document.getElementById("tab-btn-settings")?.addEventListener("click", () => switchTab("settings"));
+document.getElementById("tab-btn-tokens")?.addEventListener("click", () => switchTab("tokens"));
 document.getElementById("tab-btn-guide")?.addEventListener("click", () => switchTab("guide"));
 
-if (window.location.hash === "#guide" || window.location.hash === "#about") {
+if (window.location.hash === "#tokens") {
+  switchTab("tokens");
+} else if (window.location.hash === "#guide" || window.location.hash === "#about") {
   switchTab("guide");
 }
 
