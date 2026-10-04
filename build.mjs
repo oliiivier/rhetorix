@@ -84,8 +84,8 @@ const targets = {
       background: { scripts: ["background.js"] },
       browser_specific_settings: {
         gecko: {
-          // Identifiant provisoire : à remplacer avant publication sur addons.mozilla.org.
-          id: "rhetorix@rhetorix.local",
+          // Identifiant définitif sur addons.mozilla.org : ne plus le modifier après publication.
+          id: "{41b53149-86da-4be6-ad0c-165f373b6236}",
           // 142 : requis par data_collection_permissions (la CSS Custom Highlight API est supportée dès 140).
           strict_min_version: "142.0",
           data_collection_permissions: { required: ["websiteContent"] },

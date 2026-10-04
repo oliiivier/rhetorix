@@ -18,7 +18,6 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 
 ## Reste à préciser
 
-- **Identifiant Firefox** : `rhetorix@rhetorix.local` est provisoire. Il faudra le remplacer avant publication définitive sur addons.mozilla.org.
 - **Firefox pour Android (D9), à tester sur un appareil réel** (`npx web-ext run -t firefox-android`) :
   - le script de fond est maintenu actif pendant l'analyse par un appel d'API toutes les 20 s ; il faut vérifier que Firefox Android ne le suspend pas pendant un appel LLM long ;
   - l'octroi d'`activeTab` et la demande de permission depuis `action.onClicked` ;
