@@ -5,27 +5,48 @@ import { CATEGORIES, LABELS, isLabelOf, type Category } from "./taxonomy";
 
 export const SEVERITIES = ["high", "medium", "low"] as const;
 export const FACT_STATUSES = ["refuted", "supported", "misleading", "unverified"] as const;
+export const CONFIDENCES = ["high", "medium", "low"] as const;
 
 export type Severity = (typeof SEVERITIES)[number];
 export type FactStatus = (typeof FACT_STATUSES)[number];
+/** Confiance du modèle dans l'annotation : le procédé est-il bien présent et l'étiquette juste ? (Q3) */
+export type Confidence = (typeof CONFIDENCES)[number];
 
 export interface Source {
   title: string;
   url: string;
 }
 
+export interface FactCheck {
+  status: FactStatus;
+  context: string;
+  sources: Source[];
+}
+
 export interface Annotation {
   id: string;
+  /**
+   * Citation exacte du passage. Vide pour une annotation d'ensemble (B3, D12) : défaut
+   * de structure de l'argumentation, sans passage précis, ancré sur le titre.
+   */
   exact_quote: string;
   category: Category;
   label: string;
   severity: Severity;
+  /** Absente des analyses antérieures à Q3. */
+  confidence?: Confidence;
   rhetoric_critique: string;
-  fact_check: {
-    status: FactStatus;
-    context: string;
-    sources: Source[];
-  };
+  fact_check: FactCheck;
+}
+
+/** Vrai si l'allégation peut faire l'objet d'une vérification en ligne à la demande (C2). */
+export function isVerifiable(a: Pick<Annotation, "category" | "exact_quote" | "fact_check">): boolean {
+  return a.category === "factual_claim" && a.exact_quote !== "" && a.fact_check.status === "unverified";
+}
+
+/** Annotation d'ensemble (B3) : elle ne cite aucun passage et s'ancre sur le titre. */
+export function isDocumentLevel(a: Pick<Annotation, "exact_quote">): boolean {
+  return a.exact_quote === "";
 }
 
 export interface Analysis {
@@ -51,13 +72,14 @@ export const ANALYSIS_JSON_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["id", "exact_quote", "category", "label", "severity", "rhetoric_critique", "fact_check"],
+        required: ["id", "exact_quote", "category", "label", "severity", "confidence", "rhetoric_critique", "fact_check"],
         properties: {
           id: { type: "string" },
           exact_quote: { type: "string" },
           category: { type: "string", enum: [...CATEGORIES] },
           label: { type: "string", enum: allLabels },
           severity: { type: "string", enum: [...SEVERITIES] },
+          confidence: { type: "string", enum: [...CONFIDENCES] },
           rhetoric_critique: { type: "string" },
           fact_check: {
             type: "object",
@@ -122,33 +144,41 @@ export function validateAnnotation(a: unknown, path = "$.annotation"): Annotatio
   const o = obj(a, path);
   const category = oneOf(o.category, CATEGORIES, `${path}.category`);
   const rawLabel = str(o.label, `${path}.label`);
-  const fc = obj(o.fact_check, `${path}.fact_check`);
   const exact_quote = str(o.exact_quote, `${path}.exact_quote`).trim();
-  if (!exact_quote) fail(`${path}.exact_quote`, "citation vide");
+  // B3 : seule une annotation rhétorique peut porter sur l'ensemble ; une allégation
+  // factuelle se vérifie sur un passage précis.
+  if (!exact_quote && category === "factual_claim") fail(`${path}.exact_quote`, "citation vide");
+  const confidence = CONFIDENCES.find((c) => c === o.confidence);
   return {
     id: str(o.id, `${path}.id`),
     exact_quote,
     category,
     label: isLabelOf(category, rawLabel) ? rawLabel : "autre",
     severity: oneOf(o.severity, SEVERITIES, `${path}.severity`),
+    ...(confidence ? { confidence } : {}),
     rhetoric_critique: str(o.rhetoric_critique, `${path}.rhetoric_critique`),
-    fact_check: {
-      status: oneOf(fc.status, FACT_STATUSES, `${path}.fact_check.status`),
-      context: str(fc.context, `${path}.fact_check.context`),
-      sources: arr(fc.sources, `${path}.fact_check.sources`)
-        .map((s, j) => {
-          const so = obj(s, `${path}.fact_check.sources[${j}]`);
-          return { title: str(so.title, `${path}.fact_check.sources[${j}].title`), url: str(so.url, `${path}.fact_check.sources[${j}].url`) };
-        })
-        .filter((s) => isHttpUrl(s.url)),
-    },
+    fact_check: validateFactCheck(o.fact_check, `${path}.fact_check`),
+  };
+}
+
+export function validateFactCheck(v: unknown, path = "$.fact_check"): FactCheck {
+  const fc = obj(v, path);
+  return {
+    status: oneOf(fc.status, FACT_STATUSES, `${path}.status`),
+    context: str(fc.context, `${path}.context`),
+    sources: arr(fc.sources, `${path}.sources`)
+      .map((s, j) => {
+        const so = obj(s, `${path}.sources[${j}]`);
+        return { title: str(so.title, `${path}.sources[${j}].title`), url: str(so.url, `${path}.sources[${j}].url`) };
+      })
+      .filter((s) => isHttpUrl(s.url)),
   };
 }
 
 /**
  * Valide la sortie brute du LLM. Les erreurs de structure lèvent une SchemaError ;
  * les défauts récupérables sont corrigés : label hors catégorie → "autre",
- * URL non http(s) retirée.
+ * URL non http(s) retirée, confiance absente ou hors énumération omise.
  */
 export function validateAnalysis(raw: unknown): Analysis {
   const root = obj(raw, "$");
@@ -165,12 +195,15 @@ export function enforceAnnotationSourcePolicy(
   a: Annotation,
   searchedUrls: ReadonlySet<string> | undefined,
 ): Annotation {
-  if (!searchedUrls) {
-    return { ...a, fact_check: { ...a.fact_check, status: "unverified", sources: [] } };
-  }
-  const sources = a.fact_check.sources.filter((s) => searchedUrls.has(normalizeSourceUrl(s.url)));
-  const status = sources.length === 0 && a.fact_check.status !== "unverified" ? "unverified" : a.fact_check.status;
-  return { ...a, fact_check: { ...a.fact_check, status, sources } };
+  return { ...a, fact_check: enforceFactCheckSourcePolicy(a.fact_check, searchedUrls) };
+}
+
+/** Politique des sources (D3) appliquée à une vérification seule. */
+export function enforceFactCheckSourcePolicy(fc: FactCheck, searchedUrls: ReadonlySet<string> | undefined): FactCheck {
+  if (!searchedUrls) return { ...fc, status: "unverified", sources: [] };
+  const sources = fc.sources.filter((s) => searchedUrls.has(normalizeSourceUrl(s.url)));
+  const status = sources.length === 0 && fc.status !== "unverified" ? "unverified" : fc.status;
+  return { ...fc, status, sources };
 }
 
 /**

@@ -89,7 +89,9 @@ Readability travaille sur un clone et produit du texte normalisé. Les citations
 
 ## 5. Surlignage et interaction
 
-**Un `Highlight` par style.** Un nom de highlight correspond à une seule règle `::highlight()`. Le nom unique `rhetorix-highlight` du PRD ne permet pas de distinguer les couleurs par catégorie. Il faut prévoir `rhetorix-sophism`, `rhetorix-bias`, `rhetorix-factual`, ainsi qu'un `rhetorix-active` pour la citation sélectionnée.
+**Un `Highlight` par style.** Un nom de highlight correspond à une seule règle `::highlight()`. Le nom unique `rhetorix-highlight` du PRD ne permet pas de distinguer les couleurs par catégorie. Il faut prévoir `rhetorix-sophism`, `rhetorix-bias`, `rhetorix-factual`, ainsi qu'un `rhetorix-active` pour la citation sélectionnée, `rhetorix-document` pour le titre qui porte les annotations d'ensemble (D12) et `rhetorix-contested` pour les annotations contestées (D15), qui quittent le surlignage de leur catégorie.
+
+**Annotations d'ensemble (D12).** Sans citation, elles ne sont pas localisées : `highlight` reçoit le titre de l'article et le content script en cherche la plage (un `<h1>` dont le texte correspond au titre extrait, sinon la première occurrence du titre, sinon le seul `<h1>` de la page). Il répond `titleLocated` ; le titre surligné ouvre au survol ou au toucher une bulle qui liste ces annotations, et le clic sur leur carte y fait défiler la page. Sur YouTube, `youtube-highlight` transmet ces annotations au content script de la vidéo, qui surligne le titre affiché sous le lecteur (`ytd-watch-metadata h1`) ; `highlights.css` y est aussi injecté.
 
 **Les highlights ne reçoivent pas d'événements.** Ils ne créent pas d'éléments DOM, donc un clic ou un survol sur une citation surlignée ne peut pas être capté directement. Il faut :
 
@@ -104,11 +106,12 @@ L'utilisateur peut choisir son mode d'affichage (`displayMode: "sidepanel" | "in
 - **Mode combiné (`both`, par défaut)** : le panneau latéral et les bulles au survol sont tous les deux actifs simultanément.
 
 **Isolation des bulles flottantes en Shadow DOM.**
-Afin d'éviter tout conflit de styles avec la page hôte (ex. Wikipedia, Le Monde, NYTimes), la bulle est encapsulée dans un hôte `<div id="rhetorix-popover-host">` rattaché avec un Shadow Root ouvert (`attachShadow({ mode: "open" })`).
+Afin d'éviter tout conflit de styles avec la page hôte (ex. Wikipedia, Le Monde, NYTimes), la bulle est encapsulée dans un hôte `<div id="rhetorix-popover-host">` rattaché avec un Shadow Root ouvert (`attachShadow({ mode: "open" })`). Elle est implémentée par `AnnotationPopover` ([annotation-popover.ts](../../src/annotation-popover.ts)), partagé par le content script des articles et celui de YouTube, qui porte aussi le message bref.
 - Le style CSS est strictement isolé ;
 - Le positionnement est calculé dynamiquement (`position: fixed`) au-dessus ou en-dessous du `Range`, sans débordement de l'écran ;
 - La bordure gauche et le badge reprennent la couleur de la catégorie (rouge sophisme, orange biais, bleu allégation) ;
 - La bulle reste accessible au survol (permettant la sélection de texte ou le clic sur les liens de sources factuelles) ;
+- Elle affiche la confiance (Q3) et les actions « Vérifier en ligne » (D14, allégation non vérifiée, si le provider le permet) et « Contester » (D15), qui passent par le script de fond comme celles du panneau : elles fonctionnent donc aussi sans panneau, sur mobile ;
 - Sécurité stricte : zéro `innerHTML`, manipulation exclusive via l'API DOM (`createElement`, `textContent`, `setAttribute`).
 
 ## 6. Messages
@@ -120,14 +123,20 @@ Types dans `src/messages.ts`.
 | `analyze-tab` | panneau → fond | `{tabId, force}` |
 | `cancel` | panneau → fond | `{tabId}` |
 | `get-state` | panneau → fond | `{tabId}`, réponse : `RunSnapshot` ou `null` |
-| `run-update` | fond → panneau | `{snapshot: RunSnapshot}` : statut, phase, avancement, résumé, annotations, non localisées, erreur |
+| `run-update` | fond → panneau | `{snapshot: RunSnapshot}` : statut, phase, avancement, résumé, annotations, non localisées, erreur, titre localisé, vérifications à la demande possibles, en cours et en échec |
 | `extract` | fond → content | réponse : `{ok: true, article: {title, paragraphs, lang}}` ou `{ok: false, error, errorCode}` |
-| `highlight` | fond → content | `{annotations: HighlightItem[], displayMode?: DisplayMode, lang?: string}`, réponse : `{unlocated: string[]}` |
+| `highlight` | fond → content | `{annotations: HighlightItem[], displayMode?, lang?, title?, canVerify?}`, réponse : `{unlocated: string[], titleLocated?: boolean}` ; les annotations d'ensemble ne figurent pas dans `unlocated` |
+| `update-annotation` | fond → content | `{annotation, verifying?, error?}` : vérification à la demande en cours ou terminée (D14) |
+| `verify-annotation` | panneau ou content → fond | `{tabId?, id}` : vérification en ligne d'une allégation (D14) ; sans `tabId`, l'onglet de l'expéditeur |
+| `contest-annotation` | panneau ou content → fond | `{tabId?, id, contested}` : contestation ou retrait (D15) |
+| `youtube-highlight` | fond → content YouTube | `{annotations: VideoAnnotation[], analyzedRanges, lang?, documentAnnotations?}` |
 | `toast` | fond → content | `{text, isError?, durationMs?}` : message bref dans la page, sur mobile |
 | `set-display-mode` | panneau → content | `{displayMode: DisplayMode}` |
 | `focus` | panneau → content | `{id}` |
 | `annotation-clicked` | content → panneau | `{id}` |
 | `clear` | panneau → content | — |
+
+Si le script de fond a perdu l'état de l'onglet (service worker arrêté), `verify-annotation` et `contest-annotation` le rechargent d'abord depuis le cache (`loadCachedRun`).
 
 Le panneau est partagé entre les onglets. Il garde les résultats terminés par `tabId` et, au changement d'onglet (`tabs.onActivated`), affiche l'état mémorisé ou le demande au script de fond (`get-state`) ; une analyse peut donc se poursuivre dans un onglet pendant qu'on en consulte un autre. Le rechargement ou la fermeture d'un onglet (`tabs.onUpdated`, `tabs.onRemoved`) annule son analyse.
 
@@ -138,12 +147,15 @@ Trois adaptateurs (décision D2) implémentent la même interface :
 ```ts
 interface LlmProvider {
   supportsWebSearch(config: Config): boolean;
+  // Recherche web activable pour un seul appel complete (D14), quel que soit le réglage.
+  searchesOnDemand(config: Config): boolean;
   analyze(input: AnalyzeInput, config: Config, signal: AbortSignal): Promise<ProviderResult>;
-  // Appel textuel sans outil : consolidation, cartographie, relecture.
+  // Appel textuel : consolidation, cartographie, relecture, vérification à la demande.
   complete(request: CompletionRequest, config: Config, signal: AbortSignal, callbacks?: CompletionCallbacks): Promise<string>;
 }
 // ProviderResult = { raw: unknown; searchedUrls?: Set<string>; usage?: TokenUsage }
-// CompletionRequest = { system; user; json?; maxTokens? }
+// CompletionRequest = { system; user; json?; maxTokens?; webSearch? }
+// CompletionCallbacks = { onText?; onUsage?; onRetry?; onSource? } : onSource reçoit chaque URL renvoyée par la recherche
 ```
 
 L'orchestration (`src/analyze.ts`) enchaîne les passes suivantes. Celles marquées « approfondi » ne sont faites qu'avec le réglage « Analyse : approfondie » (D10) ; une passe secondaire en échec est ignorée, sans faire échouer l'analyse.
@@ -153,7 +165,8 @@ L'orchestration (`src/analyze.ts`) enchaîne les passes suivantes. Celles marqu�
 | Cartographie (B1) | approfondi, article découpé | `complete` sur l'article entier, ou son début et sa fin s'il dépasse le budget (100 000 tokens pour Anthropic et Gemini, la taille de morceau sinon) : thèse, arguments, positions attribuées, engagements. Le plan est joint à chaque morceau |
 | Analyse | toujours | `analyze` par morceau, deux à la fois, puis `validateAnalysis`, `enforceSourcePolicy` et fusion |
 | Consolidation (B2) | article découpé | `complete` en JSON : `summary`, `clickbait_gap` et `blind_spot` jugés sur l'ensemble à partir des constats de chaque morceau ; repli sur la fusion |
-| Relecture (Q2) | approfondi, au moins une annotation | `complete` en JSON : chaque annotation avec la définition de son étiquette et le paragraphe qui contient sa citation ; les annotations écartées sont retirées |
+| Relecture (Q2) | approfondi, au moins une annotation | `complete` en JSON : chaque annotation avec la définition de son étiquette et le paragraphe qui contient sa citation (ou la mention d'une annotation d'ensemble) ; les annotations écartées sont retirées |
+| Vérification (C2, D14) | à la demande, après l'analyse | `complete` avec `webSearch` sur une allégation : citation, paragraphe, titre et métadonnées de publication ([verify.ts](../../src/verify.ts)). Réponse `{status, context, sources}` soumise à D3 avec les URL reçues par `onSource`. Anthropic : outil `web_search`, reprise de `pause_turn` ; Gemini : `googleSearch`, sans mode JSON ; compatible OpenAI : `citations`. Pas avec Chrome Built-in AI |
 
 | Adaptateur | Sortie structurée | Recherche web (D3) |
 |---|---|---|
@@ -183,12 +196,19 @@ Quand `supportsWebSearch` est faux, le client force `fact_check.status = "unveri
 ### Cache des analyses (D7)
 
 - **Clé** : URL normalisée (sans fragment ni paramètres de suivi `utm_*`, `fbclid`…).
-- **Valeur** : `{ analysis, textHash, provider, model, lang, engineVersion, webSearch, maxChunkTokens, createdAt }`.
+- **Valeur** : `{ analysis, textHash, provider, model, lang, engineVersion, webSearch, maxChunkTokens, createdAt, title, meta }`. Le titre et les métadonnées de publication servent à ancrer les annotations d'ensemble (D12) et à contextualiser une vérification à la demande (D14) après un réaffichage depuis le cache.
+- **Vérification à la demande (D14)** : son résultat remplace le `fact_check` de l'annotation dans l'entrée (`updateCachedFactCheck`), y compris dans les annotations alignées d'une vidéo, sans changer l'empreinte.
 - **Empreinte** : le `textHash` (SHA-256 du texte extrait) et les réglages du moteur (`analysisSettings`, [engine-settings.ts](../../src/engine-settings.ts)) : provider, modèle, langue, version du moteur (`ENGINE_VERSION`, incrémentée à chaque modification du prompt, du schéma, de la taxonomie ou des passes d'analyse), recherche web effectivement utilisée et taille des morceaux. Les entrées antérieures à ces champs ne sont jamais conformes.
 - **Analyse lancée** : l'entrée n'est réutilisée que si l'empreinte est identique (`getCached`). Sinon, l'analyse est relancée.
 - **Réaffichage à l'ouverture du panneau (D11)** : `loadCachedRun` affiche l'entrée de l'URL sans ré-extraire la page (`getCachedByUrl`). Si ses réglages diffèrent des réglages courants, l'analyse est marquée « peut-être obsolète » (`RunSnapshot.stale`) et le panneau invite à la ré-analyser. Le texte n'est pas revérifié à ce stade : une modification de l'article n'est détectée qu'à l'analyse suivante.
 - **Volume** : `storage.local` est limité à 10 Mo sans la permission `unlimitedStorage`. Garder un index LRU, borner le nombre d'entrées (par exemple 200) et purger les plus anciennes.
 - **Interface** : indiquer « analyse du <date> (cache) » et proposer un bouton « Ré-analyser ». La page d'options permet de vider le cache.
+
+### Annotations contestées (D15)
+
+- **Clé** `contested` : liste d'au plus 200 entrées `{ key, url, pageTitle, contestedAt, reportedAt?, annotation, engine }` ([contested.ts](../../src/contested.ts)). `key` identifie l'annotation par page (sans fragment), étiquette et citation ; `engine` reprend les réglages qui ont produit l'analyse.
+- **Écriture** par le script de fond (`contestRunAnnotation`), **lecture** par le panneau, les content scripts et les options, qui suivent `storage.onChanged`.
+- **Signalement** : la page d'options construit l'URL `https://github.com/oliiivier/rhetorix/issues/new?title=…&body=…` (`issueUrl`, corps raccourci pour rester sous 7 500 caractères) et l'ouvre dans un onglet. Aucune requête n'est envoyée par l'extension.
 
 ## 9. Compatibilité Chromium et Firefox (D8, D9)
 

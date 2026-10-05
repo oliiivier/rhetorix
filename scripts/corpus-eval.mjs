@@ -162,6 +162,7 @@ async function main() {
     const st = engine.stability(runs);
     console.log(
       `- ${article.id} : rappel ${found}/${req}, ${last.produced} annotation(s) dont ${last.produced - last.matched} hors attentes` +
+        (last.overall ? `, ${last.overall} sur l'ensemble` : "") +
         (st === null ? "" : `, stabilité ${pct(st * 100, 100)}`) +
         (last.issues.length ? `, ${last.issues.length} écart(s)` : ""),
     );
@@ -174,6 +175,7 @@ async function main() {
   for (const [c, v] of Object.entries(s.byCategory)) if (v.required) console.log(`  rappel ${c.padEnd(14)} ${pct(v.found, v.required)} (${v.found}/${v.required})`);
   console.log(`  précision          ${pct(s.matched, s.produced)} (${s.matched}/${s.produced} annotations dans les attentes)`);
   console.log(`  citations trouvées ${pct(s.located, s.produced)}`);
+  console.log(`  sur l'ensemble     ${s.overall} annotation(s) sans citation (B3), à relire`);
   console.log(`  statut factuel     ${pct(s.factCorrect, s.factChecked)} (${s.factCorrect}/${s.factChecked})`);
   console.log(`  éléments globaux   ${pct(s.documentCorrect, s.documentChecks)} (${s.documentCorrect}/${s.documentChecks})`);
   console.log(`  témoins            ${s.controlRhetorical.toFixed(1)} annotation(s) rhétorique(s) en moyenne`);

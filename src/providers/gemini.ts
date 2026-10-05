@@ -38,6 +38,7 @@ interface GenerateContentChunk {
 
 export const geminiProvider: LlmProvider = {
   supportsWebSearch: (config) => Boolean(config.webSearch),
+  searchesOnDemand: () => true,
 
   async analyze(input, config: Config, signal) {
     const webSearch = Boolean(config.webSearch);
@@ -169,7 +170,9 @@ export const geminiProvider: LlmProvider = {
       {
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: user }] }],
-        ...(request.json ? { generationConfig: { responseMimeType: "application/json" } } : {}),
+        // Le mode JSON n'est pas accepté avec l'outil de recherche par tous les modèles :
+        // la consigne du prompt suffit alors.
+        ...(request.webSearch ? { tools: [{ googleSearch: {} }] } : request.json ? { generationConfig: { responseMimeType: "application/json" } } : {}),
       },
       signal,
       "Gemini",
@@ -189,7 +192,11 @@ export const geminiProvider: LlmProvider = {
       if (chunk.promptFeedback?.blockReason) {
         throw new ProviderError(`Requête bloquée par Gemini (${chunk.promptFeedback.blockReason}).`, "blocked", chunk.promptFeedback.blockReason);
       }
-      const text = chunk.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("");
+      const candidate = chunk.candidates?.[0];
+      if (request.webSearch) {
+        for (const g of candidate?.groundingMetadata?.groundingChunks ?? []) if (g.web?.uri) callbacks?.onSource?.(g.web.uri);
+      }
+      const text = candidate?.content?.parts?.map((p) => p.text ?? "").join("");
       if (text) {
         accumulated += text;
         streamedChars += text.length;

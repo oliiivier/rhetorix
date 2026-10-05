@@ -3,10 +3,11 @@
 // issu du LLM ou de la page est inséré via textContent (jamais innerHTML).
 
 import { isConfigured, loadConfig, providerOrigin, resolveLanguage, saveConfig, type Config, type DisplayMode } from "../config";
+import { CONTESTED_KEY, contestKey, loadContested } from "../contested";
 import { ext } from "../ext";
 import { getUiStrings } from "../i18n";
 import type { BackgroundToPanel, ContentToPanel, PanelToBackground, PanelToContent, RunSnapshot } from "../messages";
-import type { Analysis, Annotation } from "../schema";
+import { isDocumentLevel, isVerifiable, type Analysis, type Annotation } from "../schema";
 import { labelDef, type Category } from "../taxonomy";
 import { isYouTubeWatchUrl } from "../youtube/youtube-detector";
 import { formatTimestamp } from "../youtube/youtube-transcript";
@@ -22,6 +23,10 @@ interface TabState {
   /** Passages non analysés d'une analyse partielle (A3). */
   skipped?: string[];
   usage?: TokenUsage;
+  /** Vérification à la demande possible, en cours, en échec (C2). */
+  canVerify?: boolean;
+  verifying?: string[];
+  verifyErrors?: Record<string, string>;
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -32,6 +37,8 @@ const modeSelect = $<HTMLSelectElement>("display-mode");
 const statusEl = $<HTMLParagraphElement>("status");
 const resultEl = $<HTMLElement>("result");
 const cardsEl = $<HTMLOListElement>("cards");
+const documentLevelEl = $<HTMLElement>("document-level");
+const documentCardsEl = $<HTMLOListElement>("document-cards");
 const filtersEl = $<HTMLElement>("filters");
 const template = $<HTMLTemplateElement>("card-template");
 
@@ -42,6 +49,8 @@ let windowId: number | undefined;
 /** Onglets dont l'analyse est en cours dans le script de fond. */
 const runningTabs = new Set<number>();
 let activeCategoryFilter: "all" | Category = "all";
+/** Clés des annotations contestées (Q4). */
+let contestedKeys = new Set<string>();
 
 function strings() {
   return getUiStrings(config ?? undefined);
@@ -97,6 +106,8 @@ function applyI18n(): void {
   if (clickHeading) clickHeading.textContent = t.clickbaitHeading;
   const blindHeading = $("blind-spot-heading");
   if (blindHeading) blindHeading.textContent = t.blindSpotHeading;
+  $("document-level-heading").textContent = t.documentLevelHeading;
+  $("document-level-hint").textContent = t.documentLevelHint;
   const privacy = $("privacy-footer");
   if (privacy) privacy.textContent = t.privacyNotice;
   const tokenLbl = $("token-label");
@@ -125,6 +136,8 @@ function isAnalyzableUrl(url?: string): boolean {
 function showIdle(isWebPage = true): void {
   resultEl.hidden = true;
   cardsEl.replaceChildren();
+  documentCardsEl.replaceChildren();
+  documentLevelEl.hidden = true;
   const cb = $("clickbait-banner");
   if (cb) cb.hidden = true;
   const bs = $("blind-spot-card");
@@ -201,23 +214,45 @@ $("token-options-btn")?.addEventListener("click", () => {
   void ext.tabs.create({ url: ext.runtime.getURL("options.html#tokens") });
 });
 
-function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
+interface CardContext {
+  unlocated: boolean;
+  canVerify?: boolean;
+  verifying?: boolean;
+  verifyError?: string;
+}
+
+function isContested(a: Annotation): boolean {
+  return Boolean(currentTabUrl && contestedKeys.has(contestKey(currentTabUrl, a)));
+}
+
+function renderCard(a: Annotation, ctx: CardContext): HTMLLIElement {
   const t = strings();
   const lang = currentLang();
+  const unlocated = ctx.unlocated;
+  const documentLevel = isDocumentLevel(a);
+  const contested = isContested(a);
   const li = (template.content.firstElementChild as HTMLLIElement).cloneNode(true) as HTMLLIElement;
   const q = <T extends Element>(sel: string) => li.querySelector(sel) as T;
   li.dataset.id = a.id;
   li.classList.add(a.category, `severity-${a.severity}`);
+  li.classList.toggle("contested", contested);
   q<HTMLElement>(".badge").textContent = t.categories[a.category];
   q<HTMLElement>(".badge").classList.add(a.category);
   const def = labelDef(a.category, a.label, lang);
   q<HTMLElement>(".label").textContent = def?.name ?? a.label;
   if (def) q<HTMLElement>(".label").title = def.definition;
   q<HTMLElement>(".severity").textContent = t.severities[a.severity];
-  q<HTMLElement>(".quote").textContent = a.exact_quote;
+  const confidence = q<HTMLElement>(".confidence");
+  if (a.confidence) {
+    confidence.textContent = t.confidences[a.confidence];
+    confidence.title = t.confidenceHint;
+    confidence.hidden = false;
+  }
+  if (documentLevel) q<HTMLElement>(".quote").remove();
+  else q<HTMLElement>(".quote").textContent = a.exact_quote;
   const unlocatedEl = q<HTMLElement>(".unlocated");
   unlocatedEl.textContent = t.unlocatedQuote;
-  unlocatedEl.hidden = !unlocated;
+  unlocatedEl.hidden = !unlocated || documentLevel;
   q<HTMLElement>(".critique").textContent = a.rhetoric_critique;
 
   const fc = a.fact_check;
@@ -242,6 +277,34 @@ function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
     }
   }
 
+  // C2 : vérification en ligne d'une allégation restée « non vérifiée ».
+  const verifyBtn = q<HTMLButtonElement>(".verify");
+  if (ctx.canVerify && isVerifiable(a) && !contested) {
+    verifyBtn.hidden = false;
+    verifyBtn.textContent = ctx.verifying ? t.verifyingStatus : t.verifyBtn;
+    verifyBtn.title = t.verifyBtnTitle;
+    verifyBtn.disabled = Boolean(ctx.verifying);
+    verifyBtn.addEventListener("click", () => {
+      if (currentTabId !== undefined) void sendToBackground({ type: "verify-annotation", tabId: currentTabId, id: a.id });
+    });
+    const note = q<HTMLElement>(".verify-note");
+    if (ctx.verifyError && !ctx.verifying) {
+      note.textContent = ctx.verifyError;
+      note.hidden = false;
+    }
+  }
+
+  // Q4 : contestation ; la carte est alors repliée.
+  const contestBtn = q<HTMLButtonElement>(".contest");
+  contestBtn.textContent = contested ? t.uncontestBtn : t.contestBtn;
+  contestBtn.title = contested ? t.uncontestBtnTitle : t.contestBtnTitle;
+  contestBtn.addEventListener("click", () => {
+    if (currentTabId !== undefined) void sendToBackground({ type: "contest-annotation", tabId: currentTabId, id: a.id, contested: !contested });
+  });
+  const contestedNote = q<HTMLElement>(".contested-note");
+  contestedNote.textContent = t.contestedNote;
+  contestedNote.hidden = !contested;
+
   const va = a as VideoAnnotation;
   const timeBadge = q<HTMLElement>(".time-badge");
   if (timeBadge && va.startTime !== undefined && va.startTime >= 0) {
@@ -259,12 +322,12 @@ function renderCard(a: Annotation, unlocated: boolean): HTMLLIElement {
     selectCard(a.id, false);
     if (va.startTime !== undefined && va.startTime >= 0 && currentTabId !== undefined) {
       void send(currentTabId, { type: "youtube-seek", timeSec: va.startTime, autoPlay: true });
-    } else if (!unlocated && currentTabId !== undefined) {
+    } else if (!unlocated && !(documentLevel && va.startTime !== undefined) && currentTabId !== undefined) {
       void send(currentTabId, { type: "focus", id: a.id });
     }
   };
   li.addEventListener("click", (e) => {
-    if ((e.target as Element).closest("a, summary")) return;
+    if ((e.target as Element).closest("a, summary, button")) return;
     activate();
   });
   li.addEventListener("keydown", (e) => {
@@ -284,8 +347,9 @@ function applyCategoryFilter(cat: string): void {
   }
 }
 
-function updateFilterCounts(annotations: Annotation[]): void {
+function updateFilterCounts(all: Annotation[]): void {
   const t = strings();
+  const annotations = all.filter((a) => !isDocumentLevel(a));
   const counts = {
     all: annotations.length,
     sophism: annotations.filter((a) => a.category === "sophism").length,
@@ -343,14 +407,27 @@ function render(state: TabState): void {
 
   updateFilterCounts(state.analysis.annotations);
 
-  if (state.analysis.annotations.length === 0) {
+  const ctx = (a: Annotation): CardContext => ({
+    unlocated: state.unlocated.has(a.id),
+    canVerify: state.canVerify,
+    verifying: state.verifying?.includes(a.id),
+    verifyError: state.verifyErrors?.[a.id],
+  });
+  const overall = state.analysis.annotations.filter(isDocumentLevel);
+  const passages = state.analysis.annotations.filter((a) => !isDocumentLevel(a));
+  documentCardsEl.replaceChildren(...overall.map((a) => renderCard(a, ctx(a))));
+  documentLevelEl.hidden = overall.length === 0;
+
+  if (passages.length === 0) {
     const empty = document.createElement("li");
     empty.className = "empty card";
     empty.textContent = t.emptyResults;
     cardsEl.replaceChildren(empty);
+    if (overall.length > 0) empty.hidden = true;
+    renderTokenUsage(state.usage, Boolean(state.cachedAt));
     return;
   }
-  cardsEl.replaceChildren(...state.analysis.annotations.map((a) => renderCard(a, state.unlocated.has(a.id))));
+  cardsEl.replaceChildren(...passages.map((a) => renderCard(a, ctx(a))));
   applyCategoryFilter(activeCategoryFilter);
   renderTokenUsage(state.usage, Boolean(state.cachedAt));
   updateDisplayModeBanner();
@@ -371,7 +448,7 @@ function renderPartialNote(skipped: string[] | undefined): void {
 }
 
 function selectCard(id: string, scroll: boolean): void {
-  for (const card of cardsEl.querySelectorAll<HTMLElement>(".card")) {
+  for (const card of [...cardsEl.querySelectorAll<HTMLElement>(".card"), ...documentCardsEl.querySelectorAll<HTMLElement>(".card")]) {
     const active = card.dataset.id === id;
     card.classList.toggle("active", active);
     if (active) {
@@ -500,6 +577,9 @@ function toState(s: RunSnapshot): TabState {
     stale: s.stale,
     skipped: s.skipped,
     usage: s.usage,
+    canVerify: s.canVerify,
+    verifying: s.verifying,
+    verifyErrors: s.verifyErrors,
   };
 }
 
@@ -514,6 +594,8 @@ function renderSnapshot(s: RunSnapshot): void {
       if (s.phase === "extracting") {
         resultEl.hidden = true;
         cardsEl.replaceChildren();
+        documentCardsEl.replaceChildren();
+        documentLevelEl.hidden = true;
         const cb = $("clickbait-banner");
         if (cb) cb.hidden = true;
         const bs = $("blind-spot-card");
@@ -547,10 +629,17 @@ function renderSnapshot(s: RunSnapshot): void {
       $("cache-note").hidden = true;
       $("partial-note").hidden = true;
       // Ajout incrémental : seules les annotations nouvelles reçoivent une carte.
-      const shown = new Set([...cardsEl.querySelectorAll<HTMLElement>(".card")].map((c) => c.dataset.id));
+      const shown = new Set(
+        [...cardsEl.querySelectorAll<HTMLElement>(".card"), ...documentCardsEl.querySelectorAll<HTMLElement>(".card")].map((c) => c.dataset.id),
+      );
       for (const a of s.annotations) {
         if (shown.has(a.id)) continue;
-        const card = renderCard(a, false);
+        const card = renderCard(a, { unlocated: false });
+        if (isDocumentLevel(a)) {
+          documentCardsEl.append(card);
+          documentLevelEl.hidden = false;
+          continue;
+        }
         card.hidden = activeCategoryFilter !== "all" && !card.classList.contains(activeCategoryFilter);
         cardsEl.append(card);
       }
@@ -575,6 +664,8 @@ function renderSnapshot(s: RunSnapshot): void {
         return;
       }
       cardsEl.replaceChildren();
+      documentCardsEl.replaceChildren();
+      documentLevelEl.hidden = true;
       resultEl.hidden = true;
       const cb = $("clickbait-banner");
       if (cb) cb.hidden = true;
@@ -718,7 +809,16 @@ ext.tabs.onUpdated.addListener((tabId, info, tab) => {
   }
 });
 
+async function refreshContested(): Promise<void> {
+  contestedKeys = new Set((await loadContested()).map((e) => e.key));
+  if (currentTabId !== undefined && !runningTabs.has(currentTabId)) {
+    const state = states.get(currentTabId);
+    if (state) render(state);
+  }
+}
+
 ext.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes[CONTESTED_KEY]) void refreshContested();
   if (area === "local" && changes.config) {
     void loadConfig().then((c) => {
       config = c;
@@ -734,6 +834,7 @@ ext.storage.onChanged.addListener((changes, area) => {
 
 void (async () => {
   config = await loadConfig();
+  contestedKeys = new Set((await loadContested()).map((e) => e.key));
   modeSelect.value = config.displayMode ?? "both";
   applyI18n();
   windowId = (await ext.windows.getCurrent()).id;

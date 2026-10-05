@@ -71,7 +71,7 @@ function excerptOf(chunk: string): string {
   return first.length > EXCERPT_CHARS ? `${first.slice(0, EXCERPT_CHARS).trimEnd()}…` : first;
 }
 
-function metaOf(article: Extracted): ArticleMeta | undefined {
+export function metaOf(article: Extracted): ArticleMeta | undefined {
   const { publishedTime, byline, siteName } = article;
   return publishedTime || byline || siteName ? { publishedTime, byline, siteName } : undefined;
 }

@@ -1,5 +1,5 @@
 import type { DisplayMode } from "./config";
-import type { Annotation, FactStatus, Severity, Source } from "./schema";
+import type { Annotation, Confidence, FactStatus, Severity, Source } from "./schema";
 import type { Category } from "./taxonomy";
 import type { TimeRange, YouTubePlayerOptions } from "./youtube/youtube-player";
 import type { VideoAnnotation, VideoTranscript, VideoTranscriptSlice } from "./youtube/types";
@@ -11,6 +11,7 @@ export interface HighlightItem {
   category: Category;
   label?: string;
   severity?: Severity;
+  confidence?: Confidence;
   rhetoric_critique?: string;
   fact_check?: {
     status: FactStatus;
@@ -21,7 +22,18 @@ export interface HighlightItem {
 
 export type PanelToContent =
   | { type: "extract" }
-  | { type: "highlight"; annotations: HighlightItem[]; displayMode?: DisplayMode; lang?: string }
+  | {
+      type: "highlight";
+      annotations: HighlightItem[];
+      displayMode?: DisplayMode;
+      lang?: string;
+      /** Titre de l'article, ancre des annotations d'ensemble (B3). */
+      title?: string;
+      /** Vérification en ligne à la demande possible avec le provider configuré (C2). */
+      canVerify?: boolean;
+    }
+  /** Annotation modifiée après l'analyse : vérification à la demande en cours ou terminée (C2). */
+  | { type: "update-annotation"; annotation: HighlightItem; verifying?: boolean; error?: string }
   | { type: "set-display-mode"; displayMode: DisplayMode }
   | { type: "focus"; id: string }
   | { type: "clear" }
@@ -30,7 +42,14 @@ export type PanelToContent =
   /** Commandes spécifiques à YouTube. */
   | { type: "youtube-detect" }
   | { type: "youtube-extract"; startSec?: number; durationSec?: number }
-  | { type: "youtube-highlight"; annotations: VideoAnnotation[]; analyzedRanges: TimeRange[]; lang?: string }
+  | {
+      type: "youtube-highlight";
+      annotations: VideoAnnotation[];
+      analyzedRanges: TimeRange[];
+      lang?: string;
+      /** Annotations d'ensemble (B3), ancrées sur le titre de la vidéo. */
+      documentAnnotations?: Annotation[];
+    }
   | { type: "youtube-seek"; timeSec: number; autoPlay?: boolean }
   | { type: "youtube-set-options"; options: Partial<YouTubePlayerOptions> };
 
@@ -60,7 +79,10 @@ export type YouTubeExtractResult =
   | { ok: false; error: string; errorCode?: string };
 
 export interface HighlightResult {
+  /** Annotations de passage non localisées (les annotations d'ensemble n'y figurent pas). */
   unlocated: string[];
+  /** Titre trouvé dans la page : les annotations d'ensemble y sont accessibles (B3). */
+  titleLocated?: boolean;
 }
 
 // ---------- Panneau ↔ script de fond (architecture §6) ----------
@@ -91,6 +113,14 @@ export interface RunSnapshot {
   /** Le provider a renvoyé une erreur passagère : nouvel essai en attente (A4). */
   retrying?: boolean;
   error?: string;
+  /** Titre surligné dans la page, ancre des annotations d'ensemble (B3). */
+  titleLocated?: boolean;
+  /** Vérification en ligne à la demande possible avec le provider configuré (C2). */
+  canVerify?: boolean;
+  /** Annotations dont la vérification à la demande est en cours (C2). */
+  verifying?: string[];
+  /** Dernier échec de vérification à la demande, par annotation (C2). */
+  verifyErrors?: Record<string, string>;
   /** Consommation de tokens mesurée en continu pour cette analyse. */
   usage?: TokenUsage;
   /** Métadonnées spécifiques à l'analyse d'une vidéo YouTube. */
@@ -106,6 +136,13 @@ export type PanelToBackground =
   | { type: "analyze-youtube-chunk"; tabId: number; startSec: number; force?: boolean }
   | { type: "analyze-youtube-full"; tabId: number; force?: boolean }
   | { type: "cancel"; tabId: number }
+  /**
+   * Vérification en ligne d'une allégation (C2) et contestation d'une annotation (Q4).
+   * Envoyés par le panneau ou par les bulles de la page ; sans tabId, l'onglet est
+   * celui de l'expéditeur.
+   */
+  | { type: "verify-annotation"; tabId?: number; id: string }
+  | { type: "contest-annotation"; tabId?: number; id: string; contested: boolean }
   | { type: "get-state"; tabId: number }
   | { type: "open-sidepanel"; tabId?: number }
   | { type: "close-sidebar" };

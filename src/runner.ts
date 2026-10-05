@@ -2,14 +2,18 @@
 // content script, extraction, cache (D7), appel au LLM, surlignage. Le panneau
 // (desktop) et les bulles (mobile) ne sont que des vues de l'état publié ici.
 
-import { analyzeArticle, type EngineAnalysis } from "./analyze";
-import { getCached, getCachedByUrl, putCached, sha256 } from "./cache";
+import { analyzeArticle, metaOf, quoteContext, type EngineAnalysis } from "./analyze";
+import { cacheKey, getCached, getCachedByUrl, putCached, sha256, updateCachedFactCheck } from "./cache";
+import { addContested, contestKey, removeContested } from "./contested";
 import { isConfigured, loadConfig, resolveLanguage, type DisplayMode } from "./config";
-import { analysisSettings, sameSettings } from "./engine-settings";
+import { analysisSettings, sameSettings, type AnalysisSettings } from "./engine-settings";
 import { ext } from "./ext";
 import { formatErrorMessage, getUiStrings } from "./i18n";
 import type { ExtractResult, HighlightResult, PanelToContent, RunSnapshot, YouTubeExtractResult } from "./messages";
+import type { ArticleMeta } from "./prompt";
+import { isDocumentLevel, isVerifiable, type Annotation } from "./schema";
 import { recordTokenUsage, type TokenUsage } from "./tokens";
+import { canVerifyOnDemand, verifyAnnotation } from "./verify";
 import { isYouTubeWatchUrl } from "./youtube/youtube-detector";
 import { matchAnnotationsToCues } from "./youtube/youtube-matcher";
 import type { TimeRange, VideoAnnotation } from "./youtube/types";
@@ -20,6 +24,14 @@ const KEEPALIVE_MS = 20_000;
 interface Run {
   snapshot: RunSnapshot;
   controller: AbortController;
+  /** Clé de l'entrée de cache de l'analyse, à compléter après une vérification (C2). */
+  cacheKey?: string;
+  /** Article analysé : ancre des annotations d'ensemble (B3) et contexte des vérifications (C2). */
+  article?: { title: string; meta?: ArticleMeta; paragraphs?: string[] };
+  /** Réglages du moteur qui ont produit l'analyse, joints à une contestation (Q4). */
+  settings?: Partial<AnalysisSettings>;
+  /** Vérifications à la demande en cours, annulées avec l'onglet. */
+  verifications?: AbortController;
 }
 
 export type UpdateListener = (snapshot: RunSnapshot) => void;
@@ -57,6 +69,8 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
   // D11 : l'analyse est réaffichée sans ré-extraction ; si les réglages du moteur ont
   // changé depuis, elle est signalée comme peut-être obsolète.
   const stale = !sameSettings(cached, analysisSettings(config));
+  const tab = await ext.tabs.get(tabId).catch(() => null);
+  const article = { title: cached.title ?? tab?.title ?? "", meta: cached.meta };
 
   const isYouTube = Boolean(url && isYouTubeWatchUrl(url));
   if (isYouTube) {
@@ -86,6 +100,7 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
           durationSec,
         });
         if (extracted?.ok) {
+          article.title = cached.title ?? extracted.extracted.title;
           videoAnnotations = matchAnnotationsToCues(cached.analysis.annotations, extracted.slice.cues, 0);
           const range: TimeRange = { startSec: extracted.slice.startSec, endSec: extracted.slice.endSec };
           analyzedRanges = [range];
@@ -124,6 +139,7 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
           annotations: videoAnnotations,
           analyzedRanges,
           lang,
+          documentAnnotations: cached.analysis.annotations.filter(isDocumentLevel),
         });
       }
     } catch {}
@@ -139,11 +155,10 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
       clickbaitGap: cached.analysis.clickbait_gap,
       blindSpot: cached.analysis.blind_spot,
       annotations: annotationsToUse,
-      unlocated: videoAnnotations
-        ? videoAnnotations.filter((a) => a.startTime < 0).map((a) => a.id)
-        : [],
+      unlocated: videoAnnotations ? unlocatedInVideo(videoAnnotations) : [],
       cachedAt: cached.createdAt,
       stale,
+      canVerify: canVerifyOnDemand(config),
       usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
       isVideo: true,
       videoChunkRange,
@@ -152,11 +167,12 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
     };
 
     const controller = new AbortController();
-    runs.set(tabId, { snapshot, controller });
+    runs.set(tabId, { snapshot, controller, cacheKey: cached.cacheKey, article, settings: cached });
     return snapshot;
   }
 
   let unlocated: string[] = [];
+  let titleLocated: boolean | undefined;
   try {
     await inject(tabId, "access_error");
     const res = await sendToTab<HighlightResult>(tabId, {
@@ -164,8 +180,11 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
       annotations: cached.analysis.annotations,
       displayMode: config.displayMode,
       lang,
+      title: article.title,
+      canVerify: canVerifyOnDemand(config),
     });
     unlocated = res.unlocated ?? [];
+    titleLocated = res.titleLocated;
   } catch {
     // Si l'injection échoue, l'analyse reste consultable dans le panneau
   }
@@ -182,14 +201,21 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
     blindSpot: cached.analysis.blind_spot,
     annotations: cached.analysis.annotations,
     unlocated,
+    titleLocated,
     cachedAt: cached.createdAt,
     stale,
+    canVerify: canVerifyOnDemand(config),
     usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
   };
 
   const controller = new AbortController();
-  runs.set(tabId, { snapshot, controller });
+  runs.set(tabId, { snapshot, controller, cacheKey: cached.cacheKey, article, settings: cached });
   return snapshot;
+}
+
+/** Annotations de passage non alignées sur la transcription ; les annotations d'ensemble n'en sont pas. */
+function unlocatedInVideo(annotations: { id: string; exact_quote: string; startTime: number }[]): string[] {
+  return annotations.filter((a) => a.startTime < 0 && !isDocumentLevel(a)).map((a) => a.id);
 }
 
 function withoutSkipped<T extends { skipped?: unknown }>(analysis: T): Omit<T, "skipped"> {
@@ -205,9 +231,14 @@ export function cancelRun(tabId: number): void {
   runs.get(tabId)?.controller.abort();
 }
 
+function abortVerifications(tabId: number): void {
+  runs.get(tabId)?.verifications?.abort();
+}
+
 /** Onglet fermé ou rechargé : l'analyse en cours est abandonnée et l'état oublié. */
 export function forgetTab(tabId: number): void {
   cancelRun(tabId);
+  abortVerifications(tabId);
   runs.delete(tabId);
 }
 
@@ -227,6 +258,8 @@ async function inject(tabId: number, accessError: string): Promise<void> {
 async function injectYouTube(tabId: number, accessError: string): Promise<void> {
   try {
     await ext.scripting.executeScript({ target: { tabId }, files: ["content-script-youtube.js"] });
+    // Surlignage du titre de la vidéo, ancre des annotations d'ensemble (B3).
+    await ext.scripting.insertCSS({ target: { tabId }, files: ["highlights.css"] });
   } catch {
     throw new Error(accessError);
   }
@@ -256,6 +289,7 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
   const keepAlive = setInterval(() => void ext.runtime.getPlatformInfo(), KEEPALIVE_MS);
   const config = await loadConfig();
   const t = getUiStrings(config);
+  run.settings = analysisSettings(config);
   let currentUsage: TokenUsage | undefined;
   try {
     if (!isConfigured(config)) throw new Error(t.needConfigStatus);
@@ -289,6 +323,7 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
       }
 
       const article = extracted.extracted;
+      run.article = { title: article.title, paragraphs: article.paragraphs };
       const lang = resolveLanguage(config);
       const videoUrl = url!;
       const chunkTag = opts.youtubeFull ? "full" : `${startSec}-${durationSec}`;
@@ -346,18 +381,23 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         annotations: videoAnnotations,
         analyzedRanges: [analyzedRange],
         lang,
+        documentAnnotations: analysis.annotations.filter(isDocumentLevel),
       });
 
-      if (!analysis.skipped) await putCached(cacheUrl, {
+      if (!analysis.skipped) {
+        run.cacheKey = cacheKey(cacheUrl);
+        await putCached(cacheUrl, {
         ...fingerprint,
         analysis: withoutSkipped(analysis),
         createdAt: cached?.createdAt ?? Date.now(),
+        title: article.title,
         isVideo: true,
         videoAnnotations,
         analyzedRanges: [analyzedRange],
         videoChunkRange: analyzedRange,
         videoTotalDuration: extracted.transcript.durationMs / 1000,
-      });
+        });
+      }
 
       Object.assign(snapshot, {
         status: "done",
@@ -365,7 +405,8 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         clickbaitGap: analysis.clickbait_gap,
         blindSpot: analysis.blind_spot,
         annotations: videoAnnotations,
-        unlocated: videoAnnotations.filter((a) => a.startTime < 0).map((a) => a.id),
+        unlocated: unlocatedInVideo(videoAnnotations),
+        canVerify: canVerifyOnDemand(config),
         cachedAt: cached?.createdAt,
         skipped: analysis.skipped?.map((p) => p.excerpt),
         retrying: false,
@@ -384,6 +425,7 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         throw new Error(extracted.error);
       }
       const article = extracted.article;
+      run.article = { title: article.title, meta: metaOf(article), paragraphs: article.paragraphs };
       const lang = resolveLanguage(config);
       const fingerprint = {
         textHash: await sha256(article.paragraphs.join("\n\n")),
@@ -421,19 +463,24 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
           },
         });
         // A3 : une analyse partielle n'est pas mise en cache, pour être retentée.
-        if (url && !analysis.skipped) await putCached(url, { ...fingerprint, analysis, createdAt: Date.now() });
+        if (url && !analysis.skipped) {
+          await putCached(url, { ...fingerprint, analysis, createdAt: Date.now(), title: article.title, meta: run.article.meta });
+        }
         if (currentUsage) {
           await recordTokenUsage(currentUsage);
         }
       } else {
         snapshot.usage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
       }
+      if (url && !analysis.skipped) run.cacheKey = cacheKey(url);
 
-      const { unlocated } = await sendToTab<HighlightResult>(tabId, {
+      const { unlocated, titleLocated } = await sendToTab<HighlightResult>(tabId, {
         type: "highlight",
         annotations: analysis.annotations,
         displayMode: opts.displayMode ?? config.displayMode,
         lang,
+        title: article.title,
+        canVerify: canVerifyOnDemand(config),
       });
       Object.assign(snapshot, {
         status: "done",
@@ -442,6 +489,8 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         blindSpot: analysis.blind_spot,
         annotations: analysis.annotations,
         unlocated,
+        titleLocated,
+        canVerify: canVerifyOnDemand(config),
         cachedAt: cached?.createdAt,
         skipped: analysis.skipped?.map((p) => p.excerpt),
         retrying: false,
@@ -463,8 +512,12 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
           annotations: snapshot.annotations,
           displayMode: opts.displayMode ?? config.displayMode,
           lang: resolveLanguage(config),
+          title: run.article?.title,
+          canVerify: canVerifyOnDemand(config),
         });
         snapshot.unlocated = res.unlocated ?? [];
+        snapshot.titleLocated = res.titleLocated;
+        snapshot.canVerify = canVerifyOnDemand(config);
       } catch {
         // Page inaccessible : les annotations restent consultables dans le panneau
       }
@@ -474,4 +527,110 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
   }
   publish();
   return snapshot;
+}
+
+// ---------- Après l'analyse : vérification à la demande (C2) et contestation (Q4) ----------
+
+/** Paragraphe de l'allégation : texte extrait à l'analyse, sinon nouvelle extraction locale. */
+async function claimParagraph(tabId: number, run: Run, quote: string): Promise<string | undefined> {
+  let paragraphs = run.article?.paragraphs;
+  if (!paragraphs && !run.snapshot.isVideo) {
+    const extracted = await sendToTab<ExtractResult>(tabId, { type: "extract" }).catch(() => null);
+    if (extracted?.ok) {
+      paragraphs = extracted.article.paragraphs;
+      run.article = { title: run.article?.title || extracted.article.title, meta: run.article?.meta ?? metaOf(extracted.article), paragraphs };
+    }
+  }
+  return paragraphs ? quoteContext(quote, paragraphs) : undefined;
+}
+
+/**
+ * Vérifie en ligne une allégation restée « non vérifiée » (C2), avec la recherche web
+ * activée pour ce seul appel. Le résultat remplace la vérification dans l'état publié,
+ * dans la page et dans le cache.
+ */
+export async function verifyRunAnnotation(tabId: number, id: string, onUpdate: UpdateListener): Promise<void> {
+  const run = runs.get(tabId);
+  if (!run || run.snapshot.status === "running") return;
+  const snapshot = run.snapshot;
+  const annotation = snapshot.annotations.find((a) => a.id === id);
+  if (!annotation || !isVerifiable(annotation) || snapshot.verifying?.includes(id)) return;
+  const config = await loadConfig();
+  const t = getUiStrings(config);
+  if (!canVerifyOnDemand(config)) return;
+
+  const publish = (verifying: boolean, error?: string) => {
+    if (runs.get(tabId) !== run) return;
+    const current = snapshot.annotations.find((a) => a.id === id) ?? annotation;
+    onUpdate({ ...snapshot, annotations: [...snapshot.annotations] });
+    sendToTab(tabId, { type: "update-annotation", annotation: current, verifying, error }).catch(() => {});
+  };
+  run.verifications ??= new AbortController();
+  const signal = run.verifications.signal;
+  const keepAlive = setInterval(() => void ext.runtime.getPlatformInfo(), KEEPALIVE_MS);
+  snapshot.verifying = [...(snapshot.verifying ?? []), id];
+  if (snapshot.verifyErrors) delete snapshot.verifyErrors[id];
+  publish(true);
+
+  let usage: TokenUsage | undefined;
+  try {
+    const paragraph = await claimParagraph(tabId, run, annotation.exact_quote);
+    const factCheck = await verifyAnnotation(
+      annotation,
+      { title: run.article?.title ?? "", paragraph, meta: run.article?.meta },
+      config,
+      signal,
+      (u) => (usage = u),
+    );
+    snapshot.annotations = snapshot.annotations.map((a) => (a.id === id ? { ...a, fact_check: factCheck } : a));
+    if (run.cacheKey) await updateCachedFactCheck(run.cacheKey, id, factCheck);
+    snapshot.verifying = snapshot.verifying?.filter((v) => v !== id);
+    publish(false);
+  } catch (err) {
+    snapshot.verifying = snapshot.verifying?.filter((v) => v !== id);
+    if (signal.aborted) return;
+    const message = formatErrorMessage(err, t);
+    snapshot.verifyErrors = { ...snapshot.verifyErrors, [id]: message };
+    publish(false, message);
+  } finally {
+    clearInterval(keepAlive);
+    if (usage) await recordTokenUsage(usage);
+  }
+}
+
+/**
+ * Conteste une annotation (Q4) ou retire la contestation. L'annotation est enregistrée
+ * localement avec les réglages qui l'ont produite ; rien n'est envoyé à un tiers.
+ */
+export async function contestRunAnnotation(tabId: number, id: string, contested: boolean): Promise<void> {
+  const run = runs.get(tabId);
+  const annotation = run?.snapshot.annotations.find((a) => a.id === id);
+  const url = run?.snapshot.url;
+  if (!run || !annotation || !url) return;
+  const key = contestKey(url, annotation);
+  if (!contested) {
+    await removeContested(key);
+    return;
+  }
+  const settings = { ...analysisSettings(await loadConfig()), ...run.settings };
+  await addContested({
+    key,
+    url,
+    pageTitle: run.article?.title ?? "",
+    contestedAt: Date.now(),
+    annotation: contestedData(annotation),
+    engine: {
+      provider: settings.provider,
+      model: settings.model,
+      engineVersion: settings.engineVersion,
+      depth: settings.depth,
+      lang: settings.lang,
+      webSearch: settings.webSearch,
+    },
+  });
+}
+
+function contestedData(a: Annotation) {
+  const { exact_quote, category, label, severity, confidence, rhetoric_critique, fact_check } = a;
+  return { exact_quote, category, label, severity, confidence, rhetoric_critique, fact_check };
 }

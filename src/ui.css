@@ -10,6 +10,7 @@
   --sophism: #c92a2a;
   --bias: #d9480f;
   --factual: #1c64d1;
+  --document: #7048e8;
   --active: #fab005;
   --danger: #c92a2a;
   --ok: #2b8a3e;
@@ -27,6 +28,7 @@
     --sophism: #ff8787;
     --bias: #ffa94d;
     --factual: #74c0fc;
+    --document: #b197fc;
     --active: #ffd43b;
     --danger: #ff8787;
     --ok: #8ce99a;
@@ -233,6 +235,40 @@ button.filter-btn.badge.active {
 }
 .card .unlocated { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
 .card .critique { margin: 0 0 6px; }
+.card .confidence { font-size: 11px; color: var(--muted); }
+
+/* Vérification à la demande (C2) et contestation (Q4). */
+.card-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.card-actions button { padding: 3px 8px; font-size: 12px; }
+.card-actions .contest { margin-left: auto; color: var(--muted); }
+.card-actions .verify-note { font-size: 12px; color: var(--danger); }
+.card .contested-note { margin: 6px 0 0; font-size: 12px; font-style: italic; color: var(--muted); }
+.card.contested { opacity: 0.75; border-left-style: dashed; }
+.card.contested .quote,
+.card.contested .critique,
+.card.contested .fact-check,
+.card.contested .unlocated,
+.card.contested .confidence { display: none; }
+
+/* Annotations d'ensemble (B3). */
+.document-level { margin: 12px 0; }
+.document-level h2 { color: var(--document); }
+.document-level .hint { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+.document-level .card { border-left-color: var(--document); }
+
+/* Annotations contestées, dans les options (Q4). */
+.contested-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+.contested-item { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.contested-item .contested-meta { font-size: 12px; color: var(--muted); margin: 0 0 4px; overflow-wrap: anywhere; }
+.contested-item .contested-meta a { color: inherit; }
+.contested-item .label { font-weight: 600; }
+.contested-item .quote { margin: 6px 0; padding-left: 8px; border-left: 2px solid var(--border); font-style: italic; overflow-wrap: anywhere; }
+.contested-item .critique { margin: 0 0 6px; font-size: 13px; }
+.contested-item .contested-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.contested-item .report-form { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); display: grid; gap: 8px; }
+.contested-item .report-warning { margin: 0; font-size: 13px; color: var(--bias); }
+.contested-item .report-form label { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; }
+.contested-item .report-form textarea { width: 100%; box-sizing: border-box; min-height: 60px; font: inherit; }
 
 .fact-check summary { cursor: pointer; font-size: 13px; }
 .fact-status.status-refuted, .fact-status.status-misleading { color: var(--danger); }

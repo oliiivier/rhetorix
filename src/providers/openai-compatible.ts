@@ -17,6 +17,9 @@ interface ChatCompletionChunk {
 
 export const openAiCompatibleProvider: LlmProvider = {
   supportsWebSearch: (config) => Boolean(config.webSearch),
+  // La recherche dépend de l'endpoint (Perplexity, OpenRouter :online…) : seul le
+  // réglage indique qu'il en dispose.
+  searchesOnDemand: (config) => Boolean(config.webSearch),
 
   async analyze(input, config: Config, signal) {
     const webSearch = Boolean(config.webSearch);
@@ -141,6 +144,9 @@ export const openAiCompatibleProvider: LlmProvider = {
       if (chunk.usage) {
         if (typeof chunk.usage.prompt_tokens === "number") promptTokens = chunk.usage.prompt_tokens;
         if (typeof chunk.usage.completion_tokens === "number") completionTokens = chunk.usage.completion_tokens;
+      }
+      if (request.webSearch && chunk.citations) {
+        for (const u of chunk.citations) callbacks?.onSource?.(u);
       }
       const content = chunk.choices?.[0]?.delta?.content;
       if (content) {

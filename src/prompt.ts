@@ -24,7 +24,7 @@ export function systemPrompt(opts: { language: string; webSearch: boolean }): st
   return `You analyse news articles and interviews for rhetorical fallacies ("sophism"), framing or selection bias ("bias") and checkable factual claims ("factual_claim").
 
 Rules:
-- exact_quote must be copied verbatim from the article, character for character, in the article's language. Keep it short: the smallest passage that shows the problem, ideally one sentence, never more than about 300 characters.
+- Except for document-level annotations (see below), exact_quote must be copied verbatim from the article, character for character, in the article's language. Keep it short: the smallest passage that shows the problem, ideally one sentence, never more than about 300 characters.
 - Use only these labels, matching the annotation's category; use "autre" when nothing fits and name the device in rhetoric_critique.
 - Be descriptive and even-handed. Each annotation must be justified by the text itself, whatever the political orientation. Returning few or zero annotations is a valid result for a well-argued article.
 - Be thorough: read the whole text and annotate every distinct passage that uses a device, not only the most salient ones. A device that recurs in different passages gets one annotation per passage. Polemical, emotional or one-sided texts usually contain many devices; a sound thesis does not exempt the rhetoric used to defend it.
@@ -35,6 +35,11 @@ Rules:
   * "high": the device carries the article's main thesis or conclusion, or a factual claim the argument depends on;
   * "medium": it supports a secondary argument, or misleads on a point the reader may retain;
   * "low": it is a matter of tone, wording or a passing remark that does not change the argument.
+- confidence reflects how sure you are that the device is present and correctly labelled, independently of severity:
+  * "high": the device is unmistakable and most careful readers would name it the same way;
+  * "medium": the reading is defensible, but another reasonable reading exists or another label could fit;
+  * "low": the reading is debatable or depends on context you cannot see. Prefer omitting an annotation you would rate low unless the passage really deserves the reader's attention.
+- A "sophism" or "bias" that lies in the structure of the whole argument rather than in a passage (for example a conclusion that does not follow from the premises set out across the article, an internal contradiction between distant sections, a position stated early and misrepresented later) is a document-level annotation: set exact_quote to "" and explain in rhetoric_critique which parts of the article are involved. Use it only when no short passage shows the problem; never for "factual_claim". When the text is one part of a longer article, report a document-level annotation only if the defect is visible within this part or between this part and the outline.
 - For "sophism" and "bias" annotations, fact_check.status is "unverified" with empty sources unless the passage also makes a checkable claim.
 - ${factRule}
 - Judge factual claims as of the article's publication date when it is given: a claim that was accurate when published is not "refuted" because of later events. If something relevant has changed since, say so in fact_check.context.
@@ -146,16 +151,16 @@ export interface ReviewItem {
   context?: string;
 }
 
-/**
- * Relecture des annotations (Q2, mode approfondi) : écarte celles que le texte ne
- * justifie pas. Réponse JSON : { rejected: [{ id, reason }] }.
- */
 /** Définition de l'étiquette, pour que la relecture juge sur le même critère que l'analyse. */
 function labelLine(it: ReviewItem): string {
   const def = CATEGORIES.includes(it.category as Category) ? labelDef(it.category as Category, it.label, "en") : undefined;
   return def ? ` (${def.name}: ${def.definition})` : "";
 }
 
+/**
+ * Relecture des annotations (Q2, mode approfondi) : écarte celles que le texte ne
+ * justifie pas. Réponse JSON : { rejected: [{ id, reason }] }.
+ */
 export function reviewPrompt(title: string, items: ReviewItem[], outline?: string): Prompt {
   const list = items
     .map((it) =>
@@ -163,7 +168,11 @@ export function reviewPrompt(title: string, items: ReviewItem[], outline?: strin
         `[${it.id}] ${it.category}/${it.label}${labelLine(it)}`,
         `Quote: ${it.quote}`,
         `Critique: ${it.critique}`,
-        it.context ? `Paragraph: ${it.context}` : "Paragraph: (quote not found verbatim in the article)",
+        it.quote === ""
+          ? "Paragraph: (document-level annotation: it concerns the structure of the whole argument)"
+          : it.context
+            ? `Paragraph: ${it.context}`
+            : "Paragraph: (quote not found verbatim in the article)",
       ].join("\n"),
     )
     .join("\n\n");
@@ -175,7 +184,8 @@ export function reviewPrompt(title: string, items: ReviewItem[], outline?: strin
 - the critique only works through a strained reading: an ordinary descriptive word treated as loaded, a transition treated as a diversion, a plain fact treated as a fallacy;
 - for "factual_claim", the passage makes no checkable claim, or it is uncontroversial background or routine reporting that the argument does not rely on;
 - the annotation duplicates another one on the same passage;
-- the quote is absent from the article and the critique cannot be tied to any passage.
+- the quote is absent from the article and the critique cannot be tied to any passage;
+- for a document-level annotation (empty quote), the outline and the other annotations do not bear out the structural defect it describes, or it merely restates a passage-level annotation.
 Do not reject an annotation because you disagree with the article's thesis or with the critique's wording, nor because of the truth of a claim, nor because the article's thesis is sound: vehement rhetoric serving a correct conclusion is still rhetoric. Apply the same standard whatever the article's political orientation. Keep an annotation when the device is clearly present, even if minor; reject it when it requires one of the readings above.
 Answer with a single JSON object and nothing else: {"rejected": [{"id": "...", "reason": "..."}]}. Use an empty array when every annotation is justified.`,
     user: `Article title: ${title}${outline ? `\n\n<article_outline>\n${outline}\n</article_outline>` : ""}
@@ -183,5 +193,37 @@ Answer with a single JSON object and nothing else: {"rejected": [{"id": "...", "
 <annotations>
 ${list}
 </annotations>`,
+  };
+}
+
+
+export interface VerifyClaim {
+  title: string;
+  quote: string;
+  /** Paragraphe de l'article qui contient l'allégation, s'il est connu. */
+  context?: string;
+  /** Explication donnée par l'analyse. */
+  critique: string;
+  meta?: ArticleMeta;
+  analysisDate: string;
+}
+
+/**
+ * Vérification d'une allégation à la demande (C2), avec la recherche web activée pour
+ * ce seul appel. Réponse JSON : { status, context, sources: [{ title, url }] }.
+ */
+export function verifyPrompt(claim: VerifyClaim, language: string): Prompt {
+  return {
+    system: `You fact-check one claim taken from a news article. Use the web search tool to check it against reliable sources.
+Answer with a single JSON object and nothing else: {"status": "...", "context": "...", "sources": [{"title": "...", "url": "..."}]}
+- status: "supported" if reliable sources confirm the claim, "refuted" if they contradict it, "misleading" if it is partly true but distorted, exaggerated or stripped of context, "unverified" if the search is inconclusive.
+- context: 1 to 3 sentences giving the relevant facts and figures, in this language: ${language}.
+- sources: the pages that support your verdict. Only cite URLs that appeared in your search results; never write a URL from memory. Use [] when you found none.
+- Judge the claim as of the article's publication date when it is given: a claim that was accurate when published is not "refuted" because of later events. If something relevant has changed since, say so in context.`,
+    user: `${articleHeader(claim.title, claim.meta, claim.analysisDate)}
+
+Claim: ${claim.quote}${claim.context ? `
+Paragraph: ${claim.context}` : ""}
+Analyst's note: ${claim.critique}`,
   };
 }

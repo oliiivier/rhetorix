@@ -12,8 +12,9 @@ Extension de navigateur (Manifest V3) pour **Chromium** (Chrome, Brave, Edge) et
 
 - **Extraction propre** du texte avec Mozilla Readability, sans publicités, menus ni bannières.
 - **Surlignage dans la page** des passages relevés, avec la CSS Custom Highlight API : le texte de la page n'est pas modifié. Une couleur par catégorie : rouge pour les sophismes, orange pour les biais, bleu pour les allégations factuelles.
-- **Taxonomie fermée de 39 étiquettes** : 19 sophismes, 12 biais et 8 types d'allégations factuelles, chacune avec sa définition. Chaque annotation indique sa **gravité** (faible, moyenne, élevée) et une critique rhétorique.
+- **Taxonomie fermée de 39 étiquettes** : 19 sophismes, 12 biais et 8 types d'allégations factuelles, chacune avec sa définition. Chaque annotation indique sa **gravité** (faible, moyenne, élevée), la **confiance** du modèle et une critique rhétorique.
 - **Lecture d'ensemble du document** : la posture argumentative, le **décalage entre le titre et le contenu** (titre racoleur ou trompeur) et l'**angle mort** (contre-argument ou consensus omis).
+- **Défauts de structure** de l'argumentation, sans passage précis (conclusion sans lien avec les prémisses, contradiction interne…) : regroupés dans le panneau et accessibles depuis le titre surligné de l'article ou de la vidéo.
 - **Articles longs** : au-delà d'une taille réglable, l'article est découpé par paragraphes, analysé en plusieurs appels, puis un résumé global est produit.
 - **Affichage progressif** : les annotations apparaissent au fil de la réponse du LLM, sans attendre la fin de l'analyse.
 
@@ -21,6 +22,7 @@ Extension de navigateur (Manifest V3) pour **Chromium** (Chrome, Brave, Edge) et
 
 - Avec la recherche web activée, chaque allégation est confrontée à des sources et reçoit un statut : **confirmée**, **réfutée**, **trompeuse** ou **non vérifiée**.
 - **Sources fiables uniquement** : seules les URL issues de l'outil de recherche web du fournisseur sont affichées. Une URL citée de mémoire par le modèle est écartée.
+- **Vérification à la demande** : une allégation restée non vérifiée peut être vérifiée en ligne depuis sa carte ou sa bulle, en un appel avec la recherche web activée pour lui seul, même si la recherche web est désactivée dans les options. Le résultat est gardé en cache.
 
 ### Vidéos YouTube
 
@@ -40,6 +42,7 @@ Extension de navigateur (Manifest V3) pour **Chromium** (Chrome, Brave, Edge) et
 - **Panneau latéral** : une carte par annotation, des filtres par catégorie avec leurs compteurs, l'annulation d'une analyse en cours.
 - **Synchronisation dans les deux sens** : un clic sur une carte fait défiler la page jusqu'à la citation, et un clic sur une citation met sa carte en avant.
 - **Au toucher** : toute information accessible au survol l'est aussi au toucher.
+- **Contester une annotation** : elle est repliée et enregistrée dans le navigateur. Les options la listent, et permettent de la signaler aux mainteneurs par un ticket GitHub prérempli, que vous relisez et publiez vous-même (l'adresse de la page est facultative).
 - **Thème clair et sombre**, selon celui du système.
 - **Cinq langues** pour l'interface et les analyses : français, anglais, espagnol, allemand et italien.
 
@@ -114,7 +117,8 @@ build.mjs                 # build esbuild, manifest par navigateur, licences
 src/
   background.ts           # ouverture du panneau, messages, déclenchement mobile
   runner.ts               # pilotage d'une analyse par onglet (script de fond)
-  content-script.ts       # extraction (Readability), surlignage, bulles, clics et touchers
+  content-script.ts       # extraction (Readability), surlignage, clics et touchers
+  annotation-popover.ts   # bulle d'annotation et message bref dans la page (Shadow DOM)
   content-script-youtube.ts # transcription, lecteur et bulles sur YouTube
   youtube/                # détection, transcription, alignement temporel, lecteur, overlay
   sidepanel/              # panneau : déclenchement, cartes, streaming, filtres
@@ -122,6 +126,8 @@ src/
   options/                # options : fournisseur, modèle, YouTube, tokens, guide
   providers/              # adaptateurs anthropic, gemini, openai-compatible, chrome-ai
   analyze.ts              # orchestration : découpage, appels, validation, fusion
+  verify.ts               # vérification en ligne d'une allégation à la demande
+  contested.ts            # annotations contestées et ticket GitHub prérempli
   streaming-json.ts       # parseur de flux JSON progressif
   schema.ts               # contrat JSON du LLM, validation, politique des sources
   taxonomy.ts             # taxonomie fermée de 39 étiquettes, en 5 langues

@@ -1,6 +1,6 @@
 // Découpage des articles longs par paragraphes et fusion des résultats (décision D6).
 
-import { SEVERITIES, type Analysis, type Annotation } from "./schema";
+import { SEVERITIES, isDocumentLevel, type Analysis, type Annotation } from "./schema";
 import { cleanBoundary, normalize } from "./text-match";
 
 /** Estimation grossière, suffisante pour dimensionner les morceaux. */
@@ -99,18 +99,24 @@ export function quotesOverlap(a: string, b: string): boolean {
 
 const severityRank = (a: Annotation) => SEVERITIES.length - SEVERITIES.indexOf(a.severity);
 
+/** Vrai si deux annotations sont redondantes (voir dedupeAnnotations). */
+function redundant(k: Annotation, a: Annotation): boolean {
+  if (isDocumentLevel(k) || isDocumentLevel(a)) {
+    return isDocumentLevel(k) && isDocumentLevel(a) && k.category === a.category && k.label === a.label;
+  }
+  return normalize(k.exact_quote) === normalize(a.exact_quote) || (k.category === a.category && quotesOverlap(k.exact_quote, a.exact_quote));
+}
+
 /**
  * Retire les doublons, dans l'ordre d'arrivée : citation identique (quelle que soit
  * la catégorie), ou citations de même catégorie qui se recouvrent largement (A5).
+ * Deux annotations d'ensemble (B3) sont redondantes si elles ont la même étiquette.
  * Entre deux annotations redondantes, la plus sévère est gardée, à sa place.
  */
 export function dedupeAnnotations(annotations: Annotation[]): Annotation[] {
   const kept: Annotation[] = [];
   for (const a of annotations) {
-    const quote = normalize(a.exact_quote);
-    const i = kept.findIndex(
-      (k) => normalize(k.exact_quote) === quote || (k.category === a.category && quotesOverlap(k.exact_quote, a.exact_quote)),
-    );
+    const i = kept.findIndex((k) => redundant(k, a));
     if (i < 0) kept.push(a);
     else if (severityRank(a) > severityRank(kept[i]!)) kept[i] = a;
   }

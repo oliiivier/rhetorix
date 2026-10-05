@@ -15,3 +15,12 @@
 ::highlight(rhetorix-active) {
   background-color: rgb(250 204 21 / 0.55);
 }
+/* Titre de l'article, ancre des annotations d'ensemble (B3). */
+::highlight(rhetorix-document) {
+  background-color: rgb(112 72 232 / 0.16);
+  text-decoration: underline 2px dashed rgb(112 72 232);
+}
+/* Annotation contestée par l'utilisateur (Q4) : surlignage atténué. */
+::highlight(rhetorix-contested) {
+  text-decoration: underline 1px dotted rgb(120 120 120);
+}

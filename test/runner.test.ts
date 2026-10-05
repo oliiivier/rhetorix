@@ -14,6 +14,7 @@ vi.mock("../src/ext", () => ({
     runtime: { getPlatformInfo: vi.fn(async () => ({})) },
     scripting: { executeScript: vi.fn(async () => []), insertCSS: vi.fn(async () => undefined) },
     tabs: {
+      get: vi.fn(async (tabId: number) => ({ id: tabId, title: "Titre de l'onglet" })),
       sendMessage: vi.fn(async (_tabId: number, msg: PanelToContent) => {
         tabMessages.push(msg);
         if (msg.type === "extract") return extractResponse;
@@ -25,7 +26,22 @@ vi.mock("../src/ext", () => ({
       }),
     },
     i18n: { getUILanguage: () => "fr" },
+    storage: {
+      local: {
+        get: vi.fn(async (key: string) => ({ [key]: storage.get(key) })),
+        set: vi.fn(async (items: Record<string, unknown>) => {
+          for (const [k, v] of Object.entries(items)) storage.set(k, v);
+        }),
+      },
+    },
   },
+}));
+
+const storage = new Map<string, unknown>();
+const mockVerify = vi.fn();
+vi.mock("../src/verify", () => ({
+  canVerifyOnDemand: () => true,
+  verifyAnnotation: (...args: unknown[]) => mockVerify(...args),
 }));
 
 vi.mock("../src/config", async (importOriginal) => ({
@@ -34,19 +50,25 @@ vi.mock("../src/config", async (importOriginal) => ({
 }));
 
 const mockAnalyze = vi.fn();
-vi.mock("../src/analyze", () => ({ analyzeArticle: (...args: unknown[]) => mockAnalyze(...args) }));
+vi.mock("../src/analyze", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/analyze")>()),
+  analyzeArticle: (...args: unknown[]) => mockAnalyze(...args),
+}));
 
 const mockGetCached = vi.fn();
 const mockGetCachedByUrl = vi.fn();
 const mockPutCached = vi.fn();
+const mockUpdateCachedFactCheck = vi.fn();
 vi.mock("../src/cache", () => ({
   sha256: async () => "hash",
+  cacheKey: (url: string) => `cache:${url}`,
+  updateCachedFactCheck: (...args: unknown[]) => mockUpdateCachedFactCheck(...args),
   getCached: (...args: unknown[]) => mockGetCached(...args),
   getCachedByUrl: (...args: unknown[]) => mockGetCachedByUrl(...args),
   putCached: (...args: unknown[]) => mockPutCached(...args),
 }));
 
-const { runAnalysis, cancelRun, forgetTab, getSnapshot, loadCachedRun } = await import("../src/runner");
+const { runAnalysis, cancelRun, forgetTab, getSnapshot, loadCachedRun, verifyRunAnnotation, contestRunAnnotation } = await import("../src/runner");
 
 function annotation(id: string): Annotation {
   return {
@@ -393,6 +415,71 @@ describe("runAnalysis (script de fond, D9)", () => {
       expect((res?.annotations[0] as any).startTime).toBe(15);
       expect(mockPutCached).toHaveBeenCalled();
       expect(tabMessages.some((m) => m.type === "youtube-highlight")).toBe(true);
+    });
+  });
+  describe("annotations d'ensemble (B3)", () => {
+    it("transmet le titre de l'article et exclut les annotations d'ensemble des citations non localisées", async () => {
+      const overall = { ...annotation("ann-1"), exact_quote: "" };
+      mockAnalyze.mockResolvedValue({ summary: "S", annotations: [overall] });
+      const final = await runAnalysis(30, "https://ex.test/b3", { force: false }, () => {});
+      expect(tabMessages.find((m) => m.type === "highlight")).toMatchObject({ title: "T", canVerify: true });
+      expect(mockPutCached.mock.calls[0]![1]).toMatchObject({ title: "T" });
+      expect(final.annotations).toHaveLength(1);
+    });
+  });
+
+  describe("vérification à la demande (C2)", () => {
+    const claim = (): Annotation => ({ ...annotation("ann-1"), exact_quote: "Un paragraphe.", category: "factual_claim", label: "autre" });
+
+    it("met à jour l'annotation, la page et le cache", async () => {
+      mockAnalyze.mockResolvedValue({ summary: "S", annotations: [claim()] });
+      await runAnalysis(31, "https://ex.test/c2", { force: false }, () => {});
+      const factCheck = { status: "supported", context: "Confirmé.", sources: [{ title: "s", url: "https://s.test/" }] };
+      mockVerify.mockResolvedValue(factCheck);
+      const updates: RunSnapshot[] = [];
+      await verifyRunAnnotation(31, "ann-1", (s) => updates.push(s));
+
+      expect(updates[0]!.verifying).toEqual(["ann-1"]);
+      expect(updates.at(-1)!.verifying).toEqual([]);
+      expect(updates.at(-1)!.annotations[0]!.fact_check).toEqual(factCheck);
+      const [, ctx] = mockVerify.mock.calls[0]!;
+      expect(ctx).toMatchObject({ title: "T", paragraph: "Un paragraphe." });
+      expect(mockUpdateCachedFactCheck).toHaveBeenCalledWith("cache:https://ex.test/c2", "ann-1", factCheck);
+      const pageUpdates = tabMessages.filter((m) => m.type === "update-annotation");
+      expect(pageUpdates.map((m) => m.type === "update-annotation" && m.verifying)).toEqual([true, false]);
+    });
+
+    it("publie l'erreur sans modifier l'annotation", async () => {
+      mockAnalyze.mockResolvedValue({ summary: "S", annotations: [claim()] });
+      await runAnalysis(32, "https://ex.test/c2-err", { force: false }, () => {});
+      mockVerify.mockRejectedValue(new Error("quota"));
+      const updates: RunSnapshot[] = [];
+      await verifyRunAnnotation(32, "ann-1", (s) => updates.push(s));
+      expect(updates.at(-1)!.verifyErrors).toEqual({ "ann-1": "quota" });
+      expect(updates.at(-1)!.annotations[0]!.fact_check.status).toBe("unverified");
+      expect(mockUpdateCachedFactCheck).not.toHaveBeenCalled();
+    });
+
+    it("ignore une annotation qui n'est pas une allégation non vérifiée", async () => {
+      mockAnalyze.mockResolvedValue({ summary: "S", annotations: [annotation("ann-1")] });
+      await runAnalysis(33, "https://ex.test/c2-no", { force: false }, () => {});
+      await verifyRunAnnotation(33, "ann-1", () => {});
+      expect(mockVerify).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("contestation (Q4)", () => {
+    it("enregistre l'annotation contestée avec les réglages de l'analyse, puis la retire", async () => {
+      storage.clear();
+      mockAnalyze.mockResolvedValue({ summary: "S", annotations: [annotation("ann-1")] });
+      await runAnalysis(34, "https://ex.test/q4", { force: false }, () => {});
+      await contestRunAnnotation(34, "ann-1", true);
+      const list = storage.get("contested") as { url: string; pageTitle: string; annotation: Annotation; engine: { model: string } }[];
+      expect(list).toHaveLength(1);
+      expect(list[0]).toMatchObject({ url: "https://ex.test/q4", pageTitle: "T", engine: { model: "m" } });
+      expect(list[0]!.annotation.exact_quote).toBe("citation ann-1");
+      await contestRunAnnotation(34, "ann-1", false);
+      expect(storage.get("contested")).toEqual([]);
     });
   });
 });

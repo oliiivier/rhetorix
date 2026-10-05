@@ -56,6 +56,11 @@
           </div>
           <p id="blind-spot-text" class="alert-text"></p>
         </div>
+        <div id="document-level" class="document-level" hidden>
+          <h2 id="document-level-heading">Sur l'ensemble de l'article</h2>
+          <p id="document-level-hint" class="hint"></p>
+          <ol id="document-cards" class="cards"></ol>
+        </div>
         <div class="legend" id="filters" role="group" aria-label="Filtrer les annotations par catégorie">
           <button type="button" class="filter-btn active" data-category="all">Tous</button>
           <button type="button" class="filter-btn badge sophism" data-category="sophism">Sophisme</button>
@@ -88,6 +93,7 @@
           <span class="badge"></span>
           <span class="label"></span>
           <span class="time-badge" hidden></span>
+          <span class="confidence" hidden></span>
           <span class="severity"></span>
         </div>
         <blockquote class="quote"></blockquote>
@@ -98,6 +104,12 @@
           <p class="fact-context"></p>
           <ul class="sources"></ul>
         </details>
+        <p class="contested-note" hidden></p>
+        <div class="card-actions">
+          <button type="button" class="verify" hidden></button>
+          <span class="verify-note" hidden></span>
+          <button type="button" class="contest"></button>
+        </div>
       </li>
     </template>
 

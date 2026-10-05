@@ -1,8 +1,13 @@
 // Content script spécifique à YouTube : extraction de la transcription,
 // synchronisation vidéo, overlay In-Player et marqueurs sur la barre de progression.
+// Les annotations d'ensemble (B3) sont ancrées sur le titre de la vidéo, sous le lecteur.
 
+import { AnnotationPopover, type EntryState } from "./annotation-popover";
+import { CONTESTED_KEY, contestKey, loadContested } from "./contested";
 import { ext } from "./ext";
-import type { PanelToContent, YouTubeExtractResult } from "./messages";
+import { getUiStrings } from "./i18n";
+import type { PanelToBackground, PanelToContent, YouTubeExtractResult } from "./messages";
+import type { Annotation } from "./schema";
 import type { CaptionTrackMeta, VideoTranscript } from "./youtube/types";
 import { extractVideoId, isYouTubeWatchUrl, setupSpaNavigationListener } from "./youtube/youtube-detector";
 import { YouTubeOverlay } from "./youtube/youtube-overlay";
@@ -36,6 +41,99 @@ let playerController: YouTubePlayerController | null = null;
 let overlay: YouTubeOverlay | null = null;
 let cachedTranscript: VideoTranscript | null = null;
 let currentVideoId: string | null = null;
+
+// ---------- Annotations d'ensemble, ancrées sur le titre (B3) ----------
+
+const TITLE_SELECTOR = "ytd-watch-metadata h1, #above-the-fold #title h1, h1.title";
+const DOCUMENT_HIGHLIGHT = "rhetorix-document";
+const TITLE_ID = "rhetorix-title";
+let documentAnnotations: Annotation[] = [];
+let contestedKeys = new Set<string>();
+let hideTimer: number | null = null;
+
+const titlePopover = new AnnotationPopover(
+  {
+    onContest: (id, contested) => {
+      const msg: PanelToBackground = { type: "contest-annotation", id, contested };
+      ext.runtime.sendMessage(msg).catch(() => {});
+    },
+    onMouseEnter: () => cancelTitleHide(),
+    onMouseLeave: () => scheduleTitleHide(),
+  },
+  (id): EntryState => {
+    const a = documentAnnotations.find((d) => d.id === id);
+    return { contested: Boolean(a && contestedKeys.has(contestKey(location.href, a))) };
+  },
+);
+
+function titleElement(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(TITLE_SELECTOR);
+}
+
+function titleRange(): Range | null {
+  const el = titleElement();
+  if (!el || !(el.textContent ?? "").trim()) return null;
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  return range;
+}
+
+function setDocumentAnnotations(annotations: Annotation[], lang?: string): void {
+  documentAnnotations = annotations;
+  if (lang) titlePopover.lang = lang;
+  titlePopover.hide();
+  const range = annotations.length > 0 ? titleRange() : null;
+  if (range) CSS.highlights.set(DOCUMENT_HIGHLIGHT, new Highlight(range));
+  else CSS.highlights.delete(DOCUMENT_HIGHLIGHT);
+}
+
+function showTitlePopover(): void {
+  const range = titleRange();
+  if (!range || documentAnnotations.length === 0) return;
+  titlePopover.show(TITLE_ID, range, documentAnnotations, getUiStrings(titlePopover.lang).documentLevelHeading);
+}
+
+function cancelTitleHide(): void {
+  if (hideTimer !== null) {
+    window.clearTimeout(hideTimer);
+    hideTimer = null;
+  }
+}
+
+function scheduleTitleHide(): void {
+  if (hideTimer !== null) return;
+  hideTimer = window.setTimeout(() => {
+    hideTimer = null;
+    titlePopover.hide();
+  }, 200);
+}
+
+function onTitleClick(event: MouseEvent): void {
+  if (documentAnnotations.length === 0 || titlePopover.contains(event)) return;
+  const onTitle = (event.target as Element | null)?.closest?.(TITLE_SELECTOR);
+  if (onTitle) showTitlePopover();
+  else if (titlePopover.anchorId) titlePopover.hide();
+}
+
+function onTitlePointerMove(event: PointerEvent): void {
+  if (event.pointerType !== "mouse" || documentAnnotations.length === 0) return;
+  if (titlePopover.containsPoint(event.clientX, event.clientY)) {
+    cancelTitleHide();
+    return;
+  }
+  const onTitle = (event.target as Element | null)?.closest?.(TITLE_SELECTOR);
+  if (onTitle) {
+    cancelTitleHide();
+    if (!titlePopover.anchorId) showTitlePopover();
+  } else if (titlePopover.anchorId) {
+    scheduleTitleHide();
+  }
+}
+
+async function refreshContested(): Promise<void> {
+  contestedKeys = new Set((await loadContested()).map((e) => e.key));
+  titlePopover.refresh();
+}
 
 /**
  * Extrait les captionTracks depuis une chaîne HTML (recherche équilibrée de "captionTracks": [ ... ]).
@@ -314,6 +412,7 @@ function initYouTube(): void {
     if (newVideoId !== currentVideoId) {
       currentVideoId = newVideoId;
       cachedTranscript = null;
+      setDocumentAnnotations([]);
       overlay?.clearMarkers();
       overlay?.hide();
       playerController?.detach();
@@ -339,6 +438,7 @@ function initYouTube(): void {
       }
 
       case "youtube-highlight": {
+        setDocumentAnnotations(msg.documentAnnotations ?? [], msg.lang);
         ensurePlayerAndOverlay();
         if (playerController && overlay) {
           playerController.setAnnotations(msg.annotations, msg.analyzedRanges);
@@ -364,6 +464,14 @@ function initYouTube(): void {
       }
     }
     return false;
+  });
+
+  document.addEventListener("click", onTitleClick, true);
+  document.addEventListener("pointermove", onTitlePointerMove, { passive: true });
+  window.addEventListener("scroll", () => titlePopover.anchorId && titlePopover.reposition(), { passive: true });
+  void refreshContested();
+  ext.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes[CONTESTED_KEY]) void refreshContested();
   });
 
   // Attachement initial si une vidéo est déjà présente

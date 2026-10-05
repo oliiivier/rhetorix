@@ -7,7 +7,7 @@ import { systemPrompt, userPrompt } from "../prompt";
 import { ANALYSIS_JSON_SCHEMA, enforceAnnotationSourcePolicy, normalizeSourceUrl } from "../schema";
 import { ProgressiveJsonParser } from "../streaming-json";
 import { MAX_ATTEMPTS } from "./http";
-import { ProviderError, type LlmProvider } from "./types";
+import { ProviderError, type CompletionCallbacks, type CompletionRequest, type LlmProvider } from "./types";
 
 const SUBMIT_TOOL = "submit_analysis";
 const MAX_TURNS = 5;
@@ -37,6 +37,7 @@ export function createAnthropicClient(apiKey: string, endpoint?: string): Anthro
 
 export const anthropicProvider: LlmProvider = {
   supportsWebSearch: () => true,
+  searchesOnDemand: () => true,
 
   async analyze(input, config: Config, signal) {
     const cleanKey = config.apiKey.trim();
@@ -180,6 +181,7 @@ export const anthropicProvider: LlmProvider = {
     const isOAuth = cleanKey.startsWith("sk-ant-oat") || cleanKey.startsWith("Bearer ");
     const client = createAnthropicClient(config.apiKey, config.endpoint);
     const system = isOAuth ? `You are Claude Code, Anthropic's official CLI for Claude.\n\n${request.system}` : request.system;
+    if (request.webSearch) return completeWithSearch(client, config, system, request, signal, callbacks);
     const stream = client.messages.stream(
       {
         model: config.model,
@@ -210,3 +212,53 @@ export const anthropicProvider: LlmProvider = {
     return text;
   },
 };
+
+/**
+ * Appel textuel avec l'outil serveur web_search (vérification à la demande, C2). La
+ * boucle de recherche du serveur peut s'interrompre (pause_turn) : le tour est alors
+ * renvoyé tel quel pour reprendre.
+ */
+async function completeWithSearch(
+  client: Anthropic,
+  config: Config,
+  system: string,
+  request: CompletionRequest,
+  signal: AbortSignal,
+  callbacks: CompletionCallbacks | undefined,
+): Promise<string> {
+  const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [{ role: "user", content: request.user }];
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let text = "";
+  for (let turn = 0; turn < MAX_TURNS; turn++) {
+    const message = await client.beta.messages.create(
+      {
+        model: config.model,
+        max_tokens: request.maxTokens ?? 4000,
+        system,
+        tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }],
+        messages,
+      },
+      { signal },
+    );
+    inputTokens += message.usage.input_tokens;
+    outputTokens += message.usage.output_tokens;
+    callbacks?.onUsage?.({ inputTokens, outputTokens, totalTokens: inputTokens + outputTokens });
+    for (const block of message.content) {
+      if (block.type === "web_search_tool_result" && Array.isArray(block.content)) {
+        for (const r of block.content) if (r.type === "web_search_result") callbacks?.onSource?.(r.url);
+      }
+      if (block.type === "text") text += block.text;
+    }
+    callbacks?.onText?.(text);
+    if (message.stop_reason === "pause_turn") {
+      messages.push({ role: "assistant", content: message.content as Anthropic.Beta.Messages.BetaContentBlockParam[] });
+      continue;
+    }
+    if (message.stop_reason === "refusal") throw new ProviderError("Le modèle a refusé d'analyser ce contenu.", "refusal");
+    text = text.trim();
+    if (!text) throw new ProviderError("Réponse vide du modèle.", "empty_completion");
+    return text;
+  }
+  throw new ProviderError("Trop de reprises de la recherche web.", "too_many_turns");
+}

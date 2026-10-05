@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { SchemaError, enforceSourcePolicy, validateAnalysis } from "../src/schema";
+import {
+  SchemaError,
+  enforceFactCheckSourcePolicy,
+  enforceSourcePolicy,
+  isDocumentLevel,
+  isVerifiable,
+  validateAnalysis,
+  validateFactCheck,
+} from "../src/schema";
 
 const annotation = (over: Record<string, unknown> = {}) => ({
   id: "ann-1",
@@ -67,5 +75,47 @@ describe("enforceSourcePolicy (D3)", () => {
       status: "unverified",
       sources: [],
     });
+  });
+});
+
+describe("confiance (Q3)", () => {
+  it("garde une confiance valide et omet une valeur absente ou inconnue", () => {
+    const a = validateAnalysis({
+      summary: "s",
+      annotations: [annotation({ confidence: "low" }), annotation({ id: "ann-2" }), annotation({ id: "ann-3", confidence: "certaine" })],
+    });
+    expect(a.annotations.map((x) => x.confidence)).toEqual(["low", undefined, undefined]);
+    expect("confidence" in a.annotations[1]!).toBe(false);
+  });
+});
+
+describe("annotations d'ensemble (B3)", () => {
+  it("accepte une citation vide pour un sophisme ou un biais", () => {
+    const a = validateAnalysis({ summary: "s", annotations: [annotation({ exact_quote: "  " }), annotation({ id: "ann-2", category: "bias", label: "autre", exact_quote: "" })] });
+    expect(a.annotations.map(isDocumentLevel)).toEqual([true, true]);
+  });
+
+  it("rejette une allégation factuelle sans citation", () => {
+    expect(() => validateAnalysis({ summary: "s", annotations: [annotation({ category: "factual_claim", label: "autre", exact_quote: "" })] })).toThrow(SchemaError);
+  });
+});
+
+describe("vérification à la demande (C2)", () => {
+  const unverified = { status: "unverified" as const, context: "", sources: [] };
+
+  it("isVerifiable : allégation de passage restée non vérifiée", () => {
+    expect(isVerifiable({ category: "factual_claim", exact_quote: "x", fact_check: unverified })).toBe(true);
+    expect(isVerifiable({ category: "factual_claim", exact_quote: "x", fact_check: { ...unverified, status: "refuted" } })).toBe(false);
+    expect(isVerifiable({ category: "sophism", exact_quote: "x", fact_check: unverified })).toBe(false);
+  });
+
+  it("validateFactCheck et enforceFactCheckSourcePolicy appliquent D3 à une vérification seule", () => {
+    const fc = validateFactCheck({ status: "refuted", context: "c", sources: [{ title: "a", url: "https://a.test/x#y" }, { title: "b", url: "https://b.test/" }] });
+    expect(enforceFactCheckSourcePolicy(fc, new Set(["https://a.test/x"]))).toEqual({
+      status: "refuted",
+      context: "c",
+      sources: [{ title: "a", url: "https://a.test/x#y" }],
+    });
+    expect(enforceFactCheckSourcePolicy(fc, new Set()).status).toBe("unverified");
   });
 });

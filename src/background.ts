@@ -3,12 +3,23 @@
 // geste utilisateur. Firefox Android : ni l'une ni l'autre, le clic sur l'icône lance
 // directement l'analyse et le résultat s'affiche en bulles dans la page.
 
-import { isConfigured, loadConfig, providerOrigin, type Config } from "./config";
+import { DEFAULT_CONFIG, isConfigured, loadConfig, providerOrigin, resolveLanguage, type Config } from "./config";
 import { ext } from "./ext";
 import { getUiStrings } from "./i18n";
 import type { BackgroundToPanel, PanelToBackground, RunSnapshot } from "./messages";
-import { cancelRun, forgetTab, getSnapshot, isRunning, loadCachedRun, runAnalysis, sendToTab } from "./runner";
-import { CATEGORIES } from "./taxonomy";
+import {
+  cancelRun,
+  contestRunAnnotation,
+  forgetTab,
+  getSnapshot,
+  isRunning,
+  loadCachedRun,
+  runAnalysis,
+  sendToTab,
+  verifyRunAnnotation,
+} from "./runner";
+import { isDocumentLevel } from "./schema";
+import { CATEGORIES, labelDef } from "./taxonomy";
 
 interface FirefoxSidebarAction {
   toggle(): Promise<void>;
@@ -50,6 +61,16 @@ ext.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+/**
+ * État de l'onglet, rechargé depuis le cache s'il a été perdu : le service worker de
+ * Chromium peut avoir été arrêté depuis l'analyse.
+ */
+async function ensureRun(tabId: number): Promise<void> {
+  if (getSnapshot(tabId)) return;
+  const tab = await ext.tabs.get(tabId).catch(() => null);
+  await loadCachedRun(tabId, tab?.url);
+}
+
 /** Publie l'état vers le panneau ; sans panneau ouvert, l'envoi échoue sans conséquence. */
 function broadcast(snapshot: RunSnapshot): void {
   const msg: BackgroundToPanel = { type: "run-update", snapshot };
@@ -80,6 +101,18 @@ ext.runtime.onMessage.addListener((msg: PanelToBackground, sender, sendResponse)
       cancelRun(msg.tabId);
       sendResponse(null);
       break;
+    case "verify-annotation": {
+      const tabId = msg.tabId ?? sender.tab?.id;
+      if (tabId !== undefined) void ensureRun(tabId).then(() => verifyRunAnnotation(tabId, msg.id, broadcast));
+      sendResponse(null);
+      break;
+    }
+    case "contest-annotation": {
+      const tabId = msg.tabId ?? sender.tab?.id;
+      if (tabId !== undefined) void ensureRun(tabId).then(() => contestRunAnnotation(tabId, msg.id, msg.contested));
+      sendResponse(null);
+      break;
+    }
     case "get-state":
       void (async () => {
         let snap = getSnapshot(msg.tabId);
@@ -182,7 +215,8 @@ function emptySnapshot(tabId: number): RunSnapshot {
 function mobileNotifier(tabId: number): (s: RunSnapshot) => void {
   let last = "";
   return (s) => {
-    const t = getUiStrings(config ?? undefined);
+    const current = config ?? DEFAULT_CONFIG;
+    const t = getUiStrings(current);
     let text: string;
     let isError = false;
     let durationMs = 0;
@@ -195,9 +229,21 @@ function mobileNotifier(tabId: number): (s: RunSnapshot) => void {
       else text = s.total > 1 ? t.analyzingPartStatus(s.done, s.total) : t.analyzingStatus;
     } else if (s.status === "done") {
       durationMs = 5000;
-      const counts = CATEGORIES.map((c) => [c, s.annotations.filter((a) => a.category === c).length] as const).filter(([, n]) => n > 0);
-      text = counts.length ? counts.map(([c, n]) => `${t.categoriesPlural[c]} (${n})`).join(" · ") : t.emptyResults;
+      const passages = s.annotations.filter((a) => !isDocumentLevel(a));
+      const overall = s.annotations.filter(isDocumentLevel);
+      const counts = CATEGORIES.map((c) => [c, passages.filter((a) => a.category === c).length] as const).filter(([, n]) => n > 0);
+      text = counts.length || overall.length ? counts.map(([c, n]) => `${t.categoriesPlural[c]} (${n})`).join(" · ") : t.emptyResults;
       if (s.skipped?.length) text += ` · ${t.partialShort(s.skipped.length)}`;
+      // B3 : rappel des annotations d'ensemble ; si le titre n'a pas été trouvé dans la
+      // page, le message bref est leur seul accès et reste affiché jusqu'au toucher.
+      if (overall.length) {
+        if (s.titleLocated) text += `${counts.length ? " · " : ""}${t.documentLevelShort(overall.length)}`;
+        else {
+          durationMs = 0;
+          const lines = overall.map((a) => `${labelDef(a.category, a.label, resolveLanguage(current))?.name ?? a.label} : ${a.rhetoric_critique}`);
+          text += `${counts.length ? "\n\n" : ""}${t.documentLevelHeading}\n${lines.join("\n")}`;
+        }
+      }
     } else if (s.status === "cancelled") {
       durationMs = 3000;
       text = t.cancelledStatus;

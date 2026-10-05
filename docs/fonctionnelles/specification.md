@@ -27,10 +27,11 @@ Le modèle doit obligatoirement retourner un objet JSON conforme à cette struct
   "annotations": [
     {
       "id": "ann-1",
-      "exact_quote": "Citation exacte présente au mot près dans le texte",
+      "exact_quote": "Citation exacte présente au mot près dans le texte, ou chaîne vide pour une annotation d'ensemble",
       "category": "sophism" | "bias" | "factual_claim",
       "label": "argument_autorite" | "homme_de_paille" | "faux_dilemme" | … | "autre",
       "severity": "high" | "medium" | "low",
+      "confidence": "high" | "medium" | "low",
       "rhetoric_critique": "Explication de la faille de logique ou du procédé rhétorique.",
       "fact_check": {
         "status": "refuted" | "supported" | "misleading" | "unverified",
@@ -47,11 +48,16 @@ Le modèle doit obligatoirement retourner un objet JSON conforme à cette struct
 
 `severity` suit une grille définie dans le prompt (piste Q3) : `high` si le procédé porte la thèse principale ou une allégation dont dépend l'argumentation, `medium` s'il soutient un argument secondaire, `low` s'il relève du ton ou d'une remarque en passant.
 
+`confidence` (piste Q3) mesure l'assurance du modèle que le procédé est présent et bien nommé, indépendamment de sa gravité : `high` s'il est manifeste, `medium` si une autre lecture raisonnable existe, `low` si la lecture est discutable. Une valeur absente ou hors énumération est omise à la validation ; les analyses antérieures n'en ont pas.
+
+Une annotation `sophism` ou `bias` peut avoir un `exact_quote` vide (D12) : elle porte sur la structure de l'ensemble de l'argumentation (conclusion sans lien avec les prémisses, contradiction entre sections éloignées…) et non sur un passage. Elle est ancrée sur le titre de l'article, ou sur celui de la vidéo pour YouTube. Une annotation `factual_claim` sans citation est rejetée.
+
 Ce schéma est celui de chaque appel d'analyse, y compris par morceau pour un article découpé (D6). Les appels secondaires, sans sortie structurée stricte, répondent en JSON simple, analysé avec tolérance (repli en cas d'échec) :
 
 - **consolidation** d'un article découpé (B2) : `{ "summary", "clickbait_gap", "blind_spot" }`, jugés sur l'ensemble de l'article à partir des constats de chaque morceau, qui remplacent ceux de la fusion ;
 - **relecture** des annotations, en mode approfondi (Q2, D10) : `{ "rejected": [{ "id", "reason" }] }`, les annotations écartées ;
-- **cartographie** d'un article découpé, en mode approfondi (B1, D10) : un plan en texte libre, joint à l'analyse de chaque morceau.
+- **cartographie** d'un article découpé, en mode approfondi (B1, D10) : un plan en texte libre, joint à l'analyse de chaque morceau ;
+- **vérification à la demande** d'une allégation restée « non vérifiée » (C2, D14), avec la recherche web activée pour ce seul appel : `{ "status", "context", "sources": [{ "title", "url" }] }`, soumis à la même politique des sources (D3) ; le résultat remplace le `fact_check` de l'annotation.
 
 ## 4. Parcours utilisateur
 1. L'utilisateur navigue sur un article et clique sur l'icône de l'extension.
@@ -66,3 +72,6 @@ Ce schéma est celui de chaque appel d'analyse, y compris par morceau pour un ar
 5. Interaction :
    - Clic sur une carte -> la page défile (`scrollIntoView`) jusqu'à la citation surlignée.
    - Clic sur une citation dans la page -> la carte correspondante est mise en avant dans le panneau latéral.
+   - Les annotations d'ensemble (D12) occupent une section dédiée du panneau, « Sur l'ensemble de l'article ». Dans la page, le titre est surligné ; son survol ou son toucher ouvre une bulle qui les liste. Sur mobile, le message bref de fin d'analyse les rappelle et, si le titre n'a pas été trouvé dans la page, les affiche en entier.
+   - Une allégation « non vérifiée » propose « Vérifier en ligne » dans sa carte et dans sa bulle quand le provider permet la recherche web (D14). Le résultat s'affiche à la place de la vérification et complète le cache.
+   - Chaque annotation propose « Contester » (D15) : la carte est repliée, le surlignage atténué et l'annotation enregistrée localement. Les options listent les annotations contestées, d'où l'utilisateur peut ouvrir un ticket GitHub prérempli après un avertissement, ou retirer la contestation.

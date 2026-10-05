@@ -1,6 +1,6 @@
 # Évolutions du moteur d'analyse
 
-État des lieux du moteur d'analyse (extraction, découpage, appels LLM, fusion, cache) au 2026-10-04, et pistes d'amélioration. Ce document sert de base de réflexion. Les orientations retenues le 2026-10-05 (D10 à D13) sont consignées dans [points-ouverts.md](../fonctionnelles/points-ouverts.md) et rappelées en §4, l'état de mise en œuvre en §5 ; les pistes qui modifient le contrat du schéma (spec §3) devront encore y être reportées, ainsi que dans `schema.ts` et `prompt.ts`, au moment de leur mise en œuvre.
+État des lieux du moteur d'analyse (extraction, découpage, appels LLM, fusion, cache) au 2026-10-04, et pistes d'amélioration. Ce document sert de base de réflexion. Les orientations retenues le 2026-10-05 (D10 à D15) sont consignées dans [points-ouverts.md](../fonctionnelles/points-ouverts.md) et rappelées en §4, l'état de mise en œuvre en §5.
 
 Rappel du flux actuel (voir [architecture](architecture.md) §3 et §7) : `runner.ts` extrait l'article par Readability, `analyze.ts` le découpe par paragraphes (`chunkParagraphs`, 8 000 tokens par défaut), analyse les morceaux avec 2 appels simultanés, valide chaque réponse, applique la politique des sources (D3), fusionne (`mergeAnalyses`) puis consolide le résumé par un appel dédié.
 
@@ -65,36 +65,36 @@ Les appels supplémentaires de ce lot, du lot C et de la relecture Q2 ne sont fa
 ### Lot C : vérification factuelle séparée (révision de D3)
 
 - **C1. Métadonnées de publication.** Transmettre `publishedTime`, `byline` et `siteName` dans le prompt, avec la consigne d'évaluer les allégations à la date de publication et de signaler ce qui a changé depuis. Ajout au type `Extracted` et au prompt.
-- **C2. Vérification en deux temps.** La passe d'analyse repère les allégations sans les vérifier. Une seconde passe, avec la recherche web, vérifie les plus importantes dans un budget explicite, en commençant par les plus sévères. Les allégations non vérifiées faute de budget sont marquées comme telles (nouveau motif dans `fact_check`, donc modification du contrat). Cette passe peut tourner après l'affichage des annotations rhétoriques, qui apparaissent ainsi plus tôt.
+- **C2. Vérification séparée, à la demande (D14).** Une allégation restée « non vérifiée » (recherche web désactivée, budget de recherche épuisé, résultat non concluant) peut être vérifiée en ligne depuis sa carte ou sa bulle : un appel `complete` avec la recherche web activée pour lui seul (`verify.ts`, `verifyPrompt`), soumis à la politique des sources. Le résultat remplace la vérification et complète le cache. L'utilisateur choisit ainsi les allégations qui valent un appel, sans budget fixé à l'avance ni motif supplémentaire dans le contrat.
 
 ### Lot Q : qualité mesurée
 
 - **Q1. Corpus d'évaluation (D13).** Une vingtaine d'articles figés (texte et titre), variés en sujet, langue et orientation, dont quelques articles réputés bien argumentés, annotés à la main. Les textes libres (rédigés pour le corpus, domaine public, licences ouvertes) sont versionnés ; les textes non libres restent hors dépôt, dans un dossier local ignoré par git, et le dépôt n'en contient que l'URL, le titre et les annotations attendues (citations courtes). Le corpus initial est dans [eval/corpus](../../eval/corpus/README.md). Un script, sur le modèle de `scripts/test-live-provider.mjs`, lance le moteur et mesure : précision et rappel par catégorie (correspondance par chevauchement de citation), taux de citations localisées, stabilité sur plusieurs exécutions, nombre d'annotations sur les articles témoins. Non exécuté par `npm test`, car il appelle un vrai provider.
 - **Q2. Passe de relecture.** Un appel reçoit les annotations et leur contexte, et écarte celles qui ne sont pas justifiées par le texte. Réservée au mode « approfondi » (D10) ; son effet est à mesurer avec Q1.
-- **Q3. Grille de sévérité.** Définir dans le prompt ce que recouvrent `high`, `medium` et `low` (par exemple : le procédé porte sur la thèse principale, sur un argument secondaire, ou relève du style). Ajouter éventuellement un champ `confidence` (modifie le contrat).
-- **Q4. Signalement par l'utilisateur.** Un bouton « annotation contestable » sur chaque carte, enregistré localement, pour alimenter le corpus. Aucun envoi à un tiers sans décision explicite (confidentialité).
+- **Q3. Grille de sévérité et confiance.** Le prompt définit ce que recouvrent `high`, `medium` et `low` pour la sévérité, et un champ `confidence` (même échelle) indique l'assurance du modèle que le procédé est présent et bien nommé (spec §3). Le panneau et les bulles l'affichent.
+- **Q4. Signalement par l'utilisateur (D15).** Un bouton « Contester » sur chaque carte et chaque bulle replie l'annotation et l'enregistre localement (`contested.ts`). Les options listent les annotations contestées ; l'utilisateur peut ouvrir un ticket GitHub prérempli, après un avertissement et avec l'adresse de la page facultative, pour alimenter le corpus. Aucun envoi à un tiers sans son action.
 
 ## 3. Ordre proposé
 
 1. Lot A : corrige des défauts visibles sans toucher au contrat. A1 et A2 en premier, car le cache masque les effets de toute autre évolution du moteur.
 2. Q1 (corpus) avant les lots B et C, pour mesurer leur effet plutôt que de l'estimer.
 3. B1 et B2, puis C1 : ils répondent aux limites les plus structurelles.
-4. Le réglage « rapide / approfondi » (D10) avec le premier appel supplémentaire, puis C2, Q2 et B3 selon les résultats mesurés.
+4. Le réglage « rapide / approfondi » (D10) avec le premier appel supplémentaire, puis Q2, B3, C2, Q3 et Q4.
 
 ## 4. Orientations retenues (2026-10-05)
 
 | # | Question | Décision |
 |---|---|---|
-| D10 | Coût des appels supplémentaires (B1, C2, Q2) | Réglage **« rapide / approfondi »** dans les options. Le mode rapide conserve le comportement actuel ; le mode approfondi active les appels supplémentaires. Un **seul réglage** global, **« rapide » par défaut**, libellé « Analyse : rapide / approfondie » avec une aide qui annonce le surcoût (jusqu'à 3 appels supplémentaires, plus lent, plus fiable). Sans recherche web (Gemini Nano, Ollama…), le mode approfondi se réduit à la cartographie et à la relecture ; l'aide l'indique, le choix reste disponible. Le défaut pourra passer à « approfondi » si le corpus (Q1) montre un gain net |
+| D10 | Coût des appels supplémentaires (B1, Q2) | Réglage **« rapide / approfondi »** dans les options. Le mode rapide fait une passe par morceau ; le mode approfondi ajoute la cartographie et la relecture. Un **seul réglage** global, **« rapide » par défaut**, libellé « Analyse : rapide / approfondie » avec une aide qui annonce le surcoût (jusqu'à 2 appels supplémentaires, plus lent, plus fiable). Le défaut pourra passer à « approfondi » si le corpus (Q1) montre un gain net |
 | D11 | Analyse en cache peut-être obsolète au rechargement (A2) | **Affichage immédiat avec avertissement** « peut-être obsolète » et bouton « Ré-analyser », sans ré-extraction |
-| D12 | Annotations sans citation (B3) | **Acceptées, ancrées sur le titre** : section dédiée du panneau sur desktop ; sur mobile, bulle au toucher du titre et rappel dans le message bref |
+| D12 | Annotations sans citation (B3) | **Acceptées, ancrées sur le titre** (de la vidéo pour YouTube) : section dédiée du panneau sur desktop ; bulle au survol ou au toucher du titre ; sur mobile, rappel dans le message bref |
 | D13 | Emplacement du corpus d'évaluation (Q1) | **Stockage selon la licence** : textes libres versionnés, textes non libres hors dépôt ; les fiches (références, annotations attendues) sont toujours versionnées |
-
-Reste à préciser : le comportement de D12 sur les vidéos YouTube, qui n'ont pas de titre surlignable dans la transcription.
+| D14 | Vérification factuelle séparée (C2) | **À la demande**, allégation par allégation, recherche web activée pour ce seul appel ; le résultat complète le cache |
+| D15 | Signalement par l'utilisateur (Q4) | **Contestation locale**, puis ticket GitHub prérempli ouvert dans un onglet, après avertissement, adresse de la page facultative |
 
 ## 5. État de mise en œuvre (2026-10-05)
 
-`ENGINE_VERSION` vaut 5 : les analyses en cache antérieures sont réaffichées avec l'avertissement « peut-être obsolète » (D11) et refaites à la demande.
+`ENGINE_VERSION` vaut 6 : les analyses en cache antérieures sont réaffichées avec l'avertissement « peut-être obsolète » (D11) et refaites à la demande.
 
 | Piste | État | Écarts et remarques |
 |---|---|---|
@@ -105,17 +105,17 @@ Reste à préciser : le comportement de D12 sur les vidéos YouTube, qui n'ont p
 | A5 | Fait | Le dédoublonnage compare les citations normalisées au moment de la fusion, et non les plages localisées dans la page : il s'applique aussi sur mobile et sans content script |
 | B1 | Fait | Le plan est rédigé en anglais (usage interne) et limité à 250 mots |
 | B2 | Fait, autrement | Les champs `clickbait_gap` et `blind_spot` restent dans le schéma par morceau, que partagent les sorties structurées strictes des providers : ils servent d'indices à la consolidation, qui les confirme ou les écarte au vu de l'ensemble. La consolidation est faite dans les deux modes, car elle remplace l'appel de consolidation du résumé qui existait déjà |
-| B3 | À faire | Modifie le contrat et l'interface (panneau, bulles, message bref). Le comportement sur YouTube reste à préciser |
+| B3 | Fait | `exact_quote` vide, pour `sophism` et `bias` seulement. Les annotations d'ensemble sont dédoublonnées par étiquette et soumises à la relecture. Le titre est localisé par un `<h1>` qui lui correspond, sinon par sa première occurrence, sinon par le seul `<h1>` de la page. Sur YouTube, titre de la vidéo sous le lecteur. Le score du corpus les liste à part, hors précision |
 | C1 | Fait | Date, auteur et site transmis avec la date de l'analyse. Rien pour YouTube, dont l'extraction ne fournit pas ces métadonnées |
-| C2 | À faire | Modifie le contrat (motif « non vérifié faute de budget »). En attendant, le mode approfondi ajoute au plus 2 appels et non 3, ce que dit l'aide |
+| C2 | Fait, autrement | À la demande (D14) plutôt qu'en seconde passe budgétée : pas de modification du contrat d'analyse. Le provider déclare la capacité (`searchesOnDemand`) ; Anthropic utilise l'outil `web_search` dans `complete`, Gemini le grounding Google Search sans mode JSON, un endpoint compatible OpenAI ses citations |
 | Q1 | Fait | `npm run corpus:eval`. Premières mesures en §6 ; les annotations attendues restent à relire |
 | Q2 | Fait | Une relecture en échec garde toutes les annotations. Elle reçoit la définition de chaque étiquette ; effet mesuré en §6 |
-| Q3 | Fait en partie | Grille de sévérité dans le prompt ; pas de champ `confidence` |
-| Q4 | À faire | |
+| Q3 | Fait | Grille de sévérité et champ `confidence` ; la confiance n'est pas encore utilisée par la relecture ni par le score du corpus |
+| Q4 | Fait | Liste bornée à 200 entrées. Les fiches du corpus ne sont pas alimentées automatiquement : le ticket sert de point d'entrée |
 
 Non traités : le dimensionnement (§1.2 : estimation des tokens, concurrence par provider, fenêtre de Gemini Nano) et le traitement particulier des intertitres (§1.6).
 
-Prochaine étape : relire les fiches du corpus signalées en §6, puis confirmer les mesures sur 3 passes et sur un autre provider avant de trancher le défaut de D10 et la suite (C2, B3).
+Prochaine étape : relire les fiches du corpus signalées en §6, puis refaire les mesures avec la version 6 du moteur (annotations d'ensemble, confiance), sur 3 passes et sur un autre provider, avant de trancher le défaut de D10.
 
 ## 6. Mesures sur le corpus (2026-10-05)
 

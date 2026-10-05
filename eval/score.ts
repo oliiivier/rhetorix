@@ -3,7 +3,7 @@
 // utilisées par scripts/corpus-eval.mjs.
 
 import { quotesOverlap } from "../src/chunking";
-import type { Analysis, Annotation } from "../src/schema";
+import { isDocumentLevel, type Analysis, type Annotation } from "../src/schema";
 import { CATEGORIES, type Category } from "../src/taxonomy";
 import { normalize } from "../src/text-match";
 
@@ -44,13 +44,16 @@ export interface CategoryScore {
 }
 
 export interface Issue {
-  kind: "missed" | "mislabeled" | "false_positive" | "not_expected" | "fact_status" | "unlocated" | "document" | "limit";
+  kind: "missed" | "mislabeled" | "false_positive" | "not_expected" | "fact_status" | "unlocated" | "document" | "limit" | "overall";
   message: string;
 }
 
 export interface ArticleScore {
   id: string;
+  /** Annotations de passage produites ; les annotations d'ensemble (B3) sont comptées à part. */
   produced: number;
+  /** Annotations d'ensemble (B3), sans citation : listées pour relecture, hors précision. */
+  overall: number;
   /** Annotations produites qui correspondent à une annotation attendue (requise ou tolérée). */
   matched: number;
   rhetorical: number;
@@ -114,7 +117,10 @@ export function scoreArticle(article: CorpusArticle, analysis: Analysis, text: s
   // Précision : une annotation qui ne recouvre aucune annotation attendue est un faux positif probable.
   let matched = 0;
   let located = 0;
-  for (const a of analysis.annotations) {
+  const passages = analysis.annotations.filter((a) => !isDocumentLevel(a));
+  const overall = analysis.annotations.filter(isDocumentLevel);
+  for (const a of overall) issues.push({ kind: "overall", message: `${a.category}/${a.label} (${a.severity}) : ${short(a.rhetoric_critique)}` });
+  for (const a of passages) {
     if (hay.includes(normalize(a.exact_quote))) located++;
     else issues.push({ kind: "unlocated", message: `« ${short(a.exact_quote)} »` });
     const bad = article.not_expected?.find((n) => quotesOverlap(a.exact_quote, n.quote));
@@ -147,7 +153,8 @@ export function scoreArticle(article: CorpusArticle, analysis: Analysis, text: s
 
   return {
     id: article.id,
-    produced: analysis.annotations.length,
+    produced: passages.length,
+    overall: overall.length,
     matched,
     rhetorical,
     located,
@@ -181,6 +188,8 @@ export interface Summary {
   runs: number;
   byCategory: Record<Category, CategoryScore>;
   produced: number;
+  /** Annotations d'ensemble (B3). */
+  overall: number;
   matched: number;
   located: number;
   factChecked: number;
@@ -207,6 +216,7 @@ export function summarize(scores: ArticleScore[], articles: CorpusArticle[]): Su
     runs: scores.length,
     byCategory,
     produced: sum((s) => s.produced),
+    overall: sum((s) => s.overall ?? 0),
     matched: sum((s) => s.matched),
     located: sum((s) => s.located),
     factChecked: sum((s) => s.factChecked),

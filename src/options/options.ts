@@ -1,4 +1,5 @@
 import { clearCache } from "../cache";
+import { CONTESTED_KEY, issueUrl, loadContested, markReported, removeContested, type ContestedAnnotation } from "../contested";
 import { DEFAULT_MODELS, loadConfig, providerOrigin, saveConfig, type Config, type DisplayMode, type ProviderId, type YouTubePauseMode } from "../config";
 import { ext } from "../ext";
 import { getUiStrings } from "../i18n";
@@ -66,6 +67,9 @@ function applyOptionsI18n(lang: string): void {
   setTxt("btn-save", t.saveBtn);
   setTxt("heading-cache", t.cacheSectionTitle);
   setTxt("clear-cache", t.clearCacheBtn);
+  setTxt("heading-contested", t.contestedSectionTitle);
+  setTxt("contested-intro", t.contestedIntro);
+  void renderContested(lang);
   setTxt("tab-label-tokens", t.tabTokens);
   setTxt("tokens-tab-intro", t.tokensTabIntro);
   setTxt("heading-tokens-tab", t.tabTokens);
@@ -535,6 +539,114 @@ document.getElementById("clear-cache")!.addEventListener("click", () => {
   const lang = field<HTMLSelectElement>("language")?.value || "auto";
   const t = getUiStrings(lang);
   void clearCache().then(() => (document.getElementById("cache-status")!.textContent = t.cacheCleared));
+});
+
+// ---------- Annotations contestées (Q4) ----------
+
+function currentLanguage(): string {
+  return field<HTMLSelectElement>("language")?.value || "auto";
+}
+
+function node<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
+  const el = document.createElement(tag);
+  el.className = className;
+  if (text !== undefined) el.textContent = text;
+  return el;
+}
+
+function button(text: string, onClick: () => void, primary = false): HTMLButtonElement {
+  const b = node("button", primary ? "primary" : "", text);
+  b.type = "button";
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+/**
+ * Formulaire de signalement : avertissement, adresse de la page facultative et
+ * commentaire. Le ticket s'ouvre dans un onglet et l'utilisateur le publie lui-même.
+ */
+function reportForm(e: ContestedAnnotation, lang: string, onClose: () => void): HTMLElement {
+  const t = getUiStrings(lang);
+  const form = node("div", "report-form");
+  form.append(node("p", "report-warning", t.reportWarning));
+  const includeLabel = node("label", "");
+  const include = document.createElement("input");
+  include.type = "checkbox";
+  include.checked = true;
+  includeLabel.append(include, document.createTextNode(t.reportIncludeUrl));
+  const commentLabel = node("label", "");
+  commentLabel.style.flexDirection = "column";
+  const comment = document.createElement("textarea");
+  commentLabel.append(document.createTextNode(t.reportCommentLabel), comment);
+  const actions = node("div", "contested-actions");
+  actions.append(
+    button(
+      t.reportOpenBtn,
+      () => {
+        const url = issueUrl(e, { includeUrl: include.checked, comment: comment.value, extensionVersion: ext.runtime.getManifest().version });
+        void ext.tabs.create({ url });
+        void markReported(e.key).then(() => {
+          onClose();
+          void renderContested(lang);
+        });
+      },
+      true,
+    ),
+    button(t.reportCancelBtn, onClose),
+  );
+  form.append(includeLabel, commentLabel, actions);
+  return form;
+}
+
+function renderContestedItem(e: ContestedAnnotation, lang: string): HTMLLIElement {
+  const t = getUiStrings(lang);
+  const a = e.annotation;
+  const li = node("li", "contested-item");
+
+  const meta = node("p", "contested-meta");
+  const link = document.createElement("a");
+  link.href = e.url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = e.pageTitle || e.url;
+  const dates = [t.contestedOn(new Date(e.contestedAt).toLocaleString())];
+  if (e.reportedAt) dates.push(t.contestedReportedOn(new Date(e.reportedAt).toLocaleString()));
+  meta.append(link, document.createTextNode(` · ${dates.join(" · ")}`));
+
+  const def = labelDef(a.category, a.label, lang);
+  const head = node("p", "label", `${t.categories[a.category]} · ${def?.name ?? a.label} · ${t.severities[a.severity]}`);
+  const quote = a.exact_quote ? node("blockquote", "quote", a.exact_quote) : node("p", "quote", t.contestedDocumentLevel);
+  const critique = node("p", "critique", a.rhetoric_critique);
+
+  const actions = node("div", "contested-actions");
+  let form: HTMLElement | null = null;
+  const report = button(t.contestedReportBtn, () => {
+    if (form) return;
+    form = reportForm(e, lang, () => {
+      form?.remove();
+      form = null;
+    });
+    li.append(form);
+  });
+  actions.append(report, button(t.contestedRemoveBtn, () => void removeContested(e.key)));
+  li.append(meta, head, quote, critique, actions);
+  return li;
+}
+
+async function renderContested(lang = currentLanguage()): Promise<void> {
+  const t = getUiStrings(lang);
+  const list = document.getElementById("contested-list");
+  const empty = document.getElementById("contested-empty");
+  if (!list || !empty) return;
+  const entries = (await loadContested()).slice().reverse();
+  empty.textContent = t.contestedEmpty;
+  empty.hidden = entries.length > 0;
+  list.replaceChildren(...entries.map((e) => renderContestedItem(e, lang)));
+}
+
+ext.storage.onChanged.addListener((changes, area) => {
+  // Un formulaire de signalement ouvert n'est pas effacé par la date de signalement.
+  if (area === "local" && changes[CONTESTED_KEY] && !document.querySelector("#contested-list .report-form")) void renderContested();
 });
 
 async function refreshTokensDisplay(lang?: string): Promise<void> {

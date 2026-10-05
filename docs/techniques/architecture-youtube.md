@@ -159,6 +159,8 @@ Lorsque le LLM renvoie une annotation avec `exact_quote` :
    }
    ```
 
+Une annotation d'ensemble (D12), sans citation, n'est pas alignée (`startTime` à -1) et ne compte pas parmi les citations non localisées. Elle est ancrée sur le titre de la vidéo affiché sous le lecteur (`ytd-watch-metadata h1`) : le content script le surligne (`rhetorix-document`, `highlights.css` injecté avec le script) et ouvre au survol ou au toucher une bulle `AnnotationPopover` qui liste ces annotations, avec l'action « Contester » (D15).
+
 ---
 
 ## 5. Gestion des Sauts (Seek) et Déplacement rapide
@@ -290,6 +292,7 @@ container.appendChild(host);
 | `youtube-analyze-chunk` | panneau → fond | Déclenche l'analyse d'une tranche de 15 min `{startSec: number}`. |
 | `youtube-analyze-full` | panneau → fond | Déclenche l'analyse exhaustive de la vidéo entière. |
 | `youtube-seek` | panneau → content | Ordonne au lecteur de sauter à un timestamp `{time: number, pause?: boolean}`. |
+| `youtube-highlight` | fond → content | Annotations alignées, tranches analysées et annotations d'ensemble à ancrer sur le titre `{annotations, analyzedRanges, lang?, documentAnnotations?}`. |
 | `youtube-time-update` | content → panneau | Notifie le panneau du temps courant pour l'auto-scroll et la mise en surbrillance. |
 | `youtube-set-options` | options/panneau → content | Met à jour les préférences de lecture (durée min, mode de pause, reprise). |
 

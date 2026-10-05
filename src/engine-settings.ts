@@ -10,7 +10,7 @@ import { PROVIDERS } from "./providers";
  * par une version antérieure ne sont plus réutilisées et sont signalées comme
  * peut-être obsolètes (D11).
  */
-export const ENGINE_VERSION = 5;
+export const ENGINE_VERSION = 6;
 
 export interface AnalysisSettings {
   provider: string;

@@ -27,16 +27,23 @@ export interface AnalyzeInput {
   onStream?: StreamCallbacks;
 }
 
-/** Appel textuel sans outil : consolidation, cartographie, relecture. */
+/** Appel textuel : consolidation, cartographie, relecture, vérification à la demande. */
 export interface CompletionRequest extends Prompt {
   /** Réponse attendue en JSON : mode JSON du provider s'il en a un. */
   json?: boolean;
   maxTokens?: number;
+  /**
+   * Active la recherche web pour ce seul appel, quel que soit le réglage (C2). Les URL
+   * renvoyées par l'outil de recherche sont signalées par `onSource` (D3).
+   */
+  webSearch?: boolean;
 }
 
 export interface CompletionCallbacks {
   /** Texte cumulé reçu jusqu'ici. */
   onText?: (text: string) => void;
+  /** URL renvoyée par l'outil de recherche web (appel avec `webSearch`). */
+  onSource?: (url: string) => void;
   onUsage?: (usage: TokenUsage) => void;
   onRetry?: (info: RetryInfo) => void;
 }
@@ -55,6 +62,11 @@ export interface ProviderResult {
 
 export interface LlmProvider {
   supportsWebSearch(config: Config): boolean;
+  /**
+   * Vrai si un appel `complete` peut activer la recherche web à la demande (C2), même
+   * quand le réglage de recherche web est désactivé.
+   */
+  searchesOnDemand(config: Config): boolean;
   analyze(input: AnalyzeInput, config: Config, signal: AbortSignal): Promise<ProviderResult>;
   complete(request: CompletionRequest, config: Config, signal: AbortSignal, callbacks?: CompletionCallbacks): Promise<string>;
 }

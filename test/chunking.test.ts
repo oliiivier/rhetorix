@@ -106,6 +106,17 @@ describe("dedupeAnnotations (A5)", () => {
     ]);
     expect(out.map((a) => a.id)).toEqual(["c", "b"]);
   });
+
+  it("ne fusionne deux annotations d'ensemble (B3) que si elles ont la même étiquette", () => {
+    const out = dedupeAnnotations([
+      ann("a", "", "sophism", "low"),
+      { ...ann("b", "", "sophism", "low"), label: "homme_de_paille" },
+      ann("c", "", "sophism", "high"),
+      ann("d", "Un passage", "sophism", "low"),
+      ann("e", "", "bias", "low"),
+    ]);
+    expect(out.map((a) => a.id)).toEqual(["c", "b", "d", "e"]);
+  });
 });
 
 describe("mapSettled (A3)", () => {

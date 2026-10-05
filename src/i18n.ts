@@ -4,7 +4,7 @@
 import type { AnalysisDepth, Config, DisplayMode } from "./config";
 import { ext } from "./ext";
 import type { ProviderErrorCode } from "./providers/types";
-import type { FactStatus, Severity } from "./schema";
+import type { Confidence, FactStatus, Severity } from "./schema";
 import type { Category } from "./taxonomy";
 
 export type Language = "fr" | "en" | "es" | "de" | "it";
@@ -53,6 +53,22 @@ export interface UiStrings {
   categoriesPlural: Record<Category, string>;
   severities: Record<Severity, string>;
   factStatuses: Record<FactStatus, string>;
+  confidences: Record<Confidence, string>;
+  confidenceHint: string;
+  /** Annotations d'ensemble (B3). */
+  documentLevelHeading: string;
+  documentLevelHint: string;
+  documentLevelShort: (count: number) => string;
+  /** Vérification en ligne à la demande (C2). */
+  verifyBtn: string;
+  verifyBtnTitle: string;
+  verifyingStatus: string;
+  /** Contestation d'une annotation (Q4). */
+  contestBtn: string;
+  contestBtnTitle: string;
+  uncontestBtn: string;
+  uncontestBtnTitle: string;
+  contestedNote: string;
 
   // Popover (icône d'extension)
   brandSubtitle: string;
@@ -91,6 +107,19 @@ export interface UiStrings {
   cacheSectionTitle: string;
   clearCacheBtn: string;
   cacheCleared: string;
+  contestedSectionTitle: string;
+  contestedIntro: string;
+  contestedEmpty: string;
+  contestedOn: (date: string) => string;
+  contestedReportedOn: (date: string) => string;
+  contestedDocumentLevel: string;
+  contestedReportBtn: string;
+  contestedRemoveBtn: string;
+  reportWarning: string;
+  reportIncludeUrl: string;
+  reportCommentLabel: string;
+  reportOpenBtn: string;
+  reportCancelBtn: string;
   privacySectionTitle: string;
   privacyText: string;
   getGeminiKeyBtn: string;
@@ -274,6 +303,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       misleading: "Trompeur",
       unverified: "Non vérifié",
     },
+    confidences: { high: "Confiance élevée", medium: "Confiance moyenne", low: "Confiance faible" },
+    confidenceHint: "Assurance du modèle que le procédé est présent et bien nommé, indépendamment de sa gravité.",
+    documentLevelHeading: "Sur l'ensemble de l'article",
+    documentLevelHint: "Défauts de structure de l'argumentation, sans passage précis : ils sont accessibles depuis le titre surligné.",
+    documentLevelShort: (n) => `${n} remarque${n > 1 ? "s" : ""} sur l'ensemble (touchez le titre)`,
+    verifyBtn: "🔍 Vérifier en ligne",
+    verifyBtnTitle: "Lancer une recherche web pour cette seule allégation (un appel au fournisseur, recherche activée pour cet appel uniquement).",
+    verifyingStatus: "Vérification en ligne…",
+    contestBtn: "⚑ Contester",
+    contestBtnTitle: "Signaler cette annotation comme contestable. Elle est enregistrée dans ce navigateur et retrouvée dans les options.",
+    uncontestBtn: "Rétablir",
+    uncontestBtnTitle: "Retirer la contestation et réafficher l'annotation.",
+    contestedNote: "Annotation contestée. Retrouvez-la dans les options pour la signaler sur GitHub.",
 
     brandSubtitle: "Esprit critique & rhétorique",
     activePageLabel: "Page active",
@@ -313,6 +355,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     cacheSectionTitle: "Cache des analyses",
     clearCacheBtn: "Vider le cache",
     cacheCleared: "Cache vidé.",
+    contestedSectionTitle: "Annotations contestées",
+    contestedIntro: "Les annotations que vous avez contestées sont enregistrées uniquement dans ce navigateur. Vous pouvez les signaler aux mainteneurs en ouvrant un ticket GitHub prérempli : rien n'est envoyé sans votre action.",
+    contestedEmpty: "Aucune annotation contestée.",
+    contestedOn: (date) => `Contestée le ${date}`,
+    contestedReportedOn: (date) => `Signalée le ${date}`,
+    contestedDocumentLevel: "(annotation sur l'ensemble de l'article)",
+    contestedReportBtn: "Signaler sur GitHub…",
+    contestedRemoveBtn: "Retirer",
+    reportWarning: "Cela va ouvrir un ticket prérempli sur GitHub. Vérifiez que le texte cité ne contient pas d'information personnelle avant de publier.",
+    reportIncludeUrl: "Inclure l'adresse de la page (décochez pour une page privée ou interne : intranet, document confidentiel…)",
+    reportCommentLabel: "Pourquoi cette annotation est-elle contestable ? (facultatif)",
+    reportOpenBtn: "Ouvrir GitHub",
+    reportCancelBtn: "Annuler",
     privacySectionTitle: "Vie privée",
     privacyText:
       "Le texte des articles analysés est envoyé uniquement au fournisseur que vous avez configuré. Rhetorix ne dispose d'aucun serveur central.",
@@ -523,6 +578,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       misleading: "Misleading",
       unverified: "Unverified",
     },
+    confidences: { high: "High confidence", medium: "Medium confidence", low: "Low confidence" },
+    confidenceHint: "How sure the model is that the device is present and correctly named, regardless of its severity.",
+    documentLevelHeading: "On the article as a whole",
+    documentLevelHint: "Flaws in the structure of the argument, with no specific passage: they can be reached from the highlighted title.",
+    documentLevelShort: (n) => `${n} note${n > 1 ? "s" : ""} on the whole article (tap the title)`,
+    verifyBtn: "🔍 Check online",
+    verifyBtnTitle: "Run a web search for this claim only (one call to the provider, with search enabled for this call only).",
+    verifyingStatus: "Checking online…",
+    contestBtn: "⚑ Dispute",
+    contestBtnTitle: "Flag this annotation as questionable. It is saved in this browser and listed in the options.",
+    uncontestBtn: "Restore",
+    uncontestBtnTitle: "Withdraw the dispute and show the annotation again.",
+    contestedNote: "Disputed annotation. Find it in the options to report it on GitHub.",
 
     brandSubtitle: "Critical thinking & rhetoric",
     activePageLabel: "Active page",
@@ -562,6 +630,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     cacheSectionTitle: "Analysis cache",
     clearCacheBtn: "Clear cache",
     cacheCleared: "Cache cleared.",
+    contestedSectionTitle: "Disputed annotations",
+    contestedIntro: "The annotations you disputed are stored in this browser only. You can report them to the maintainers by opening a prefilled GitHub issue: nothing is sent without your action.",
+    contestedEmpty: "No disputed annotation.",
+    contestedOn: (date) => `Disputed on ${date}`,
+    contestedReportedOn: (date) => `Reported on ${date}`,
+    contestedDocumentLevel: "(annotation on the article as a whole)",
+    contestedReportBtn: "Report on GitHub…",
+    contestedRemoveBtn: "Remove",
+    reportWarning: "This will open a prefilled issue on GitHub. Check that the quoted text contains no personal information before publishing.",
+    reportIncludeUrl: "Include the page address (untick for a private or internal page: intranet, confidential document…)",
+    reportCommentLabel: "Why is this annotation questionable? (optional)",
+    reportOpenBtn: "Open GitHub",
+    reportCancelBtn: "Cancel",
     privacySectionTitle: "Privacy",
     privacyText:
       "The text of analyzed articles is sent exclusively to the provider you configured. Rhetorix does not run any central server.",
@@ -772,6 +853,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       misleading: "Engañoso",
       unverified: "No verificado",
     },
+    confidences: { high: "Confianza alta", medium: "Confianza media", low: "Confianza baja" },
+    confidenceHint: "Seguridad del modelo de que el procedimiento está presente y bien nombrado, con independencia de su gravedad.",
+    documentLevelHeading: "Sobre el conjunto del artículo",
+    documentLevelHint: "Defectos de estructura de la argumentación, sin un pasaje concreto: se accede a ellos desde el título resaltado.",
+    documentLevelShort: (n) => `${n} observación${n > 1 ? "es" : ""} sobre el conjunto (toque el título)`,
+    verifyBtn: "🔍 Verificar en línea",
+    verifyBtnTitle: "Lanzar una búsqueda web solo para esta afirmación (una llamada al proveedor, con la búsqueda activada solo para esta llamada).",
+    verifyingStatus: "Verificando en línea…",
+    contestBtn: "⚑ Impugnar",
+    contestBtnTitle: "Marcar esta anotación como discutible. Se guarda en este navegador y aparece en las opciones.",
+    uncontestBtn: "Restablecer",
+    uncontestBtnTitle: "Retirar la impugnación y volver a mostrar la anotación.",
+    contestedNote: "Anotación impugnada. Encuéntrela en las opciones para notificarla en GitHub.",
 
     brandSubtitle: "Pensamiento crítico y retórica",
     activePageLabel: "Página activa",
@@ -811,6 +905,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     cacheSectionTitle: "Caché de análisis",
     clearCacheBtn: "Vaciar caché",
     cacheCleared: "Caché vaciada.",
+    contestedSectionTitle: "Anotaciones impugnadas",
+    contestedIntro: "Las anotaciones que ha impugnado se guardan solo en este navegador. Puede notificarlas a los mantenedores abriendo una incidencia de GitHub precompletada: no se envía nada sin su intervención.",
+    contestedEmpty: "Ninguna anotación impugnada.",
+    contestedOn: (date) => `Impugnada el ${date}`,
+    contestedReportedOn: (date) => `Notificada el ${date}`,
+    contestedDocumentLevel: "(anotación sobre el conjunto del artículo)",
+    contestedReportBtn: "Notificar en GitHub…",
+    contestedRemoveBtn: "Quitar",
+    reportWarning: "Se abrirá una incidencia precompletada en GitHub. Compruebe que el texto citado no contiene información personal antes de publicarla.",
+    reportIncludeUrl: "Incluir la dirección de la página (desmárquelo para una página privada o interna: intranet, documento confidencial…)",
+    reportCommentLabel: "¿Por qué es discutible esta anotación? (opcional)",
+    reportOpenBtn: "Abrir GitHub",
+    reportCancelBtn: "Cancelar",
     privacySectionTitle: "Privacidad",
     privacyText:
       "El texto de los artículos analizados se envía únicamente al proveedor que haya configurado. Rhetorix no dispone de ningún servidor central.",
@@ -1021,6 +1128,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       misleading: "Irreführend",
       unverified: "Nicht überprüft",
     },
+    confidences: { high: "Hohe Sicherheit", medium: "Mittlere Sicherheit", low: "Geringe Sicherheit" },
+    confidenceHint: "Wie sicher das Modell ist, dass das Stilmittel vorliegt und richtig benannt ist, unabhängig von seinem Schweregrad.",
+    documentLevelHeading: "Zum Artikel insgesamt",
+    documentLevelHint: "Mängel im Aufbau der Argumentation ohne bestimmte Textstelle: Sie sind über den hervorgehobenen Titel erreichbar.",
+    documentLevelShort: (n) => `${n} Anmerkung${n > 1 ? "en" : ""} zum Gesamttext (Titel antippen)`,
+    verifyBtn: "🔍 Online prüfen",
+    verifyBtnTitle: "Eine Websuche nur für diese Behauptung starten (ein Aufruf beim Anbieter, Suche nur für diesen Aufruf aktiviert).",
+    verifyingStatus: "Online-Prüfung…",
+    contestBtn: "⚑ Anfechten",
+    contestBtnTitle: "Diese Annotation als fragwürdig markieren. Sie wird in diesem Browser gespeichert und in den Optionen aufgeführt.",
+    uncontestBtn: "Wiederherstellen",
+    uncontestBtnTitle: "Anfechtung zurücknehmen und die Annotation wieder anzeigen.",
+    contestedNote: "Angefochtene Annotation. In den Optionen können Sie sie auf GitHub melden.",
 
     brandSubtitle: "Kritisches Denken & Rhetorik",
     activePageLabel: "Aktive Seite",
@@ -1060,6 +1180,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     cacheSectionTitle: "Analyse-Cache",
     clearCacheBtn: "Cache leeren",
     cacheCleared: "Cache geleert.",
+    contestedSectionTitle: "Angefochtene Annotationen",
+    contestedIntro: "Ihre angefochtenen Annotationen werden nur in diesem Browser gespeichert. Sie können sie den Maintainern über ein vorausgefülltes GitHub-Issue melden: Ohne Ihr Zutun wird nichts gesendet.",
+    contestedEmpty: "Keine angefochtene Annotation.",
+    contestedOn: (date) => `Angefochten am ${date}`,
+    contestedReportedOn: (date) => `Gemeldet am ${date}`,
+    contestedDocumentLevel: "(Annotation zum Artikel insgesamt)",
+    contestedReportBtn: "Auf GitHub melden…",
+    contestedRemoveBtn: "Entfernen",
+    reportWarning: "Dadurch wird ein vorausgefülltes Issue auf GitHub geöffnet. Prüfen Sie vor dem Veröffentlichen, dass der zitierte Text keine persönlichen Informationen enthält.",
+    reportIncludeUrl: "Adresse der Seite angeben (bei einer privaten oder internen Seite abwählen: Intranet, vertrauliches Dokument…)",
+    reportCommentLabel: "Warum ist diese Annotation fragwürdig? (optional)",
+    reportOpenBtn: "GitHub öffnen",
+    reportCancelBtn: "Abbrechen",
     privacySectionTitle: "Datenschutz",
     privacyText:
       "Der Text analysierter Artikel wird ausschließlich an den von Ihnen konfigurierten Anbieter gesendet. Rhetorix betreibt keinen zentralen Server.",
@@ -1270,6 +1403,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       misleading: "Fuorviante",
       unverified: "Non verificato",
     },
+    confidences: { high: "Affidabilità alta", medium: "Affidabilità media", low: "Affidabilità bassa" },
+    confidenceHint: "Quanto il modello è sicuro che il procedimento sia presente e nominato correttamente, indipendentemente dalla sua gravità.",
+    documentLevelHeading: "Sull'articolo nel suo insieme",
+    documentLevelHint: "Difetti nella struttura dell'argomentazione, senza un passaggio preciso: si raggiungono dal titolo evidenziato.",
+    documentLevelShort: (n) => `${n} ${n > 1 ? "osservazioni" : "osservazione"} sull'insieme (tocca il titolo)`,
+    verifyBtn: "🔍 Verifica online",
+    verifyBtnTitle: "Avvia una ricerca web solo per questa affermazione (una chiamata al provider, con la ricerca attivata solo per questa chiamata).",
+    verifyingStatus: "Verifica online…",
+    contestBtn: "⚑ Contesta",
+    contestBtnTitle: "Segnala questa annotazione come discutibile. Viene salvata in questo browser ed elencata nelle opzioni.",
+    uncontestBtn: "Ripristina",
+    uncontestBtnTitle: "Ritira la contestazione e mostra di nuovo l'annotazione.",
+    contestedNote: "Annotazione contestata. La trovi nelle opzioni per segnalarla su GitHub.",
 
     brandSubtitle: "Pensiero critico e retorica",
     activePageLabel: "Pagina attiva",
@@ -1309,6 +1455,19 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     cacheSectionTitle: "Cache delle analisi",
     clearCacheBtn: "Svuota cache",
     cacheCleared: "Cache svuotata.",
+    contestedSectionTitle: "Annotazioni contestate",
+    contestedIntro: "Le annotazioni che hai contestato sono salvate solo in questo browser. Puoi segnalarle ai manutentori aprendo una issue GitHub precompilata: nulla viene inviato senza una tua azione.",
+    contestedEmpty: "Nessuna annotazione contestata.",
+    contestedOn: (date) => `Contestata il ${date}`,
+    contestedReportedOn: (date) => `Segnalata il ${date}`,
+    contestedDocumentLevel: "(annotazione sull'articolo nel suo insieme)",
+    contestedReportBtn: "Segnala su GitHub…",
+    contestedRemoveBtn: "Rimuovi",
+    reportWarning: "Verrà aperta una issue precompilata su GitHub. Prima di pubblicarla, verifica che il testo citato non contenga informazioni personali.",
+    reportIncludeUrl: "Includi l'indirizzo della pagina (deseleziona per una pagina privata o interna: intranet, documento riservato…)",
+    reportCommentLabel: "Perché questa annotazione è discutibile? (facoltativo)",
+    reportOpenBtn: "Apri GitHub",
+    reportCancelBtn: "Annulla",
     privacySectionTitle: "Privacy",
     privacyText:
       "Il testo degli articoli analizzati viene inviato esclusivamente al fornitore configurato. Rhetorix non dispone di alcun server centrale.",

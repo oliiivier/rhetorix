@@ -58,6 +58,7 @@ async function checkAvailability(factory: AILanguageModelFactory): Promise<"read
 
 export const chromeAiProvider: LlmProvider = {
   supportsWebSearch: () => false,
+  searchesOnDemand: () => false,
 
   async analyze(input, _config: Config, signal) {
     const factory = getAILanguageModelFactory();

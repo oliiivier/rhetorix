@@ -1,7 +1,8 @@
 // Cache des analyses par URL dans storage.local (décision D7, architecture §8).
 
 import { sameSettings, type AnalysisSettings } from "./engine-settings";
-import type { Analysis } from "./schema";
+import type { ArticleMeta } from "./prompt";
+import type { Analysis, FactCheck } from "./schema";
 import type { TimeRange, VideoAnnotation } from "./youtube/types";
 import { ext } from "./ext";
 
@@ -21,6 +22,9 @@ export type CacheEntry = Partial<AnalysisSettings> & {
   model: string;
   lang: string;
   createdAt: number;
+  /** Titre et métadonnées de l'article : ancre des annotations d'ensemble (B3), contexte de la vérification à la demande (C2). */
+  title?: string;
+  meta?: ArticleMeta;
   isVideo?: boolean;
   videoAnnotations?: VideoAnnotation[];
   analyzedRanges?: TimeRange[];
@@ -58,7 +62,7 @@ async function readIndex(): Promise<string[]> {
 }
 
 export async function getCached(url: string, fp: CacheFingerprint): Promise<CacheEntry | null> {
-  const key = PREFIX + normalizeUrl(url);
+  const key = cacheKey(url);
   const entry = (await ext.storage.local.get(key))[key] as CacheEntry | undefined;
   if (!entry || !matchesFingerprint(entry, fp)) return null;
   await touch(key);
@@ -70,13 +74,13 @@ export async function getCached(url: string, fp: CacheFingerprint): Promise<Cach
  * au chargement du panneau (D11), qui la signale comme peut-être obsolète si les
  * réglages ont changé. Une analyse lancée explicitement passe par getCached.
  */
-export async function getCachedByUrl(url: string): Promise<CacheEntry | null> {
+export async function getCachedByUrl(url: string): Promise<(CacheEntry & { cacheKey: string }) | null> {
   try {
-    const key = PREFIX + normalizeUrl(url);
+    const key = cacheKey(url);
     const entry = (await ext.storage.local.get(key))[key] as CacheEntry | undefined;
     if (entry) {
       await touch(key);
-      return entry;
+      return { ...entry, cacheKey: key };
     }
     const index = await readIndex();
     const candidateKey = index.find((k) => k.startsWith(key + "&rhetorix_chunk=") || k.startsWith(key + "?rhetorix_chunk="));
@@ -84,7 +88,7 @@ export async function getCachedByUrl(url: string): Promise<CacheEntry | null> {
       const chunkEntry = (await ext.storage.local.get(candidateKey))[candidateKey] as CacheEntry | undefined;
       if (chunkEntry) {
         await touch(candidateKey);
-        return chunkEntry;
+        return { ...chunkEntry, cacheKey: candidateKey };
       }
     }
     return null;
@@ -93,8 +97,28 @@ export async function getCachedByUrl(url: string): Promise<CacheEntry | null> {
   }
 }
 
+/** Clé de stockage de l'entrée d'une URL. */
+export function cacheKey(url: string): string {
+  return PREFIX + normalizeUrl(url);
+}
+
+/**
+ * Complète l'entrée par le résultat d'une vérification à la demande (C2), dans
+ * l'analyse et, pour une vidéo, dans les annotations alignées. Sans effet si l'entrée
+ * a disparu entre-temps.
+ */
+export async function updateCachedFactCheck(key: string, id: string, factCheck: FactCheck): Promise<void> {
+  const entry = (await ext.storage.local.get(key))[key] as CacheEntry | undefined;
+  if (!entry) return;
+  const patch = <T extends { id: string; fact_check: FactCheck }>(list: T[]): T[] =>
+    list.map((a) => (a.id === id ? { ...a, fact_check: factCheck } : a));
+  const updated: CacheEntry = { ...entry, analysis: { ...entry.analysis, annotations: patch(entry.analysis.annotations) } };
+  if (entry.videoAnnotations) updated.videoAnnotations = patch(entry.videoAnnotations);
+  await ext.storage.local.set({ [key]: updated });
+}
+
 export async function putCached(url: string, entry: CacheEntry): Promise<void> {
-  const key = PREFIX + normalizeUrl(url);
+  const key = cacheKey(url);
   await ext.storage.local.set({ [key]: entry });
   await touch(key);
 }

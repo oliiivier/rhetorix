@@ -241,7 +241,7 @@ describe("analyzeArticle", () => {
         .mockResolvedValueOnce({ raw: { summary: "S1", annotations: [claim("citation un.")] } })
         .mockResolvedValueOnce({ raw: { summary: "S2", annotations: [claim("citation deux.")] } });
       mockConsolidate.mockImplementation(async (request: { system: string }) => {
-        if (request.system.includes("outline")) return "Thesis: X.";
+        if (request.system.startsWith("You prepare the outline")) return "Thesis: X.";
         if (request.system.includes("review")) return '{"rejected": [{"id": "ann-2", "reason": "concession"}, {"id": "inconnu"}]}';
         return '{"summary": "Global.", "clickbait_gap": "", "blind_spot": ""}';
       });
