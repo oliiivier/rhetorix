@@ -16,9 +16,20 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 | D8 | Navigateurs | **Chromium (≥ 128) et Firefox (≥ 142)** | Deux paquets générés : `dist/chrome` (`side_panel`, service worker) et `dist/firefox` (`sidebar_action`, script de fond, `data_collection_permissions`). Voir architecture §9 |
 | D9 | Mobile | **Firefox pour Android (≥ 142)**, même paquet que Firefox desktop. **L'analyse est pilotée par le script de fond partout** ; sur mobile, le toucher de l'icône lance l'analyse immédiatement et le résultat s'affiche en **bulles au toucher** seulement | Le panneau devient une vue de l'état publié par le script de fond (architecture §3). Sur mobile : pas de résumé ni de liste, les annotations non localisées ne sont pas visibles ; l'avancement passe par un message bref dans la page. Safari iOS reste hors périmètre |
 
+## Décisions prises (2026-10-05)
+
+Orientations pour l'évolution du moteur d'analyse, détaillées dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). Aucune n'est encore mise en œuvre.
+
+| # | Sujet | Décision | Conséquences |
+|---|---|---|---|
+| D10 | Coût de l'analyse | **Réglage « rapide / approfondi »** | Le mode rapide conserve le comportement actuel. Le mode approfondi ajoute la cartographie préalable des articles découpés, la vérification factuelle séparée et la relecture des annotations. Nouveau réglage dans les options et textes d'interface en 5 langues |
+| D11 | Cache au rechargement | **Affichage immédiat avec avertissement** | Une analyse en cache dont la configuration ne correspond plus (provider, modèle, langue, version du moteur…) est affichée avec la mention « peut-être obsolète » et le bouton « Ré-analyser ». Le texte n'est pas ré-extrait au rechargement. Corrige l'écart actuel avec l'architecture §8 |
+| D12 | Annotations sans citation | **Acceptées, ancrées sur le titre** | Pour les défauts de structure de l'argumentation. Modifie le contrat (spec §3). Section dédiée dans le panneau ; sur mobile, bulle au toucher du titre et rappel dans le message bref |
+| D13 | Corpus d'évaluation | **Textes intégraux hors dépôt** | Le dépôt ne contient que le script d'évaluation, les références des articles et les annotations attendues ; les textes restent dans un dossier local ignoré par git |
+
 ## Reste à préciser
 
-- **Évolutions du moteur d'analyse** : constats et pistes (contexte global pour les articles découpés, vérification factuelle séparée, cache, robustesse, mesure de la qualité) recensés dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). Aucune piste n'est décidée ; les questions à trancher sont listées en fin de document.
+- **Évolutions du moteur d'analyse** : constats et pistes (contexte global pour les articles découpés, vérification factuelle séparée, cache, robustesse, mesure de la qualité) recensés dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). Orientations D10 à D13 retenues ; restent à préciser le libellé et la valeur par défaut du réglage D10, et le comportement de D12 sur les vidéos YouTube.
 - **Firefox pour Android (D9), à tester sur un appareil réel** (`npx web-ext run -t firefox-android`) :
   - le script de fond est maintenu actif pendant l'analyse par un appel d'API toutes les 20 s ; il faut vérifier que Firefox Android ne le suspend pas pendant un appel LLM long ;
   - l'octroi d'`activeTab` et la demande de permission depuis `action.onClicked` ;

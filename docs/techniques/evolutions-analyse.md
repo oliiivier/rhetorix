@@ -1,6 +1,6 @@
 # Évolutions du moteur d'analyse
 
-État des lieux du moteur d'analyse (extraction, découpage, appels LLM, fusion, cache) au 2026-10-04, et pistes d'amélioration. Ce document sert de base de réflexion : aucune des pistes n'est encore décidée. Celles qui modifient le contrat du schéma (spec §3) ou une décision (D3, D6, D7) devront être tranchées et reportées dans [points-ouverts.md](../fonctionnelles/points-ouverts.md) avant d'être mises en œuvre.
+État des lieux du moteur d'analyse (extraction, découpage, appels LLM, fusion, cache) au 2026-10-04, et pistes d'amélioration. Ce document sert de base de réflexion. Les orientations retenues le 2026-10-05 (D10 à D13) sont consignées dans [points-ouverts.md](../fonctionnelles/points-ouverts.md) et rappelées en §4 ; les pistes qui modifient le contrat du schéma (spec §3) devront encore y être reportées, ainsi que dans `schema.ts` et `prompt.ts`, au moment de leur mise en œuvre.
 
 Rappel du flux actuel (voir [architecture](architecture.md) §3 et §7) : `runner.ts` extrait l'article par Readability, `analyze.ts` le découpe par paragraphes (`chunkParagraphs`, 8 000 tokens par défaut), analyse les morceaux avec 2 appels simultanés, valide chaque réponse, applique la politique des sources (D3), fusionne (`mergeAnalyses`) puis consolide le résumé par un appel dédié.
 
@@ -49,39 +49,45 @@ Les pistes sont regroupées par lot, du plus simple au plus structurant. Pour ch
 | Piste | Mise en œuvre | Impact |
 |---|---|---|
 | A1. Versionner l'empreinte du cache | Ajouter à `CacheFingerprint` un `engineVersion` (constante incrémentée à chaque modification du prompt, du schéma ou de la taxonomie), `webSearch` et `maxChunkTokens` | Invalide le cache existant une fois ; mettre à jour l'architecture §8 |
-| A2. Respecter l'empreinte au rechargement | `loadCachedRun` calcule l'empreinte de la configuration courante et ignore l'entrée si elle diffère. Le `textHash` n'étant connu qu'après extraction, soit extraire au rechargement, soit afficher l'entrée avec la mention « peut-être obsolète » | Choix d'interface à trancher |
+| A2. Signaler une analyse en cache peut-être obsolète (D11) | `loadCachedRun` affiche toujours l'entrée trouvée, sans ré-extraire. Il compare la partie configuration de l'empreinte (provider, modèle, langue, `engineVersion`, `webSearch`, `maxChunkTokens`) à la configuration courante ; si elle diffère, l'analyse est marquée « peut-être obsolète » avec le bouton « Ré-analyser ». Le texte n'est pas revérifié : une analyse lancée explicitement repasse par `getCached`, qui contrôle le `textHash` | Nouveau champ dans `RunSnapshot`, nouveaux textes d'interface (5 langues), mise à jour de l'architecture §8 |
 | A3. Conserver les résultats partiels | Remplacer `Promise.all` par une collecte tolérante aux échecs ; publier les morceaux réussis avec un statut « analyse partielle » et la liste des passages non analysés. Ne plus vider `snapshot.annotations` en cas d'erreur ou d'annulation | Nouveau statut dans `RunSnapshot` et nouveaux textes d'interface dans `i18n.ts` (5 langues) |
 | A4. Nouvelles tentatives | Dans `postJson`, retenter les 429, 500, 502, 503 et 529 avec un délai croissant (en respectant `Retry-After`), 3 essais au plus, interrompus par le `signal` | Allonge la durée d'une analyse ; le message d'avancement doit l'indiquer |
 | A5. Dédoublonnage par chevauchement | Après localisation, fusionner les annotations de même catégorie dont les citations se recouvrent largement (garder la plus sévère) | Pur, testable dans `chunking.ts` ou `text-match.ts` |
 
 ### Lot B : contexte global pour l'analyse découpée (révision de D6)
 
+Les appels supplémentaires de ce lot, du lot C et de la relecture Q2 ne sont faits qu'en mode « approfondi » (D10) ; le mode « rapide » conserve le comportement actuel.
+
 - **B1. Passe préalable de cartographie.** Pour un article découpé, un premier appel court produit un plan : thèse, principaux arguments, positions citées. Ce plan est joint à chaque morceau, ce qui permet de repérer les procédés qui s'étendent sur plusieurs sections. Coût : un appel supplémentaire sur l'article entier, ou sur ses premiers et derniers paragraphes si l'article dépasse la fenêtre.
 - **B2. Éléments globaux consolidés.** `clickbait_gap` et `blind_spot` sont retirés des appels par morceau et produits par l'appel de consolidation, qui reçoit le titre, le plan et les résumés partiels. Le schéma par morceau et le schéma de consolidation divergent alors : à reporter dans la spec §3.
-- **B3. Annotations globales.** Autoriser des annotations sans citation (ou ancrées sur le titre) pour les défauts de structure. Le panneau sait déjà afficher les annotations non localisées ; il faut un statut explicite pour les distinguer d'un échec de localisation. Modifie le contrat (spec §3, `schema.ts`, `prompt.ts`).
+- **B3. Annotations globales (D12).** Autoriser des annotations sans citation pour les défauts de structure, ancrées sur le titre de l'article. Sur desktop, elles occupent une section dédiée du panneau, distincte des annotations non localisées (échec de localisation). Sur mobile (D9), elles sont accessibles en touchant le titre surligné et rappelées dans le message bref de fin d'analyse ; si le titre n'est pas localisable dans la page, le message bref reste le seul accès. Modifie le contrat (spec §3, `schema.ts`, `prompt.ts`).
 
 ### Lot C : vérification factuelle séparée (révision de D3)
 
 - **C1. Métadonnées de publication.** Transmettre `publishedTime`, `byline` et `siteName` dans le prompt, avec la consigne d'évaluer les allégations à la date de publication et de signaler ce qui a changé depuis. Ajout au type `Extracted` et au prompt.
 - **C2. Vérification en deux temps.** La passe d'analyse repère les allégations sans les vérifier. Une seconde passe, avec la recherche web, vérifie les plus importantes dans un budget explicite, en commençant par les plus sévères. Les allégations non vérifiées faute de budget sont marquées comme telles (nouveau motif dans `fact_check`, donc modification du contrat). Cette passe peut tourner après l'affichage des annotations rhétoriques, qui apparaissent ainsi plus tôt.
 
-### Lot D : qualité mesurée
+### Lot Q : qualité mesurée
 
-- **D1. Corpus d'évaluation.** Une vingtaine d'articles figés (texte et titre), variés en sujet, langue et orientation, dont quelques articles réputés bien argumentés, annotés à la main. Un script, sur le modèle de `scripts/test-live-provider.mjs`, lance le moteur et mesure : précision et rappel par catégorie (correspondance par chevauchement de citation), taux de citations localisées, stabilité sur plusieurs exécutions, nombre d'annotations sur les articles témoins. Non exécuté par `npm test`, car il appelle un vrai provider.
-- **D2. Passe de relecture optionnelle.** Un appel reçoit les annotations et leur contexte, et écarte celles qui ne sont pas justifiées par le texte. Réglable dans les options, car elle augmente le coût. À évaluer avec D1 avant d'en faire le comportement par défaut.
-- **D3. Grille de sévérité.** Définir dans le prompt ce que recouvrent `high`, `medium` et `low` (par exemple : le procédé porte sur la thèse principale, sur un argument secondaire, ou relève du style). Ajouter éventuellement un champ `confidence` (modifie le contrat).
-- **D4. Signalement par l'utilisateur.** Un bouton « annotation contestable » sur chaque carte, enregistré localement, pour alimenter le corpus. Aucun envoi à un tiers sans décision explicite (confidentialité).
+- **Q1. Corpus d'évaluation (D13).** Une vingtaine d'articles figés (texte et titre), variés en sujet, langue et orientation, dont quelques articles réputés bien argumentés, annotés à la main. Les textes intégraux restent hors dépôt, dans un dossier local ignoré par git ; le dépôt ne contient que le script, l'URL et le titre de chaque article, et les annotations attendues (citations courtes). Un script, sur le modèle de `scripts/test-live-provider.mjs`, lance le moteur et mesure : précision et rappel par catégorie (correspondance par chevauchement de citation), taux de citations localisées, stabilité sur plusieurs exécutions, nombre d'annotations sur les articles témoins. Non exécuté par `npm test`, car il appelle un vrai provider.
+- **Q2. Passe de relecture.** Un appel reçoit les annotations et leur contexte, et écarte celles qui ne sont pas justifiées par le texte. Réservée au mode « approfondi » (D10) ; son effet est à mesurer avec Q1.
+- **Q3. Grille de sévérité.** Définir dans le prompt ce que recouvrent `high`, `medium` et `low` (par exemple : le procédé porte sur la thèse principale, sur un argument secondaire, ou relève du style). Ajouter éventuellement un champ `confidence` (modifie le contrat).
+- **Q4. Signalement par l'utilisateur.** Un bouton « annotation contestable » sur chaque carte, enregistré localement, pour alimenter le corpus. Aucun envoi à un tiers sans décision explicite (confidentialité).
 
 ## 3. Ordre proposé
 
 1. Lot A : corrige des défauts visibles sans toucher au contrat. A1 et A2 en premier, car le cache masque les effets de toute autre évolution du moteur.
-2. D1 (corpus) avant les lots B et C, pour mesurer leur effet plutôt que de l'estimer.
+2. Q1 (corpus) avant les lots B et C, pour mesurer leur effet plutôt que de l'estimer.
 3. B1 et B2, puis C1 : ils répondent aux limites les plus structurelles.
-4. C2, D2 et B3 selon les résultats mesurés.
+4. Le réglage « rapide / approfondi » (D10) avec le premier appel supplémentaire, puis C2, Q2 et B3 selon les résultats mesurés.
 
-## 4. Questions à trancher
+## 4. Orientations retenues (2026-10-05)
 
-- Accepte-t-on qu'une analyse découpée coûte un ou deux appels de plus (B1, C2, D2) ? Faut-il un réglage « analyse rapide / analyse approfondie » ?
-- Au rechargement d'une page dont l'analyse en cache est peut-être obsolète (A2) : ré-extraire pour vérifier, ou afficher avec un avertissement ?
-- Une annotation sans citation (B3) est-elle acceptable sur mobile, où les annotations non localisées ne sont pas visibles (D9) ?
-- Le corpus d'évaluation (D1) peut-il contenir des articles soumis au droit d'auteur dans le dépôt, ou faut-il le garder hors dépôt ?
+| # | Question | Décision |
+|---|---|---|
+| D10 | Coût des appels supplémentaires (B1, C2, Q2) | Réglage **« rapide / approfondi »** dans les options. Le mode rapide conserve le comportement actuel ; le mode approfondi active les appels supplémentaires |
+| D11 | Analyse en cache peut-être obsolète au rechargement (A2) | **Affichage immédiat avec avertissement** « peut-être obsolète » et bouton « Ré-analyser », sans ré-extraction |
+| D12 | Annotations sans citation (B3) | **Acceptées, ancrées sur le titre** : section dédiée du panneau sur desktop ; sur mobile, bulle au toucher du titre et rappel dans le message bref |
+| D13 | Emplacement du corpus d'évaluation (Q1) | **Textes intégraux hors dépôt** ; seuls le script, les références des articles et les annotations attendues sont versionnés |
+
+Reste à préciser : le libellé et la valeur par défaut du réglage D10, et le comportement de D12 sur les vidéos YouTube, qui n'ont pas de titre surlignable dans la transcription.

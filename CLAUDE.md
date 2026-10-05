@@ -20,9 +20,9 @@ Après une modification, lancer `typecheck`, `test` et `build`.
 - [docs/fonctionnelles/spec-youtube.md](docs/fonctionnelles/spec-youtube.md) : spécifications fonctionnelles pour le module YouTube et la synchronisation vidéo ;
 - [docs/techniques/architecture.md](docs/techniques/architecture.md) : composants, messages, providers, cache, compatibilité des navigateurs ;
 - [docs/techniques/architecture-youtube.md](docs/techniques/architecture-youtube.md) : architecture technique du module YouTube et synchronisation vidéo ;
-- [docs/techniques/evolutions-analyse.md](docs/techniques/evolutions-analyse.md) : limites actuelles du moteur d'analyse et pistes d'évolution, non encore décidées ;
+- [docs/techniques/evolutions-analyse.md](docs/techniques/evolutions-analyse.md) : limites actuelles du moteur d'analyse, pistes d'évolution et orientations retenues (D10 à D13) ;
 - [docs/implementation/youtube.md](docs/implementation/youtube.md) : plan d'implémentation par jalons du module YouTube ;
-- [docs/fonctionnelles/points-ouverts.md](docs/fonctionnelles/points-ouverts.md) : les décisions prises (D1 à D8) et les points restant à préciser. Ne pas trancher implicitement un point ouvert : demander, ou documenter le choix fait.
+- [docs/fonctionnelles/points-ouverts.md](docs/fonctionnelles/points-ouverts.md) : les décisions prises (D1 à D13) et les points restant à préciser. Ne pas trancher implicitement un point ouvert : demander, ou documenter le choix fait.
 
 ## Conventions
 
