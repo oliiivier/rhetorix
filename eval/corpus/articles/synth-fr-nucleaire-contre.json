@@ -55,7 +55,10 @@
         "misleading",
         "unverified"
       ],
-      "note": "Faux : environ un quart à un tiers selon les années, le nucléaire restant majoritaire."
+      "note": "Faux : 27,8 % de la production en 2024 (150 TWh sur 539 TWh), le nucléaire en assurant 67 %.",
+      "sources": [
+        "https://analysesetdonnees.rte-france.com/bilan-electrique-2024/production"
+      ]
     },
     {
       "quote": "L'Allemagne a fermé ses trois derniers réacteurs en avril 2023",
@@ -66,13 +69,17 @@
       "fact_status": [
         "supported",
         "unverified"
+      ],
+      "note": "Exact : Emsland, Isar 2 et Neckarwestheim 2, arrêtés le 15 avril 2023.",
+      "sources": [
+        "https://www.cleanenergywire.org/factsheets/qa-germanys-nuclear-exit-one-year-after"
       ]
     }
   ],
   "not_expected": [
     {
       "quote": "Le chantier de l'EPR de Flamanville a accumulé plus de dix ans de retard",
-      "note": "Fait exact présenté avec nuance : ne doit pas être signalé comme sophisme ou biais."
+      "note": "Fait exact (mise en service prévue en 2012, raccordement fin 2024) présenté avec nuance : ne doit pas être signalé comme sophisme ou biais."
     }
   ],
   "text_sha256": "62fd907ab553eaf9262a82d025f8a4584335e7bb590490bd734d725ce040934b"

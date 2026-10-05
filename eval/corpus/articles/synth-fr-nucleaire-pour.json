@@ -56,7 +56,7 @@
         "misleading",
         "unverified"
       ],
-      "note": "Faux : Tchernobyl (Ukraine, 1986)."
+      "note": "Faux : l'accident de Tchernobyl (Ukraine, 1986) a fait des victimes directes et indirectes."
     },
     {
       "quote": "La France tire aujourd'hui environ deux tiers de son électricité de ses centrales nucléaires",
@@ -67,6 +67,10 @@
       "fact_status": [
         "supported",
         "unverified"
+      ],
+      "note": "Exact : 361,7 TWh sur 539 TWh en 2024, soit 67 %.",
+      "sources": [
+        "https://analysesetdonnees.rte-france.com/bilan-electrique-2024/production"
       ]
     }
   ],

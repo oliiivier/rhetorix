@@ -48,7 +48,10 @@
         "misleading",
         "unverified"
       ],
-      "note": "Estimations initiales très supérieures au bilan établi ensuite (5 Israéliens, une quarantaine d'Indiens)."
+      "note": "Estimations initiales très supérieures au bilan établi ensuite : 5 Israéliens et 41 Indiens.",
+      "sources": [
+        "https://brilliantmaps.com/9-11-victims/"
+      ]
     },
     {
       "quote": "hundreds of British citizens",
@@ -61,7 +64,10 @@
         "misleading",
         "unverified"
       ],
-      "note": "67 Britanniques selon le bilan établi."
+      "note": "Bilan établi : 67 Britanniques.",
+      "sources": [
+        "https://brilliantmaps.com/9-11-victims/"
+      ]
     },
     {
       "quote": "they follow in the path of fascism, Nazism, and totalitarianism",
@@ -101,6 +107,10 @@
       "fact_status": [
         "supported",
         "unverified"
+      ],
+      "note": "Exact : 2001 Emergency Supplemental Appropriations Act (P.L. 107-38), signé le 18 septembre 2001.",
+      "sources": [
+        "https://www.congress.gov/bill/107th-congress/house-bill/2888"
       ]
     }
   ],

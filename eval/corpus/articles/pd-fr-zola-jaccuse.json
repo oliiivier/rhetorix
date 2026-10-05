@@ -98,7 +98,10 @@
         "supported",
         "unverified"
       ],
-      "note": "Innocence de Dreyfus, établie par la Cour de cassation en 1906 : ne doit pas être contestée."
+      "note": "Innocence de Dreyfus établie par l'arrêt de la Cour de cassation du 12 juillet 1906 : ne doit pas être contestée.",
+      "sources": [
+        "http://www.dreyfus.culture.fr/fr/pedagogie/pedago-theme-19-arret-cassation-innocence-capitaine-dreyfus.htm"
+      ]
     },
     {
       "quote": "je me mets sous le coup des articles 30 et 31 de la loi sur la presse du 29 juillet 1881",
@@ -110,6 +113,10 @@
       "fact_status": [
         "supported",
         "unverified"
+      ],
+      "note": "Exact : diffamation envers les corps constitués et les armées (art. 30) et envers les fonctionnaires (art. 31).",
+      "sources": [
+        "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000043748424"
       ]
     }
   ],

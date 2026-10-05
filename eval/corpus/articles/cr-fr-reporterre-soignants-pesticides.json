@@ -62,6 +62,10 @@
         "supported",
         "misleading",
         "unverified"
+      ],
+      "note": "Exact : l'INCa décrit les cancers professionnels comme sous-déclarés et sous-reconnus (moins de 1 800 reconnus par an pour plusieurs dizaines de milliers estimés).",
+      "sources": [
+        "https://www.cancer.fr/professionnels-de-sante/prevention-et-depistages/prevention/expositions-professionnelles"
       ]
     }
   ],

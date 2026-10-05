@@ -60,7 +60,8 @@ Une licence « pas de modification » (CC BY-ND) est compatible avec `texts/`, p
       "accept": ["sophism/faux_dilemme", "bias/cadrage"],  // labels acceptés, le premier est préféré
       "required": true,                 // true : compte dans le rappel ; false : toléré
       "fact_status": ["refuted", "misleading", "unverified"],  // statuts acceptés
-      "note": "…"
+      "note": "…",                      // justification, en particulier du statut factuel
+      "sources": ["https://…"]          // sources de la vérification
     }
   ],
   "not_expected": [{ "quote": "…", "note": "…" }]  // passages qui ne doivent pas être annotés
@@ -94,7 +95,7 @@ Règles d'évaluation prévues :
 
 ## Annoter
 
-Les annotations actuelles ont été rédigées par Claude, puis à relire. Pour les textes réels, seuls les procédés évidents sont `required` ; les cas discutables sont `required: false`, pour ne pas compter comme faux positif une annotation défendable. Les textes synthétiques ont une vérité de référence certaine, puisque leurs défauts ont été posés volontairement.
+Les annotations actuelles ont été rédigées par Claude et restent à relire. Les statuts factuels ont été vérifiés le 2026-10-05 ; chaque vérification est justifiée dans `note` et sourcée dans `sources`. Pour les textes réels, seuls les procédés évidents sont `required` ; les cas discutables sont `required: false`, pour ne pas compter comme faux positif une annotation défendable. Les textes synthétiques ont une vérité de référence certaine, puisque leurs défauts ont été posés volontairement.
 
 Pour ajouter un article :
 

@@ -55,7 +55,10 @@
         "misleading",
         "unverified"
       ],
-      "note": "Faux : environ 2,8 millions d'habitants pour la commune."
+      "note": "Faux : 2,75 millions d'habitants pour la commune et 4,2 millions pour la ville métropolitaine (2026).",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Rome"
+      ]
     },
     {
       "quote": "inaugurato nell'80 d.C. sotto l'imperatore Tito",
@@ -66,6 +69,10 @@
       "fact_status": [
         "supported",
         "unverified"
+      ],
+      "note": "Exact : inauguration par Titus en 80 apr. J.-C. (certaines sources indiquent 80 ou 81).",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Inaugural_games_of_the_Colosseum"
       ]
     }
   ],

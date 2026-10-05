@@ -56,7 +56,10 @@
         "misleading",
         "unverified"
       ],
-      "note": "Faux : le Fair Labor Standards Act de 1938 fixe 44 h, puis 40 h à partir de 1940."
+      "note": "Faux : le Fair Labor Standards Act de 1938 fixe 44 h, puis 42 h en octobre 1939 et 40 h en octobre 1940.",
+      "sources": [
+        "https://www.dol.gov/general/aboutdol/history/flsa1938"
+      ]
     },
     {
       "quote": "Between 2015 and 2019, Iceland ran trials of shorter working hours involving about 2,500 public sector workers.",
@@ -68,6 +71,10 @@
       "fact_status": [
         "supported",
         "unverified"
+      ],
+      "note": "Exact : essais d'Alda et Autonomy, environ 1 % de la population active.",
+      "sources": [
+        "https://en.alda.is/2021/07/04/going-public-icelands-journey-to-a-shorter-working-week/"
       ]
     }
   ],

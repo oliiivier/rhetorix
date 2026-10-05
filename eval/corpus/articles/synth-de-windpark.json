@@ -54,7 +54,11 @@
         "misleading",
         "unverified"
       ],
-      "note": "Faux : les estimations publiées sont de l'ordre de quelques oiseaux par éolienne et par an."
+      "note": "Faux : de l'ordre de 3 à 8 oiseaux par éolienne et par an aux États-Unis ; les estimations les plus élevées restent inférieures à 20.",
+      "sources": [
+        "https://tethys.pnnl.gov/publications/estimates-bird-collision-mortality-wind-facilities-contiguous-united-states-america",
+        "https://www.nature.com/articles/s41598-025-03407-8"
+      ]
     },
     {
       "quote": "im Jahr 2023 mehr als die Hälfte des in Deutschland erzeugten Stroms aus erneuerbaren Energien stammte",
@@ -65,6 +69,10 @@
       "fact_status": [
         "supported",
         "unverified"
+      ],
+      "note": "Exact : environ 56 % (Destatis) à 60 % (Fraunhofer ISE, production publique nette) selon le périmètre.",
+      "sources": [
+        "https://www.ise.fraunhofer.de/en/press-media/press-releases/2024/public-electricity-generation-2023-renewable-energies-cover-the-majority-of-german-electricity-consumption-for-the-first-time.html"
       ]
     }
   ],

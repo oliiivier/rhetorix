@@ -26,7 +26,12 @@
       "required": false,
       "fact_status": [
         "supported",
+        "misleading",
         "unverified"
+      ],
+      "note": "Exact : SNCF créée le 1er janvier 1938, sous forme de société d'économie mixte à majorité publique (EPIC en 1983). « misleading » toléré pour cette nuance.",
+      "sources": [
+        "https://fr.wikipedia.org/wiki/Soci%C3%A9t%C3%A9_nationale_des_chemins_de_fer_fran%C3%A7ais"
       ]
     }
   ],
