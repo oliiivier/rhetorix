@@ -93,6 +93,47 @@ Règles d'évaluation prévues :
 | `cr-fr-contrepoints-secheresse` | fr | Presse d'opinion libérale, ton mesuré |
 | `cr-fr-reporterre-soignants-pesticides` | fr | Presse d'opinion écologiste, ton militant |
 
+## Vérification des faits
+
+Les statuts factuels attendus ont été vérifiés le 2026-10-05. Les fiches font foi : chaque annotation y porte sa justification (`note`) et ses sources (`sources`). Ce tableau en est le récapitulatif ; le mettre à jour en même temps que les fiches.
+
+### Affirmations fausses (statut attendu : `refuted`)
+
+| Fiche | Affirmation | Réalité | Source |
+|---|---|---|---|
+| `synth-fr-nucleaire-pour` | Aucun accident nucléaire n'a fait de victime en Europe | Tchernobyl (Ukraine, 1986) | — |
+| `synth-fr-nucleaire-contre` | Les renouvelables fournissent plus de la moitié de l'électricité française | 27,8 % en 2024, contre 67 % pour le nucléaire | [RTE](https://analysesetdonnees.rte-france.com/bilan-electrique-2024/production) |
+| `synth-en-four-day-week` | Semaine légale de 32 h aux États-Unis depuis 1938 | 44 h en 1938, 42 h en 1939, 40 h en 1940 | [DOL](https://www.dol.gov/general/aboutdol/history/flsa1938) |
+| `synth-es-suplemento` | L'OMS recommande la vitamine C à tous les adultes | Aucune recommandation générale ; déconseillée avec la vitamine E pendant la grossesse | [OMS eLENA](https://www.who.int/tools/elena/interventions/vitaminsec-pregnancy) |
+| `synth-de-windpark` | Une éolienne tue des milliers d'oiseaux par an | 3 à 8 par éolienne et par an aux États-Unis ; moins de 20 dans les estimations les plus hautes | [PNNL](https://tethys.pnnl.gov/publications/estimates-bird-collision-mortality-wind-facilities-contiguous-united-states-america), [Nature](https://www.nature.com/articles/s41598-025-03407-8) |
+| `synth-it-mercato` | Rome compte plus de 10 millions d'habitants | 2,75 millions (commune), 4,2 millions (ville métropolitaine) | [Wikipédia](https://en.wikipedia.org/wiki/Rome) |
+| `pd-en-bush-2001-address` | Plus de 130 Israéliens et plus de 250 Indiens morts le 11 septembre | 5 Israéliens, 41 Indiens | [Brilliant Maps](https://brilliantmaps.com/9-11-victims/) |
+| `pd-en-bush-2001-address` | Des centaines de Britanniques morts le 11 septembre | 67 Britanniques | [Brilliant Maps](https://brilliantmaps.com/9-11-victims/) |
+
+### Affirmations exactes (statut attendu : `supported`, ou non contesté)
+
+| Fiche | Affirmation | Précision | Source |
+|---|---|---|---|
+| `synth-fr-nucleaire-pour` | Le nucléaire fournit environ deux tiers de l'électricité française | 67 % en 2024 (361,7 TWh sur 539 TWh) | [RTE](https://analysesetdonnees.rte-france.com/bilan-electrique-2024/production) |
+| `synth-fr-nucleaire-contre` | L'Allemagne a fermé ses trois derniers réacteurs en avril 2023 | Le 15 avril 2023 | [Clean Energy Wire](https://www.cleanenergywire.org/factsheets/qa-germanys-nuclear-exit-one-year-after) |
+| `synth-fr-nucleaire-contre` | L'EPR de Flamanville a plus de dix ans de retard | Prévu en 2012, raccordé fin 2024 | — |
+| `synth-fr-controle-trains` | La SNCF a été créée en 1938 | Société d'économie mixte en 1938, EPIC en 1983 : `misleading` toléré | [Wikipédia](https://fr.wikipedia.org/wiki/Soci%C3%A9t%C3%A9_nationale_des_chemins_de_fer_fran%C3%A7ais) |
+| `synth-en-four-day-week` | Essais islandais de 2015 à 2019, environ 2 500 travailleurs | Environ 1 % de la population active | [Alda](https://en.alda.is/2021/07/04/going-public-icelands-journey-to-a-shorter-working-week/) |
+| `synth-es-suplemento` | Vitamine C isolée en 1928 par Szent-Györgyi | Substance identifiée comme vitamine C en 1932 : `misleading` toléré | [Britannica](https://www.britannica.com/biography/Albert-Szent-Gyorgyi) |
+| `synth-de-windpark` | Plus de la moitié de l'électricité allemande renouvelable en 2023 | 56 à 60 % selon le périmètre | [Fraunhofer ISE](https://www.ise.fraunhofer.de/en/press-media/press-releases/2024/public-electricity-generation-2023-renewable-energies-cover-the-majority-of-german-electricity-consumption-for-the-first-time.html) |
+| `synth-it-mercato` | Colisée inauguré en 80 sous Titus | 80 ou 81 selon les sources | [Wikipédia](https://en.wikipedia.org/wiki/Inaugural_games_of_the_Colosseum) |
+| `pd-fr-zola-jaccuse` | Dreyfus innocent | Arrêt de la Cour de cassation du 12 juillet 1906 | [Ministère de la Culture](http://www.dreyfus.culture.fr/fr/pedagogie/pedago-theme-19-arret-cassation-innocence-capitaine-dreyfus.htm) |
+| `pd-fr-zola-jaccuse` | Articles 30 et 31 de la loi du 29 juillet 1881 | Diffamation envers les corps constitués et les fonctionnaires | [Légifrance](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000043748424) |
+| `pd-en-bush-2001-address` | 40 milliards de dollars votés par le Congrès | P.L. 107-38, signée le 18 septembre 2001 | [Congress.gov](https://www.congress.gov/bill/107th-congress/house-bill/2888) |
+| `cc-en-wikinews-fuel-standards` | Réserves de 36, 32 et 29 jours | Le diesel varie entre 32 et 34 jours selon les sources | [Macquarie University](https://lighthouse.mq.edu.au/article/2026/march-2026/could-australia-run-out-of-petrol) |
+| `cr-fr-contrepoints-secheresse` | Incendie des Landes de 1949 : 52 000 ha, 82 morts | Chiffres exacts | [Wikipédia](https://fr.wikipedia.org/wiki/Incendie_de_la_for%C3%AAt_des_Landes_de_1949) |
+| `cr-fr-reporterre-soignants-pesticides` | Selon l'INCa, les cancers professionnels sont sous-reconnus | Moins de 1 800 reconnus par an pour plusieurs dizaines de milliers estimés | [INCa](https://www.cancer.fr/professionnels-de-sante/prevention-et-depistages/prevention/expositions-professionnelles) |
+
+### Limites
+
+- Le bilan du 11 septembre par nationalité provient d'une source secondaire ; une source primaire serait préférable.
+- Les chiffres d'actualité (réserves australiennes, parts de production électrique) peuvent être révisés : les sources indiquent la valeur retenue à la date de vérification.
+
 ## Annoter
 
 Les annotations actuelles ont été rédigées par Claude et restent à relire. Les statuts factuels ont été vérifiés le 2026-10-05 ; chaque vérification est justifiée dans `note` et sourcée dans `sources`. Pour les textes réels, seuls les procédés évidents sont `required` ; les cas discutables sont `required: false`, pour ne pas compter comme faux positif une annotation défendable. Les textes synthétiques ont une vérité de référence certaine, puisque leurs défauts ont été posés volontairement.
