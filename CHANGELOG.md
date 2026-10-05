@@ -57,6 +57,6 @@ Première version publiée.
 - Interface et analyses en cinq langues : français, anglais, espagnol, allemand, italien.
 - Politique de confidentialité, licence MIT, paquets Chrome et Firefox.
 
-[0.1.2]: https://github.com/oliiivier/rhetorix/compare/60ade13...2bbac96
-[0.1.1]: https://github.com/oliiivier/rhetorix/compare/278219c...60ade13
-[0.1.0]: https://github.com/oliiivier/rhetorix/tree/278219c
+[0.1.2]: https://github.com/oliiivier/rhetorix/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/oliiivier/rhetorix/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/oliiivier/rhetorix/releases/tag/v0.1.0
