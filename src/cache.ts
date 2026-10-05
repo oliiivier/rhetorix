@@ -1,10 +1,20 @@
 // Cache des analyses par URL dans storage.local (décision D7, architecture §8).
 
+import { sameSettings, type AnalysisSettings } from "./engine-settings";
 import type { Analysis } from "./schema";
 import type { TimeRange, VideoAnnotation } from "./youtube/types";
 import { ext } from "./ext";
 
-export interface CacheEntry {
+/** Empreinte d'une analyse : texte analysé et réglages du moteur (A1). */
+export interface CacheFingerprint extends AnalysisSettings {
+  textHash: string;
+}
+
+/**
+ * Les champs de réglage ajoutés par A1 (engineVersion, webSearch, maxChunkTokens)
+ * sont absents des entrées plus anciennes, qui restent lisibles.
+ */
+export type CacheEntry = Partial<AnalysisSettings> & {
   analysis: Analysis;
   textHash: string;
   provider: string;
@@ -16,9 +26,7 @@ export interface CacheEntry {
   analyzedRanges?: TimeRange[];
   videoChunkRange?: TimeRange;
   videoTotalDuration?: number;
-}
-
-export type CacheFingerprint = Omit<CacheEntry, "analysis" | "createdAt" | "isVideo" | "videoAnnotations" | "analyzedRanges" | "videoChunkRange" | "videoTotalDuration">;
+};
 
 const PREFIX = "cache:";
 const INDEX_KEY = "cache-index";
@@ -41,7 +49,8 @@ export async function sha256(text: string): Promise<string> {
 }
 
 export function matchesFingerprint(entry: CacheEntry, fp: CacheFingerprint): boolean {
-  return entry.textHash === fp.textHash && entry.provider === fp.provider && entry.model === fp.model && entry.lang === fp.lang;
+  const { textHash, ...settings } = fp;
+  return entry.textHash === textHash && sameSettings(entry, settings);
 }
 
 async function readIndex(): Promise<string[]> {
@@ -56,6 +65,11 @@ export async function getCached(url: string, fp: CacheFingerprint): Promise<Cach
   return entry;
 }
 
+/**
+ * Entrée de l'URL sans contrôle de l'empreinte : sert au réaffichage d'une analyse
+ * au chargement du panneau (D11), qui la signale comme peut-être obsolète si les
+ * réglages ont changé. Une analyse lancée explicitement passe par getCached.
+ */
 export async function getCachedByUrl(url: string): Promise<CacheEntry | null> {
   try {
     const key = PREFIX + normalizeUrl(url);

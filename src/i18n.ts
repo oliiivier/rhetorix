@@ -33,6 +33,7 @@ export interface UiStrings {
   clickbaitHeading: string;
   blindSpotHeading: string;
   cacheNote: (date: string) => string;
+  staleCacheNote: (date: string) => string;
   emptyResults: string;
   unlocatedQuote: string;
   factCheckLabel: string;
@@ -224,6 +225,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     clickbaitHeading: "Décalage titre / contenu",
     blindSpotHeading: "Angle mort / Omission clé",
     cacheNote: (date) => `Analyse du ${date} (cache).`,
+    staleCacheNote: (date) => `Analyse du ${date} (cache), produite avec d'autres réglages ou une version antérieure du moteur : peut-être obsolète. « Ré-analyser » pour la mettre à jour.`,
     emptyResults: "Aucun procédé rhétorique notable relevé.",
     unlocatedQuote: "Citation introuvable dans la page.",
     factCheckLabel: "Vérification :",
@@ -464,6 +466,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     clickbaitHeading: "Headline / Content Gap",
     blindSpotHeading: "Blind Spot / Key Omission",
     cacheNote: (date) => `Analysis from ${date} (cached).`,
+    staleCacheNote: (date) => `Analysis from ${date} (cached), produced with different settings or an earlier engine version: possibly outdated. Use “Re-analyze” to update it.`,
     emptyResults: "No significant rhetorical devices found.",
     unlocatedQuote: "Quote could not be located in the page.",
     factCheckLabel: "Fact-check:",
@@ -704,6 +707,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     clickbaitHeading: "Desfase titular / contenido",
     blindSpotHeading: "Punto ciego / Omisión clave",
     cacheNote: (date) => `Análisis del ${date} (caché).`,
+    staleCacheNote: (date) => `Análisis del ${date} (caché), realizado con otros ajustes o una versión anterior del motor: posiblemente obsoleto. Use «Reanalizar» para actualizarlo.`,
     emptyResults: "No se detectaron recursos retóricos relevantes.",
     unlocatedQuote: "Cita no encontrada en la página.",
     factCheckLabel: "Verificación:",
@@ -944,6 +948,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     clickbaitHeading: "Diskrepanz Titel / Inhalt",
     blindSpotHeading: "Blinder Fleck / Zentrale Auslassung",
     cacheNote: (date) => `Analyse vom ${date} (Cache).`,
+    staleCacheNote: (date) => `Analyse vom ${date} (Cache), mit anderen Einstellungen oder einer älteren Version der Analyse erstellt: möglicherweise veraltet. Mit „Erneut analysieren“ aktualisieren.`,
     emptyResults: "Keine auffälligen rhetorischen Mittel festgestellt.",
     unlocatedQuote: "Zitat auf der Seite nicht gefunden.",
     factCheckLabel: "Faktencheck:",
@@ -1184,6 +1189,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     clickbaitHeading: "Discrepanza titolo / contenuto",
     blindSpotHeading: "Punto cieco / Omissione chiave",
     cacheNote: (date) => `Analisi del ${date} (cache).`,
+    staleCacheNote: (date) => `Analisi del ${date} (cache), prodotta con altre impostazioni o una versione precedente del motore: forse obsoleta. Usa «Rianalizza» per aggiornarla.`,
     emptyResults: "Nessun artificio retorico rilevante individuato.",
     unlocatedQuote: "Citazione non trovata nella pagina.",
     factCheckLabel: "Verifica:",

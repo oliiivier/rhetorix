@@ -5,6 +5,7 @@
 import { analyzeArticle } from "./analyze";
 import { getCached, getCachedByUrl, putCached, sha256 } from "./cache";
 import { isConfigured, loadConfig, resolveLanguage, type DisplayMode } from "./config";
+import { analysisSettings, sameSettings } from "./engine-settings";
 import { ext } from "./ext";
 import { formatErrorMessage, getUiStrings } from "./i18n";
 import type { ExtractResult, HighlightResult, PanelToContent, RunSnapshot, YouTubeExtractResult } from "./messages";
@@ -53,6 +54,9 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
   const config = await loadConfig();
   const lang = resolveLanguage(config);
   const t = getUiStrings(config);
+  // D11 : l'analyse est réaffichée sans ré-extraction ; si les réglages du moteur ont
+  // changé depuis, elle est signalée comme peut-être obsolète.
+  const stale = !sameSettings(cached, analysisSettings(config));
 
   const isYouTube = Boolean(url && isYouTubeWatchUrl(url));
   if (isYouTube) {
@@ -139,6 +143,7 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
         ? videoAnnotations.filter((a) => a.startTime < 0).map((a) => a.id)
         : [],
       cachedAt: cached.createdAt,
+      stale,
       usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
       isVideo: true,
       videoChunkRange,
@@ -178,6 +183,7 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
     annotations: cached.analysis.annotations,
     unlocated,
     cachedAt: cached.createdAt,
+    stale,
     usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
   };
 
@@ -286,9 +292,7 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         : (startSec === 0 ? videoUrl : `${videoUrl}${videoUrl.includes("?") ? "&" : "?"}rhetorix_chunk=${chunkTag}`);
       const fingerprint = {
         textHash: await sha256(article.paragraphs.join("\n\n")),
-        provider: config.provider,
-        model: config.model,
-        lang,
+        ...analysisSettings(config),
       };
 
       const cached = !opts.force ? await getCached(cacheUrl, fingerprint) : null;
@@ -371,9 +375,7 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
       const lang = resolveLanguage(config);
       const fingerprint = {
         textHash: await sha256(article.paragraphs.join("\n\n")),
-        provider: config.provider,
-        model: config.model,
-        lang,
+        ...analysisSettings(config),
       };
       const cached = !opts.force && url ? await getCached(url, fingerprint) : null;
       let analysis = cached?.analysis;

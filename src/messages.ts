@@ -80,6 +80,8 @@ export interface RunSnapshot {
   annotations: Annotation[];
   unlocated: string[];
   cachedAt?: number;
+  /** Analyse en cache produite avec d'autres réglages du moteur : peut-être obsolète (D11). */
+  stale?: boolean;
   error?: string;
   /** Consommation de tokens mesurée en continu pour cette analyse. */
   usage?: TokenUsage;

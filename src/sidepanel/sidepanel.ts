@@ -18,6 +18,7 @@ interface TabState {
   analysis: Analysis;
   unlocated: Set<string>;
   cachedAt?: number;
+  stale?: boolean;
   usage?: TokenUsage;
 }
 
@@ -330,7 +331,11 @@ function render(state: TabState): void {
 
   const note = $("cache-note");
   note.hidden = state.cachedAt === undefined;
-  if (state.cachedAt !== undefined) note.textContent = t.cacheNote(new Date(state.cachedAt).toLocaleString());
+  note.classList.toggle("stale", Boolean(state.stale));
+  if (state.cachedAt !== undefined) {
+    const date = new Date(state.cachedAt).toLocaleString();
+    note.textContent = state.stale ? t.staleCacheNote(date) : t.cacheNote(date);
+  }
   analyzeBtn.textContent = t.reanalyzeBtn;
 
   updateFilterCounts(state.analysis.annotations);
@@ -472,6 +477,7 @@ function toState(s: RunSnapshot): TabState {
     },
     unlocated: new Set(s.unlocated),
     cachedAt: s.cachedAt,
+    stale: s.stale,
     usage: s.usage,
   };
 }

@@ -2,13 +2,11 @@
 // politique des sources (D3), fusion.
 
 import { chunkParagraphs, mapLimit, mergeAnalyses } from "./chunking";
-import { resolveLanguage, type Config, type ProviderId } from "./config";
+import { resolveLanguage, type Config } from "./config";
+import { webSearchEnabled } from "./engine-settings";
 import type { Extracted } from "./messages";
-import { anthropicProvider } from "./providers/anthropic";
-import { chromeAiProvider } from "./providers/chrome-ai";
-import { geminiProvider } from "./providers/gemini";
-import { openAiCompatibleProvider } from "./providers/openai-compatible";
-import type { LlmProvider, StreamCallbacks } from "./providers/types";
+import { PROVIDERS } from "./providers";
+import type { StreamCallbacks } from "./providers/types";
 import type { TokenUsage } from "./tokens";
 import {
   enforceAnnotationSourcePolicy,
@@ -17,13 +15,6 @@ import {
   type Analysis,
   type Annotation,
 } from "./schema";
-
-const PROVIDERS: Record<ProviderId, LlmProvider> = {
-  anthropic: anthropicProvider,
-  "openai-compatible": openAiCompatibleProvider,
-  gemini: geminiProvider,
-  "chrome-ai": chromeAiProvider,
-};
 
 const CONCURRENCY = 2;
 
@@ -48,7 +39,7 @@ export async function analyzeArticle(
 ): Promise<Analysis> {
   const cb = callbacks ?? {};
   const provider = PROVIDERS[config.provider];
-  const webSearch = config.webSearch && provider.supportsWebSearch(config);
+  const webSearch = webSearchEnabled(config);
   const language = resolveLanguage(config);
   const chunks = chunkParagraphs(article.paragraphs, config.maxChunkTokens);
   let done = 0;

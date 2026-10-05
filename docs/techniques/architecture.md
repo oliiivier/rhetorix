@@ -179,8 +179,10 @@ Quand `supportsWebSearch` est faux, le client force `fact_check.status = "unveri
 ### Cache des analyses (D7)
 
 - **Clé** : URL normalisée (sans fragment ni paramètres de suivi `utm_*`, `fbclid`…).
-- **Valeur** : `{ analysis, textHash, provider, model, lang, createdAt }`.
-- **Validité** : l'entrée n'est utilisée que si le `textHash` (SHA-256 du texte extrait) est identique. Si l'article a changé, on relance l'analyse. Changer de provider, de modèle ou de langue invalide aussi l'entrée.
+- **Valeur** : `{ analysis, textHash, provider, model, lang, engineVersion, webSearch, maxChunkTokens, createdAt }`.
+- **Empreinte** : le `textHash` (SHA-256 du texte extrait) et les réglages du moteur (`analysisSettings`, [engine-settings.ts](../../src/engine-settings.ts)) : provider, modèle, langue, version du moteur (`ENGINE_VERSION`, incrémentée à chaque modification du prompt, du schéma, de la taxonomie ou des passes d'analyse), recherche web effectivement utilisée et taille des morceaux. Les entrées antérieures à ces champs ne sont jamais conformes.
+- **Analyse lancée** : l'entrée n'est réutilisée que si l'empreinte est identique (`getCached`). Sinon, l'analyse est relancée.
+- **Réaffichage à l'ouverture du panneau (D11)** : `loadCachedRun` affiche l'entrée de l'URL sans ré-extraire la page (`getCachedByUrl`). Si ses réglages diffèrent des réglages courants, l'analyse est marquée « peut-être obsolète » (`RunSnapshot.stale`) et le panneau invite à la ré-analyser. Le texte n'est pas revérifié à ce stade : une modification de l'article n'est détectée qu'à l'analyse suivante.
 - **Volume** : `storage.local` est limité à 10 Mo sans la permission `unlimitedStorage`. Garder un index LRU, borner le nombre d'entrées (par exemple 200) et purger les plus anciennes.
 - **Interface** : indiquer « analyse du <date> (cache) » et proposer un bouton « Ré-analyser ». La page d'options permet de vider le cache.
 

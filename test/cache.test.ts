@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getCachedByUrl, normalizeUrl, putCached, type CacheEntry } from "../src/cache";
+import { getCached, getCachedByUrl, matchesFingerprint, normalizeUrl, putCached, type CacheEntry, type CacheFingerprint } from "../src/cache";
+import { ENGINE_VERSION } from "../src/engine-settings";
 
 const storage = new Map<string, unknown>();
 vi.mock("../src/ext", () => ({
@@ -53,6 +54,38 @@ describe("cache module", () => {
       const retrieved = await getCachedByUrl("https://ex.org/article");
       expect(retrieved).not.toBeNull();
       expect(retrieved?.analysis.summary).toBe("Test");
+    });
+  });
+
+  describe("empreinte (A1)", () => {
+    const fp: CacheFingerprint = {
+      textHash: "th",
+      provider: "anthropic",
+      model: "m",
+      lang: "fr",
+      engineVersion: ENGINE_VERSION,
+      webSearch: true,
+      maxChunkTokens: 8000,
+    };
+    const entry: CacheEntry = { ...fp, analysis: { summary: "S", annotations: [] }, createdAt: 1 };
+
+    it("accepte une entrée produite avec les mêmes texte et réglages", () => {
+      expect(matchesFingerprint(entry, fp)).toBe(true);
+    });
+
+    it("refuse une entrée dont la version du moteur, la recherche web ou le découpage diffère", () => {
+      expect(matchesFingerprint(entry, { ...fp, engineVersion: ENGINE_VERSION + 1 })).toBe(false);
+      expect(matchesFingerprint(entry, { ...fp, webSearch: false })).toBe(false);
+      expect(matchesFingerprint(entry, { ...fp, maxChunkTokens: 4000 })).toBe(false);
+      expect(matchesFingerprint(entry, { ...fp, textHash: "autre" })).toBe(false);
+    });
+
+    it("refuse une entrée antérieure au versionnage", async () => {
+      const legacy: CacheEntry = { analysis: entry.analysis, textHash: "th", provider: "anthropic", model: "m", lang: "fr", createdAt: 1 };
+      expect(matchesFingerprint(legacy, fp)).toBe(false);
+      await putCached("https://ex.org/legacy", legacy);
+      expect(await getCached("https://ex.org/legacy", fp)).toBeNull();
+      expect(await getCachedByUrl("https://ex.org/legacy")).not.toBeNull();
     });
   });
 });

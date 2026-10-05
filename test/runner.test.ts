@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_CONFIG, type Config } from "../src/config";
 import type { PanelToContent, RunSnapshot } from "../src/messages";
+import { analysisSettings } from "../src/engine-settings";
 import type { Annotation } from "../src/schema";
 
 const tabMessages: PanelToContent[] = [];
@@ -253,10 +254,23 @@ describe("runAnalysis (script de fond, D9)", () => {
       expect(res?.clickbaitGap).toBe("Décalage titre");
       expect(res?.blindSpot).toBe("Angle mort");
       expect(res?.cachedAt).toBe(123456789);
+      // Entrée produite avec d'autres réglages : réaffichée, mais signalée (D11).
+      expect(res?.stale).toBe(true);
       expect(res?.annotations).toHaveLength(1);
       expect(mockAnalyze).not.toHaveBeenCalled();
       expect(tabMessages.some((m) => m.type === "highlight")).toBe(true);
       expect(getSnapshot(12)).toEqual(res);
+    });
+
+    it("ne signale pas comme obsolète une analyse produite avec les réglages courants", async () => {
+      mockGetCachedByUrl.mockResolvedValueOnce({
+        analysis: { summary: "S", annotations: [] },
+        textHash: "h",
+        ...analysisSettings(config),
+        createdAt: 1,
+      });
+      const res = await loadCachedRun(40, "https://ex.test/fresh");
+      expect(res?.stale).toBe(false);
     });
 
     it("charge et renvoie l'analyse d'une vidéo YouTube en cache avec alignement temporel", async () => {
