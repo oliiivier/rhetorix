@@ -11,12 +11,12 @@ vi.mock("../src/providers/openai-compatible", () => ({
   openAiCompatibleProvider: {
     supportsWebSearch: (config: Config) => mockSupportsWebSearch(config),
     analyze: (...args: unknown[]) => mockAnalyze(...args),
-    consolidateSummary: (...args: unknown[]) => mockConsolidate(...args),
+    complete: (...args: unknown[]) => mockConsolidate(...args),
   },
 }));
 
 // Doit être importé après vi.mock
-const { analyzeArticle } = await import("../src/analyze");
+const { analyzeArticle, quoteContext } = await import("../src/analyze");
 
 describe("analyzeArticle", () => {
   beforeEach(() => {
@@ -115,7 +115,9 @@ describe("analyzeArticle", () => {
         },
       });
 
-    mockConsolidate.mockResolvedValueOnce("Résumé consolidé global.");
+    mockConsolidate.mockResolvedValueOnce(
+      '```json\n{"summary": "Résumé consolidé global.", "clickbait_gap": "Titre exagéré.", "blind_spot": ""}\n```',
+    );
 
     const article: Extracted = {
       title: "Grand article",
@@ -134,16 +136,17 @@ describe("analyzeArticle", () => {
     });
 
     expect(mockAnalyze).toHaveBeenCalledTimes(2);
+    // Mode rapide : un seul appel supplémentaire, la consolidation (B2).
     expect(mockConsolidate).toHaveBeenCalledTimes(1);
-    expect(mockConsolidate).toHaveBeenCalledWith(
-      "Grand article",
-      ["Résumé partie 1", "Résumé partie 2"],
-      "fr",
-      baseConfig,
-      controller.signal,
-      undefined,
-    );
+    const [request, config, signal] = mockConsolidate.mock.calls[0]!;
+    expect(request.json).toBe(true);
+    expect(request.user).toContain("Section 1 summary: Résumé partie 1");
+    expect(request.user).toContain("Section 2 summary: Résumé partie 2");
+    expect(config).toBe(baseConfig);
+    expect(signal).toBe(controller.signal);
     expect(result.summary).toBe("Résumé consolidé global.");
+    expect(result.clickbait_gap).toBe("Titre exagéré.");
+    expect(result.blind_spot).toBe("");
     expect(result.annotations).toHaveLength(2);
     expect(result.annotations[0]!.id).toBe("ann-1");
     expect(result.annotations[1]!.id).toBe("ann-2");
@@ -198,6 +201,87 @@ describe("analyzeArticle", () => {
     mockAnalyze.mockRejectedValue(new Error("quota"));
     const article: Extracted = { title: "T", lang: "fr", paragraphs: ["A".repeat(300), "B".repeat(300)] };
     await expect(analyzeArticle(article, baseConfig, new AbortController().signal)).rejects.toThrow("quota");
+  });
+
+  it("se replie sur la fusion si la consolidation ne renvoie pas de JSON valide (B2)", async () => {
+    mockAnalyze
+      .mockResolvedValueOnce({ raw: { summary: "S1", blind_spot: "Angle 1", annotations: [] } })
+      .mockResolvedValueOnce({ raw: { summary: "S2", annotations: [] } });
+    mockConsolidate.mockResolvedValueOnce("Voici le résumé : pas de JSON.");
+    const article: Extracted = { title: "T", lang: "fr", paragraphs: ["A".repeat(300), "B".repeat(300)] };
+    const result = await analyzeArticle(article, baseConfig, new AbortController().signal);
+    expect(result.summary).toBe("S1\n\nS2");
+    expect(result.blind_spot).toBe("Angle 1");
+  });
+
+  it("transmet les métadonnées de publication et la date d'analyse (C1)", async () => {
+    mockAnalyze.mockResolvedValueOnce({ raw: { summary: "S", annotations: [] } });
+    const article: Extracted = { title: "T", lang: "fr", paragraphs: ["Court."], publishedTime: "1898-01-13", byline: "Émile Zola", siteName: "L'Aurore" };
+    await analyzeArticle(article, baseConfig, new AbortController().signal);
+    const input = mockAnalyze.mock.calls[0]![0];
+    expect(input.meta).toEqual({ publishedTime: "1898-01-13", byline: "Émile Zola", siteName: "L'Aurore" });
+    expect(input.analysisDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  describe("mode approfondi (D10)", () => {
+    const deepConfig: Config = { ...baseConfig, analysisDepth: "deep" };
+    const claim = (quote: string) => ({
+      id: "ann-1",
+      exact_quote: quote,
+      category: "sophism",
+      label: "homme_de_paille",
+      severity: "high",
+      rhetoric_critique: "c",
+      fact_check: { status: "unverified", context: "", sources: [] },
+    });
+
+    it("cartographie l'article découpé, joint le plan à chaque morceau, consolide puis relit (B1, B2, Q2)", async () => {
+      const article: Extracted = { title: "Long", lang: "fr", paragraphs: [`${"A".repeat(250)} citation un.`, `${"B".repeat(250)} citation deux.`] };
+      mockAnalyze
+        .mockResolvedValueOnce({ raw: { summary: "S1", annotations: [claim("citation un.")] } })
+        .mockResolvedValueOnce({ raw: { summary: "S2", annotations: [claim("citation deux.")] } });
+      mockConsolidate.mockImplementation(async (request: { system: string }) => {
+        if (request.system.includes("outline")) return "Thesis: X.";
+        if (request.system.includes("review")) return '{"rejected": [{"id": "ann-2", "reason": "concession"}, {"id": "inconnu"}]}';
+        return '{"summary": "Global.", "clickbait_gap": "", "blind_spot": ""}';
+      });
+      const phases: (string | undefined)[] = [];
+      const result = await analyzeArticle(article, deepConfig, new AbortController().signal, { onProgress: (p) => phases.push(p.phase) });
+
+      expect(mockConsolidate).toHaveBeenCalledTimes(3);
+      expect(mockAnalyze.mock.calls.map((c) => c[0].outline)).toEqual(["Thesis: X.", "Thesis: X."]);
+      const reviewRequest = mockConsolidate.mock.calls[2]![0];
+      expect(reviewRequest.user).toContain("[ann-1] sophism/homme_de_paille");
+      expect(reviewRequest.user).toContain(`Paragraph: ${"A".repeat(250)} citation un.`);
+      expect(result.annotations.map((a) => [a.id, a.exact_quote])).toEqual([["ann-1", "citation un."]]);
+      expect(result.summary).toBe("Global.");
+      expect([...new Set(phases)]).toEqual(["mapping", "analyzing", "consolidating", "reviewing"]);
+    });
+
+    it("ne cartographie pas un article d'un seul morceau et garde tout si la relecture échoue", async () => {
+      mockAnalyze.mockResolvedValueOnce({ raw: { summary: "S", annotations: [claim("Court.")] } });
+      mockConsolidate.mockRejectedValueOnce(new Error("503"));
+      const result = await analyzeArticle({ title: "T", lang: "fr", paragraphs: ["Court."] }, deepConfig, new AbortController().signal);
+      expect(mockConsolidate).toHaveBeenCalledTimes(1);
+      expect(mockConsolidate.mock.calls[0]![0].system).toContain("review");
+      expect(result.annotations).toHaveLength(1);
+    });
+
+    it("n'ajoute aucun appel en mode rapide", async () => {
+      mockAnalyze.mockResolvedValueOnce({ raw: { summary: "S", annotations: [claim("Court.")] } });
+      await analyzeArticle({ title: "T", lang: "fr", paragraphs: ["Court."] }, baseConfig, new AbortController().signal);
+      expect(mockConsolidate).not.toHaveBeenCalled();
+    });
+  });
+
+  it("quoteContext renvoie le paragraphe de la citation, réduit autour d'elle s'il est long", () => {
+    const long = `${"x ".repeat(600)}La citation « exacte » est là.${" y".repeat(600)}`;
+    expect(quoteContext("citation un", ["Autre.", "Une citation un ici."])).toBe("Une citation un ici.");
+    const ctx = quoteContext("La citation “ exacte ”", [long])!;
+    expect(ctx).toContain("La citation « exacte » est là.");
+    expect(ctx.length).toBeLessThan(810);
+    expect(ctx.startsWith("…") && ctx.endsWith("…")).toBe(true);
+    expect(quoteContext("absente", ["Rien."])).toBeUndefined();
   });
 
   it("transmet les callbacks de streaming au provider", async () => {

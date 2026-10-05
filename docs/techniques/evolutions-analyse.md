@@ -1,6 +1,6 @@
 # Évolutions du moteur d'analyse
 
-État des lieux du moteur d'analyse (extraction, découpage, appels LLM, fusion, cache) au 2026-10-04, et pistes d'amélioration. Ce document sert de base de réflexion. Les orientations retenues le 2026-10-05 (D10 à D13) sont consignées dans [points-ouverts.md](../fonctionnelles/points-ouverts.md) et rappelées en §4 ; les pistes qui modifient le contrat du schéma (spec §3) devront encore y être reportées, ainsi que dans `schema.ts` et `prompt.ts`, au moment de leur mise en œuvre.
+État des lieux du moteur d'analyse (extraction, découpage, appels LLM, fusion, cache) au 2026-10-04, et pistes d'amélioration. Ce document sert de base de réflexion. Les orientations retenues le 2026-10-05 (D10 à D13) sont consignées dans [points-ouverts.md](../fonctionnelles/points-ouverts.md) et rappelées en §4, l'état de mise en œuvre en §5 ; les pistes qui modifient le contrat du schéma (spec §3) devront encore y être reportées, ainsi que dans `schema.ts` et `prompt.ts`, au moment de leur mise en œuvre.
 
 Rappel du flux actuel (voir [architecture](architecture.md) §3 et §7) : `runner.ts` extrait l'article par Readability, `analyze.ts` le découpe par paragraphes (`chunkParagraphs`, 8 000 tokens par défaut), analyse les morceaux avec 2 appels simultanés, valide chaque réponse, applique la politique des sources (D3), fusionne (`mergeAnalyses`) puis consolide le résumé par un appel dédié.
 
@@ -91,3 +91,28 @@ Les appels supplémentaires de ce lot, du lot C et de la relecture Q2 ne sont fa
 | D13 | Emplacement du corpus d'évaluation (Q1) | **Stockage selon la licence** : textes libres versionnés, textes non libres hors dépôt ; les fiches (références, annotations attendues) sont toujours versionnées |
 
 Reste à préciser : le comportement de D12 sur les vidéos YouTube, qui n'ont pas de titre surlignable dans la transcription.
+
+## 5. État de mise en œuvre (2026-10-05)
+
+`ENGINE_VERSION` vaut 3 : les analyses en cache antérieures sont réaffichées avec l'avertissement « peut-être obsolète » (D11) et refaites à la demande.
+
+| Piste | État | Écarts et remarques |
+|---|---|---|
+| A1 | Fait | L'empreinte comprend aussi la profondeur d'analyse (D10). La recherche web retenue est celle effectivement utilisée (réglage et provider) |
+| A2 | Fait | `RunSnapshot.stale`, note du panneau. Une entrée antérieure à A1 est toujours signalée |
+| A3 | Fait | `mapSettled` ; une analyse partielle n'est pas mise en cache. Après une erreur ou une annulation, les annotations reçues restent surlignées |
+| A4 | Fait | Pour Anthropic, les nouvelles tentatives sont celles du SDK (`maxRetries`), qui ne les signale pas : le message d'avancement ne l'indique que pour Gemini et les endpoints compatibles OpenAI |
+| A5 | Fait | Le dédoublonnage compare les citations normalisées au moment de la fusion, et non les plages localisées dans la page : il s'applique aussi sur mobile et sans content script |
+| B1 | Fait | Le plan est rédigé en anglais (usage interne) et limité à 250 mots |
+| B2 | Fait, autrement | Les champs `clickbait_gap` et `blind_spot` restent dans le schéma par morceau, que partagent les sorties structurées strictes des providers : ils servent d'indices à la consolidation, qui les confirme ou les écarte au vu de l'ensemble. La consolidation est faite dans les deux modes, car elle remplace l'appel de consolidation du résumé qui existait déjà |
+| B3 | À faire | Modifie le contrat et l'interface (panneau, bulles, message bref). Le comportement sur YouTube reste à préciser |
+| C1 | Fait | Date, auteur et site transmis avec la date de l'analyse. Rien pour YouTube, dont l'extraction ne fournit pas ces métadonnées |
+| C2 | À faire | Modifie le contrat (motif « non vérifié faute de budget »). En attendant, le mode approfondi ajoute au plus 2 appels et non 3, ce que dit l'aide |
+| Q1 | Fait | `npm run corpus:eval`. Aucune mesure n'a encore été faite ; les annotations attendues restent à relire |
+| Q2 | Fait | Une relecture en échec garde toutes les annotations. Effet à mesurer avec Q1 |
+| Q3 | Fait en partie | Grille de sévérité dans le prompt ; pas de champ `confidence` |
+| Q4 | À faire | |
+
+Non traités : le dimensionnement (§1.2 : estimation des tokens, concurrence par provider, fenêtre de Gemini Nano) et le traitement particulier des intertitres (§1.6).
+
+Prochaine étape : mesurer avec le corpus les modes rapide et approfondi (`npm run corpus:eval -- --depth fast|deep --runs 3`), pour décider du défaut de D10 et de la suite (C2, B3).

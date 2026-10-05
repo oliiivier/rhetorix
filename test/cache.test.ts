@@ -66,6 +66,7 @@ describe("cache module", () => {
       engineVersion: ENGINE_VERSION,
       webSearch: true,
       maxChunkTokens: 8000,
+      depth: "fast",
     };
     const entry: CacheEntry = { ...fp, analysis: { summary: "S", annotations: [] }, createdAt: 1 };
 
@@ -77,6 +78,7 @@ describe("cache module", () => {
       expect(matchesFingerprint(entry, { ...fp, engineVersion: ENGINE_VERSION + 1 })).toBe(false);
       expect(matchesFingerprint(entry, { ...fp, webSearch: false })).toBe(false);
       expect(matchesFingerprint(entry, { ...fp, maxChunkTokens: 4000 })).toBe(false);
+      expect(matchesFingerprint(entry, { ...fp, depth: "deep" })).toBe(false);
       expect(matchesFingerprint(entry, { ...fp, textHash: "autre" })).toBe(false);
     });
 

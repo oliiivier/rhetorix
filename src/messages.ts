@@ -44,6 +44,10 @@ export interface Extracted {
   lang: string;
   /** Paragraphes du contenu principal, dans l'ordre (base du découpage D6). */
   paragraphs: string[];
+  /** Métadonnées de publication fournies par Readability, si la page les déclare (C1). */
+  publishedTime?: string;
+  byline?: string;
+  siteName?: string;
 }
 
 export type ExtractErrorCode = "no_article" | "empty_article";
@@ -63,7 +67,7 @@ export interface HighlightResult {
 // Le script de fond pilote l'analyse (D9) ; le panneau n'en est qu'une vue.
 
 export type RunStatus = "running" | "done" | "error" | "cancelled";
-export type RunPhase = "extracting" | "analyzing" | "consolidating";
+export type RunPhase = "extracting" | "mapping" | "analyzing" | "consolidating" | "reviewing";
 
 /** État d'une analyse pour un onglet, tel que le panneau l'affiche. */
 export interface RunSnapshot {

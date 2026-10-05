@@ -36,6 +36,12 @@ let pointerRaf: number | null = null;
 
 const LEAF_BLOCKS = "p, li, blockquote, h1, h2, h3, h4, h5, h6, pre, figcaption, td";
 
+/** Métadonnée de publication nettoyée (C1) ; absente si vide. */
+function meta(value: string | null | undefined): string | undefined {
+  const v = value?.replace(/\s+/g, " ").trim().slice(0, 200);
+  return v || undefined;
+}
+
 function extract(): ExtractResult {
   const article = new Readability(document.cloneNode(true) as Document).parse();
   if (!article?.content) return { ok: false, error: "Aucun contenu d'article détecté sur cette page.", errorCode: "no_article" };
@@ -57,6 +63,9 @@ function extract(): ExtractResult {
       title: article.title ?? document.title,
       lang: article.lang ?? document.documentElement.lang ?? "",
       paragraphs,
+      publishedTime: meta(article.publishedTime),
+      byline: meta(article.byline),
+      siteName: meta(article.siteName),
     },
   };
 }

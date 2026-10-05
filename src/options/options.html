@@ -110,6 +110,15 @@
         </div>
 
         <label>
+          <span id="lbl-analysis-depth">Analyse</span>
+          <select name="analysisDepth">
+            <option value="fast" id="opt-depth-fast">Rapide</option>
+            <option value="deep" id="opt-depth-deep">Approfondie</option>
+          </select>
+          <span class="hint" id="analysis-depth-hint"></span>
+        </label>
+
+        <label>
           <span id="lbl-max-chunk">Taille maximale d'un morceau (tokens)</span>
           <input type="number" name="maxChunkTokens" min="2000" step="1000" />
           <span class="hint" id="max-chunk-hint">Au-delà, l'article est découpé par paragraphes et analysé en plusieurs appels.</span>

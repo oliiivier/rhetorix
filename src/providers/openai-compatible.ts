@@ -3,7 +3,7 @@
 // Prise en charge des citations web (D3) si l'endpoint dispose de la recherche web.
 
 import type { Config } from "../config";
-import { consolidatePrompt, systemPrompt, userPrompt } from "../prompt";
+import { systemPrompt, userPrompt } from "../prompt";
 import { ANALYSIS_JSON_SCHEMA, enforceAnnotationSourcePolicy, normalizeSourceUrl } from "../schema";
 import { parseSseJson, ProgressiveJsonParser, stripCodeFence } from "../streaming-json";
 import { postJson } from "./http";
@@ -110,8 +110,10 @@ export const openAiCompatibleProvider: LlmProvider = {
     }
   },
 
-  async consolidateSummary(title, summaries, language, config, signal, onProgressText, onUsage) {
-    const { system, user } = consolidatePrompt(title, summaries, language);
+  // Pas de response_format en mode JSON : tous les endpoints compatibles ne l'acceptent
+  // pas. La consigne du prompt suffit, et la réponse est analysée avec tolérance.
+  async complete(request, config, signal, callbacks) {
+    const { system, user } = request;
     const url = `${config.endpoint.replace(/\/+$/, "")}/chat/completions`;
     const res = await postJson(
       url,
@@ -127,6 +129,7 @@ export const openAiCompatibleProvider: LlmProvider = {
       },
       signal,
       "l'endpoint",
+      callbacks?.onRetry,
     );
 
     let promptTokens = Math.ceil((system.length + user.length) / 4);
@@ -146,16 +149,16 @@ export const openAiCompatibleProvider: LlmProvider = {
         if (!chunk.usage?.completion_tokens) {
           completionTokens = Math.ceil(streamedChars / 4);
         }
-        onProgressText?.(accumulated);
+        callbacks?.onText?.(accumulated);
       }
     }
-    onUsage?.({
+    callbacks?.onUsage?.({
       inputTokens: promptTokens,
       outputTokens: completionTokens,
       totalTokens: promptTokens + completionTokens,
     });
     const text = accumulated.trim();
-    if (!text) throw new ProviderError("Résumé consolidé vide.", "empty_consolidated");
+    if (!text) throw new ProviderError("Réponse vide de l'endpoint.", "empty_completion");
     return text;
   },
 };

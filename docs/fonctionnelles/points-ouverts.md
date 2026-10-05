@@ -18,7 +18,7 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 
 ## Décisions prises (2026-10-05)
 
-Orientations pour l'évolution du moteur d'analyse, détaillées dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). Aucune n'est encore mise en œuvre.
+Orientations pour l'évolution du moteur d'analyse, détaillées dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). D10, D11 et D13 sont mises en œuvre ; D10 sans la vérification factuelle séparée (C2), qui reste à faire. D12 n'est pas encore mise en œuvre.
 
 | # | Sujet | Décision | Conséquences |
 |---|---|---|---|
@@ -48,7 +48,7 @@ Orientations pour l'évolution du moteur d'analyse, détaillées dans [evolution
 - **Streaming et affichage progressif (D2 / D6)** : implémenté via `src/streaming-json.ts` (`ProgressiveJsonParser`) sur les 3 fournisseurs (Anthropic, Gemini, OpenAI-compatible). Le résumé se met à jour en temps réel et les cartes d'annotations apparaissent dynamiquement au fil de l'eau dès validation unitaire, avec application immédiate de la politique D3 et préfixage des identifiants lors du découpage.
 - **Internationalisation complète & Traduction de la taxonomie (D4 / D5)** : module `src/i18n.ts` et traductions complètes de la taxonomie (`src/taxonomy.ts`) pour les 5 langues supportées (fr, en, es, de, it). Panneau latéral, options et messages d'erreurs (extraction et providers) s'adaptent dynamiquement en temps réel.
 - **Icônes de l'extension** : créées en SVG (`src/icons/icon.svg`) et déclinées en PNG (16, 32, 48, 128 px), déclarées dans les manifests Chromium et Firefox.
-- **Résumé consolidé (D6)** : implémenté via `consolidateSummary` sur les 3 providers avec streaming textuel et repli gracieux sur les résumés partiels concaténés en cas d'erreur.
+- **Résumé consolidé (D6)** : implémenté via l'appel textuel `complete` des providers, qui consolide aussi le décalage titre / contenu et l'angle mort (piste B2), avec affichage progressif du résumé et repli sur la fusion des résultats partiels en cas d'erreur.
 - **Filtrage des cartes par catégorie** : filtres interactifs par catégorie avec compteurs incrémentés en temps réel ajoutés dans le panneau latéral (`sidepanel.html` / `sidepanel.ts`).
 - **Ollama et serveurs locaux** : consigne `OLLAMA_ORIGINS` intégrée directement dans la page d'options sous le champ endpoint avec préservation du balisage `<code>`.
 - **Compatibilité Firefox / AMO** : `strict_min_version` fixée à 142.0 pour la conformité avec `data_collection_permissions`, avertissement `web-ext lint` résolu.

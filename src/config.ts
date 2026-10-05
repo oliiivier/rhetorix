@@ -5,6 +5,8 @@ import { ext } from "./ext";
 export type ProviderId = "anthropic" | "openai-compatible" | "gemini" | "chrome-ai";
 export type DisplayMode = "sidepanel" | "inline" | "both";
 export type YouTubePauseMode = "none" | "pause_start" | "pause_after";
+/** D10 : « rapide » = une passe par morceau ; « approfondie » = cartographie et relecture en plus. */
+export type AnalysisDepth = "fast" | "deep";
 
 export interface Config {
   provider: ProviderId;
@@ -18,6 +20,8 @@ export interface Config {
   webSearch: boolean;
   /** Taille maximale d'un morceau envoyé au LLM (décision D6). */
   maxChunkTokens: number;
+  /** Profondeur d'analyse (décision D10). */
+  analysisDepth: AnalysisDepth;
   /** Mode d'affichage : panneau latéral, bulles au survol ou les deux. */
   displayMode: DisplayMode;
   /** Durée d'une tranche d'analyse YouTube par défaut (en minutes, défaut: 15). */
@@ -49,6 +53,7 @@ export const DEFAULT_CONFIG: Config = {
   language: "auto",
   webSearch: true,
   maxChunkTokens: 8_000,
+  analysisDepth: "fast",
   displayMode: "both",
   youtubeChunkMinutes: 15,
   youtubeMinDisplayDuration: 6,

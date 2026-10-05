@@ -481,6 +481,8 @@ function statusText(s: RunSnapshot): string {
   }
   if (s.phase === "extracting") return t.extractingStatus;
   if (s.phase === "consolidating") return t.consolidatingStatus;
+  if (s.phase === "mapping") return t.mappingStatus;
+  if (s.phase === "reviewing") return t.reviewingStatus;
   return s.total > 1 ? t.analyzingPartStatus(s.done, s.total) : t.analyzingStatus;
 }
 

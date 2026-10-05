@@ -1,4 +1,5 @@
 import type { Config } from "../config";
+import type { ArticleMeta, Prompt } from "../prompt";
 import type { Annotation } from "../schema";
 import type { TokenUsage } from "../tokens";
 import type { RetryInfo } from "./http";
@@ -17,7 +18,27 @@ export interface AnalyzeInput {
   part: { index: number; total: number };
   language: string;
   webSearch: boolean;
+  /** Métadonnées de publication (C1). */
+  meta?: ArticleMeta;
+  /** Date de l'analyse (AAAA-MM-JJ), pour juger les allégations dans le temps (C1). */
+  analysisDate?: string;
+  /** Plan de l'article entier, joint à chaque morceau en mode approfondi (B1). */
+  outline?: string;
   onStream?: StreamCallbacks;
+}
+
+/** Appel textuel sans outil : consolidation, cartographie, relecture. */
+export interface CompletionRequest extends Prompt {
+  /** Réponse attendue en JSON : mode JSON du provider s'il en a un. */
+  json?: boolean;
+  maxTokens?: number;
+}
+
+export interface CompletionCallbacks {
+  /** Texte cumulé reçu jusqu'ici. */
+  onText?: (text: string) => void;
+  onUsage?: (usage: TokenUsage) => void;
+  onRetry?: (info: RetryInfo) => void;
 }
 
 export interface ProviderResult {
@@ -35,15 +56,7 @@ export interface ProviderResult {
 export interface LlmProvider {
   supportsWebSearch(config: Config): boolean;
   analyze(input: AnalyzeInput, config: Config, signal: AbortSignal): Promise<ProviderResult>;
-  consolidateSummary?(
-    title: string,
-    summaries: string[],
-    language: string,
-    config: Config,
-    signal: AbortSignal,
-    onProgressText?: (text: string) => void,
-    onUsage?: (usage: TokenUsage) => void,
-  ): Promise<string>;
+  complete(request: CompletionRequest, config: Config, signal: AbortSignal, callbacks?: CompletionCallbacks): Promise<string>;
 }
 
 export type ProviderErrorCode =
@@ -53,7 +66,7 @@ export type ProviderErrorCode =
   | "too_many_turns"
   | "empty_response"
   | "invalid_json"
-  | "empty_consolidated"
+  | "empty_completion"
   | "blocked"
   | "http_error";
 

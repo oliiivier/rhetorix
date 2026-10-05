@@ -15,12 +15,15 @@ Extension de navigateur pour Chromium (Chrome, Brave, Edge) et Firefox permettan
   - Envoi des requêtes au service d'analyse.
 - `options.html / options.js` :
   - Configuration du provider LLM, de l'endpoint et de la clé API.
+  - Profondeur d'analyse (D10) : « Analyse : rapide / approfondie ». Le mode approfondi ajoute la cartographie des articles découpés et la relecture des annotations.
 
 ## 3. Schéma de données attendu du LLM (Structured Output)
 Le modèle doit obligatoirement retourner un objet JSON conforme à cette structure :
 
 {
   "summary": "Bref résumé de la posture argumentative de l'article",
+  "clickbait_gap": "Écart entre le titre et le contenu, ou chaîne vide",
+  "blind_spot": "Point de vue, contre-argument ou consensus omis, ou chaîne vide",
   "annotations": [
     {
       "id": "ann-1",
@@ -41,6 +44,14 @@ Le modèle doit obligatoirement retourner un objet JSON conforme à cette struct
 }
 
 `label` est un identifiant de la taxonomie fermée définie dans `src/taxonomy.ts` (décision D4) ; le nom affiché et la définition en sont dérivés.
+
+`severity` suit une grille définie dans le prompt (piste Q3) : `high` si le procédé porte la thèse principale ou une allégation dont dépend l'argumentation, `medium` s'il soutient un argument secondaire, `low` s'il relève du ton ou d'une remarque en passant.
+
+Ce schéma est celui de chaque appel d'analyse, y compris par morceau pour un article découpé (D6). Les appels secondaires, sans sortie structurée stricte, répondent en JSON simple, analysé avec tolérance (repli en cas d'échec) :
+
+- **consolidation** d'un article découpé (B2) : `{ "summary", "clickbait_gap", "blind_spot" }`, jugés sur l'ensemble de l'article à partir des constats de chaque morceau, qui remplacent ceux de la fusion ;
+- **relecture** des annotations, en mode approfondi (Q2, D10) : `{ "rejected": [{ "id", "reason" }] }`, les annotations écartées ;
+- **cartographie** d'un article découpé, en mode approfondi (B1, D10) : un plan en texte libre, joint à l'analyse de chaque morceau.
 
 ## 4. Parcours utilisateur
 1. L'utilisateur navigue sur un article et clique sur l'icône de l'extension.

@@ -1,7 +1,7 @@
 // Réglages dont dépend le résultat d'une analyse : partie configuration de
 // l'empreinte du cache (A1, architecture §8).
 
-import { resolveLanguage, type Config } from "./config";
+import { resolveLanguage, type AnalysisDepth, type Config } from "./config";
 import { PROVIDERS } from "./providers";
 
 /**
@@ -10,7 +10,7 @@ import { PROVIDERS } from "./providers";
  * par une version antérieure ne sont plus réutilisées et sont signalées comme
  * peut-être obsolètes (D11).
  */
-export const ENGINE_VERSION = 2;
+export const ENGINE_VERSION = 3;
 
 export interface AnalysisSettings {
   provider: string;
@@ -20,6 +20,8 @@ export interface AnalysisSettings {
   /** Recherche web effectivement utilisée (réglage activé et proposée par le provider). */
   webSearch: boolean;
   maxChunkTokens: number;
+  /** Profondeur d'analyse (D10). */
+  depth: AnalysisDepth;
 }
 
 export function webSearchEnabled(config: Config): boolean {
@@ -34,6 +36,7 @@ export function analysisSettings(config: Config): AnalysisSettings {
     engineVersion: ENGINE_VERSION,
     webSearch: webSearchEnabled(config),
     maxChunkTokens: config.maxChunkTokens,
+    depth: config.analysisDepth,
   };
 }
 

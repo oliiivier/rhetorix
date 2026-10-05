@@ -1,7 +1,7 @@
 // Internationalisation de Rhetorix (décision D5).
 // Prise en charge du français (fr), anglais (en), espagnol (es), allemand (de) et italien (it).
 
-import type { Config, DisplayMode } from "./config";
+import type { AnalysisDepth, Config, DisplayMode } from "./config";
 import { ext } from "./ext";
 import type { ProviderErrorCode } from "./providers/types";
 import type { FactStatus, Severity } from "./schema";
@@ -22,6 +22,8 @@ export interface UiStrings {
   analyzingStatus: string;
   analyzingPartStatus: (done: number, total: number) => string;
   consolidatingStatus: string;
+  mappingStatus: string;
+  reviewingStatus: string;
   retryingStatus: string;
   cancelledStatus: string;
   accessErrorStatus: string;
@@ -78,6 +80,9 @@ export interface UiStrings {
   webSearchHintOpenAi: string;
   maxChunkLabel: string;
   maxChunkHint: string;
+  analysisDepthLabel: string;
+  analysisDepths: Record<AnalysisDepth, string>;
+  analysisDepthHint: string;
   saveBtn: string;
   savedSuccess: string;
   savedPermissionDenied: string;
@@ -215,6 +220,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analyse en cours…",
     analyzingPartStatus: (done, total) => `Analyse en cours… (${done}/${total} parties)`,
     consolidatingStatus: "Synthèse du résumé global…",
+    mappingStatus: "Plan de l'article…",
+    reviewingStatus: "Relecture des annotations…",
     retryingStatus: "Fournisseur saturé ou indisponible : nouvelle tentative…",
     cancelledStatus: "Analyse annulée.",
     accessErrorStatus:
@@ -295,6 +302,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "Actif si l'endpoint supporte la recherche web (Perplexity, OpenRouter :online…). Avec Ollama ou Mistral sans recherche, les allégations restent en « non vérifié ».",
     maxChunkLabel: "Taille maximale d'un morceau (tokens)",
     maxChunkHint: "Au-delà de cette taille, l'article est découpé par paragraphes et analysé en plusieurs appels.",
+    analysisDepthLabel: "Analyse",
+    analysisDepths: { fast: "Rapide", deep: "Approfondie" },
+    analysisDepthHint: "Rapide : une passe d'analyse par morceau. Approfondie : pour un article long, établit d'abord le plan de l'ensemble afin de repérer les procédés qui s'étendent sur plusieurs sections, puis relit les annotations pour écarter celles que le texte ne justifie pas. Jusqu'à 2 appels supplémentaires : plus lent et plus coûteux, mais plus fiable.",
     saveBtn: "Enregistrer",
     savedSuccess: "Configuration enregistrée.",
     savedPermissionDenied: "Configuration enregistrée, mais la permission d'accès à l'API a été refusée.",
@@ -442,7 +452,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       too_many_turns: () => "Trop de reprises de la recherche web.",
       empty_response: () => "Réponse vide du fournisseur.",
       invalid_json: () => "La réponse du fournisseur n'est pas un JSON valide.",
-      empty_consolidated: () => "Résumé consolidé vide.",
+      empty_completion: () => "Réponse vide du modèle.",
       blocked: (detail) => (detail ? `Requête bloquée (${detail}).` : "Requête bloquée par les filtres de sécurité."),
       http_error: (detail) => (detail ? `Erreur du fournisseur : ${detail}` : "Erreur de communication avec le fournisseur."),
     },
@@ -459,6 +469,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analyzing…",
     analyzingPartStatus: (done, total) => `Analyzing… (${done}/${total} parts)`,
     consolidatingStatus: "Synthesizing overall summary…",
+    mappingStatus: "Outlining the article…",
+    reviewingStatus: "Reviewing annotations…",
     retryingStatus: "Provider busy or unavailable: retrying…",
     cancelledStatus: "Analysis cancelled.",
     accessErrorStatus:
@@ -539,6 +551,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "Active if the endpoint supports web search (Perplexity, OpenRouter :online…). With Ollama or Mistral without search, claims remain 'unverified'.",
     maxChunkLabel: "Max chunk size (tokens)",
     maxChunkHint: "Beyond this limit, the article is split by paragraphs and analyzed across multiple calls.",
+    analysisDepthLabel: "Analysis",
+    analysisDepths: { fast: "Fast", deep: "In-depth" },
+    analysisDepthHint: "Fast: one analysis pass per chunk. In-depth: for a long article, first outlines the whole text to catch devices spanning several sections, then reviews the annotations to drop those the text does not support. Up to 2 extra calls: slower and more costly, but more reliable.",
     saveBtn: "Save",
     savedSuccess: "Configuration saved.",
     savedPermissionDenied: "Configuration saved, but API access permission was denied.",
@@ -686,7 +701,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       too_many_turns: () => "Too many web search retry turns.",
       empty_response: () => "Empty response from provider.",
       invalid_json: () => "Provider response is not valid JSON.",
-      empty_consolidated: () => "Consolidated summary is empty.",
+      empty_completion: () => "Empty response from the model.",
       blocked: (detail) => (detail ? `Request blocked (${detail}).` : "Request blocked by safety filters."),
       http_error: (detail) => (detail ? `Provider error: ${detail}` : "Communication error with provider."),
     },
@@ -703,6 +718,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analizando…",
     analyzingPartStatus: (done, total) => `Analizando… (${done}/${total} partes)`,
     consolidatingStatus: "Sintetizando el resumen global…",
+    mappingStatus: "Esbozando el artículo…",
+    reviewingStatus: "Revisando las anotaciones…",
     retryingStatus: "Proveedor saturado o no disponible: reintentando…",
     cancelledStatus: "Análisis cancelado.",
     accessErrorStatus:
@@ -783,6 +800,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "Activo si el endpoint admite búsqueda web (Perplexity, OpenRouter :online…). Con Ollama o Mistral sin búsqueda, las afirmaciones permanecen como 'no verificado'.",
     maxChunkLabel: "Tamaño máximo de fragmento (tokens)",
     maxChunkHint: "Más allá de este límite, el artículo se divide por párrafos y se analiza en varias llamadas.",
+    analysisDepthLabel: "Análisis",
+    analysisDepths: { fast: "Rápido", deep: "Exhaustivo" },
+    analysisDepthHint: "Rápido: una pasada de análisis por fragmento. Exhaustivo: en un artículo largo, primero esboza el conjunto para detectar los recursos que abarcan varias secciones y luego revisa las anotaciones para descartar las que el texto no justifica. Hasta 2 llamadas adicionales: más lento y costoso, pero más fiable.",
     saveBtn: "Guardar",
     savedSuccess: "Configuración guardada.",
     savedPermissionDenied: "Configuración guardada, pero se denegó el permiso de acceso a la API.",
@@ -930,7 +950,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       too_many_turns: () => "Demasiados intentos de búsqueda web.",
       empty_response: () => "Respuesta vacía del proveedor.",
       invalid_json: () => "La respuesta del proveedor no es un JSON válido.",
-      empty_consolidated: () => "El resumen consolidado está vacío.",
+      empty_completion: () => "Respuesta vacía del modelo.",
       blocked: (detail) => (detail ? `Solicitud bloqueada (${detail}).` : "Solicitud bloqueada por filtros de seguridad."),
       http_error: (detail) => (detail ? `Error del proveedor: ${detail}` : "Error de comunicación con el proveedor."),
     },
@@ -947,6 +967,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analyse läuft…",
     analyzingPartStatus: (done, total) => `Analyse läuft… (${done}/${total} Abschnitte)`,
     consolidatingStatus: "Gesamtzusammenfassung wird erstellt…",
+    mappingStatus: "Gliederung des Artikels…",
+    reviewingStatus: "Anmerkungen werden geprüft…",
     retryingStatus: "Anbieter überlastet oder nicht erreichbar: neuer Versuch…",
     cancelledStatus: "Analyse abgebrochen.",
     accessErrorStatus:
@@ -1027,6 +1049,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "Aktiv, wenn der Endpunkt Websuche unterstützt (Perplexity, OpenRouter :online…). Bei Ollama oder Mistral ohne Suche bleiben Behauptungen 'nicht überprüft'.",
     maxChunkLabel: "Maximale Blockgröße (Tokens)",
     maxChunkHint: "Jenseits dieser Grenze wird der Artikel in Absätze unterteilt und über mehrere Aufrufe analysiert.",
+    analysisDepthLabel: "Analyse",
+    analysisDepths: { fast: "Schnell", deep: "Gründlich" },
+    analysisDepthHint: "Schnell: ein Analysedurchgang pro Abschnitt. Gründlich: Bei einem langen Artikel wird zuerst eine Gliederung des Ganzen erstellt, um abschnittsübergreifende Mittel zu erkennen; danach werden die Anmerkungen geprüft und jene verworfen, die der Text nicht stützt. Bis zu 2 zusätzliche Aufrufe: langsamer und teurer, aber zuverlässiger.",
     saveBtn: "Speichern",
     savedSuccess: "Konfiguration gespeichert.",
     savedPermissionDenied: "Konfiguration gespeichert, aber die Zugriffsberechtigung für die API wurde verweigert.",
@@ -1174,7 +1199,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       too_many_turns: () => "Zu viele Versuche bei der Websuche.",
       empty_response: () => "Leere Antwort vom Anbieter.",
       invalid_json: () => "Die Antwort des Anbieters ist kein gültiges JSON.",
-      empty_consolidated: () => "Zusammenfassung ist leer.",
+      empty_completion: () => "Leere Antwort des Modells.",
       blocked: (detail) => (detail ? `Anfrage blockiert (${detail}).` : "Anfrage durch Sicherheitsfilter blockiert."),
       http_error: (detail) => (detail ? `Anbieterfehler: ${detail}` : "Kommunikationsfehler mit dem Anbieter."),
     },
@@ -1191,6 +1216,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analisi in corso…",
     analyzingPartStatus: (done, total) => `Analisi in corso… (${done}/${total} parti)`,
     consolidatingStatus: "Sintesi del riassunto generale…",
+    mappingStatus: "Schema dell'articolo…",
+    reviewingStatus: "Revisione delle annotazioni…",
     retryingStatus: "Fornitore sovraccarico o non disponibile: nuovo tentativo…",
     cancelledStatus: "Analisi annullata.",
     accessErrorStatus:
@@ -1271,6 +1298,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "Attivo se l'endpoint supporta la ricerca web (Perplexity, OpenRouter :online…). Con Ollama o Mistral senza ricerca, le affermazioni rimangono «non verificato».",
     maxChunkLabel: "Dimensione massima porzione (token)",
     maxChunkHint: "Oltre questo limite, l'articolo viene suddiviso in paragrafi e analizzato in più chiamate.",
+    analysisDepthLabel: "Analisi",
+    analysisDepths: { fast: "Rapida", deep: "Approfondita" },
+    analysisDepthHint: "Rapida: un passaggio di analisi per porzione. Approfondita: per un articolo lungo, traccia prima lo schema dell'insieme per individuare i procedimenti che si estendono su più sezioni, poi rilegge le annotazioni per scartare quelle non giustificate dal testo. Fino a 2 chiamate aggiuntive: più lenta e costosa, ma più affidabile.",
     saveBtn: "Salva",
     savedSuccess: "Configurazione salvata.",
     savedPermissionDenied: "Salvato, ma l'autorizzazione di accesso all'API è stata negata.",
@@ -1418,7 +1448,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       too_many_turns: () => "Troppi tentativi di ricerca web.",
       empty_response: () => "Risposta vuota dal provider.",
       invalid_json: () => "La risposta del provider non è un JSON valido.",
-      empty_consolidated: () => "Il riassunto consolidato è vuoto.",
+      empty_completion: () => "Risposta vuota del modello.",
       blocked: (detail) => (detail ? `Richiesta bloccata (${detail}).` : "Richiesta bloccata dai filtri di sicurezza."),
       http_error: (detail) => (detail ? `Errore del provider: ${detail}` : "Errore di comunicazione con il provider."),
     },

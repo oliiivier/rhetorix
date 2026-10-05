@@ -3,7 +3,7 @@
 // Pas de recherche web : mode "unverified" (D3).
 
 import type { Config } from "../config";
-import { consolidatePrompt, systemPrompt, userPrompt } from "../prompt";
+import { systemPrompt, userPrompt } from "../prompt";
 import { enforceAnnotationSourcePolicy } from "../schema";
 import { ProgressiveJsonParser, stripCodeFence } from "../streaming-json";
 import { ProviderError, type LlmProvider } from "./types";
@@ -141,13 +141,13 @@ export const chromeAiProvider: LlmProvider = {
     }
   },
 
-  async consolidateSummary(title, summaries, language, _config, signal, onProgressText, onUsage) {
+  async complete(request, _config, signal, callbacks) {
     const factory = getAILanguageModelFactory();
     if (!factory) {
       throw new ProviderError("Chrome Built-in AI non disponible.", "blocked");
     }
 
-    const { system, user } = consolidatePrompt(title, summaries, language);
+    const { system, user } = request;
     const session = await factory.create({
       systemPrompt: system,
       signal,
@@ -156,38 +156,21 @@ export const chromeAiProvider: LlmProvider = {
     const promptTokens = Math.ceil((system.length + user.length) / 4);
 
     try {
-      if (onProgressText) {
-        const stream = session.promptStreaming(user, { signal });
-        let accumulated = "";
-        for await (const chunk of stream) {
-          let delta = chunk;
-          if (chunk.startsWith(accumulated)) {
-            delta = chunk.slice(accumulated.length);
-            accumulated = chunk;
-          } else {
-            accumulated += chunk;
-          }
-          if (delta) onProgressText(accumulated);
-        }
-        const text = accumulated.trim();
-        const outputTokens = Math.ceil(text.length / 4);
-        onUsage?.({
-          inputTokens: promptTokens,
-          outputTokens,
-          totalTokens: promptTokens + outputTokens,
-        });
-        return text;
-      } else {
-        const res = await session.prompt(user, { signal });
-        const text = res.trim();
-        const outputTokens = Math.ceil(text.length / 4);
-        onUsage?.({
-          inputTokens: promptTokens,
-          outputTokens,
-          totalTokens: promptTokens + outputTokens,
-        });
-        return text;
+      let accumulated = "";
+      for await (const chunk of session.promptStreaming(user, { signal })) {
+        // Selon la version de Chrome, chaque élément est le texte cumulé ou un delta.
+        accumulated = chunk.startsWith(accumulated) ? chunk : accumulated + chunk;
+        callbacks?.onText?.(accumulated);
       }
+      const text = accumulated.trim();
+      const outputTokens = Math.ceil(text.length / 4);
+      callbacks?.onUsage?.({
+        inputTokens: promptTokens,
+        outputTokens,
+        totalTokens: promptTokens + outputTokens,
+      });
+      if (!text) throw new ProviderError("Réponse vide de Chrome Built-in AI.", "empty_completion");
+      return text;
     } finally {
       session.destroy();
     }

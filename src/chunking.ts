@@ -31,6 +31,33 @@ export function chunkParagraphs(paragraphs: string[], maxTokens: number): string
 }
 
 /**
+ * Texte soumis à la cartographie (B1) : l'article entier s'il tient dans `maxTokens`,
+ * sinon ses premiers paragraphes (deux tiers du budget) et ses derniers (un tiers),
+ * séparés par « […] ». Thèse et conclusion se trouvent en général à ces endroits.
+ */
+export function outlineSource(paragraphs: string[], maxTokens: number): { text: string; truncated: boolean } {
+  const total = paragraphs.reduce((n, p) => n + estimateTokens(p), 0);
+  if (total <= maxTokens) return { text: paragraphs.join("\n\n"), truncated: false };
+  const head: string[] = [];
+  let size = 0;
+  let i = 0;
+  for (; i < paragraphs.length; i++) {
+    const t = estimateTokens(paragraphs[i]!);
+    if (head.length > 0 && size + t > (maxTokens * 2) / 3) break;
+    head.push(paragraphs[i]!);
+    size += t;
+  }
+  const tail: string[] = [];
+  for (let j = paragraphs.length - 1; j > i; j--) {
+    const t = estimateTokens(paragraphs[j]!);
+    if (size + t > maxTokens) break;
+    tail.unshift(paragraphs[j]!);
+    size += t;
+  }
+  return { text: [...head, "[…]", ...tail].join("\n\n"), truncated: true };
+}
+
+/**
  * Fusionne les analyses partielles : ids renumérotés, doublons retirés
  * (`dedupeAnnotations`). Les résumés partiels sont concaténés ; ils sont
  * normalement remplacés par l'appel de consolidation (analyze.ts).
@@ -90,7 +117,7 @@ export function dedupeAnnotations(annotations: Annotation[]): Annotation[] {
   return kept;
 }
 
-function renumber(a: Analysis): Analysis {
+export function renumber(a: Analysis): Analysis {
   return { ...a, annotations: a.annotations.map((ann, i) => ({ ...ann, id: `ann-${i + 1}` })) };
 }
 

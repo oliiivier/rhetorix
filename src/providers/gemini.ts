@@ -2,7 +2,7 @@
 // Recherche web intégrée via l'outil de grounding Google Search (D3).
 
 import type { Config } from "../config";
-import { consolidatePrompt, systemPrompt, userPrompt } from "../prompt";
+import { systemPrompt, userPrompt } from "../prompt";
 import { ANALYSIS_JSON_SCHEMA, enforceAnnotationSourcePolicy, normalizeSourceUrl } from "../schema";
 import { parseSseJson, ProgressiveJsonParser, stripCodeFence } from "../streaming-json";
 import { postJson } from "./http";
@@ -159,8 +159,8 @@ export const geminiProvider: LlmProvider = {
     }
   },
 
-  async consolidateSummary(title, summaries, language, config, signal, onProgressText, onUsage) {
-    const { system, user } = consolidatePrompt(title, summaries, language);
+  async complete(request, config, signal, callbacks) {
+    const { system, user } = request;
     const modelName = config.model.replace(/^models\//, "");
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:streamGenerateContent?alt=sse`;
     const res = await postJson(
@@ -169,9 +169,11 @@ export const geminiProvider: LlmProvider = {
       {
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: user }] }],
+        ...(request.json ? { generationConfig: { responseMimeType: "application/json" } } : {}),
       },
       signal,
       "Gemini",
+      callbacks?.onRetry,
     );
 
     let promptTokens = Math.ceil((system.length + user.length) / 4);
@@ -184,6 +186,9 @@ export const geminiProvider: LlmProvider = {
         if (typeof chunk.usageMetadata.promptTokenCount === "number") promptTokens = chunk.usageMetadata.promptTokenCount;
         if (typeof chunk.usageMetadata.candidatesTokenCount === "number") candidateTokens = chunk.usageMetadata.candidatesTokenCount;
       }
+      if (chunk.promptFeedback?.blockReason) {
+        throw new ProviderError(`Requête bloquée par Gemini (${chunk.promptFeedback.blockReason}).`, "blocked", chunk.promptFeedback.blockReason);
+      }
       const text = chunk.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("");
       if (text) {
         accumulated += text;
@@ -191,16 +196,16 @@ export const geminiProvider: LlmProvider = {
         if (!chunk.usageMetadata?.candidatesTokenCount) {
           candidateTokens = Math.ceil(streamedChars / 4);
         }
-        onProgressText?.(accumulated);
+        callbacks?.onText?.(accumulated);
       }
     }
-    onUsage?.({
+    callbacks?.onUsage?.({
       inputTokens: promptTokens,
       outputTokens: candidateTokens,
       totalTokens: promptTokens + candidateTokens,
     });
     const text = accumulated.trim();
-    if (!text) throw new ProviderError("Résumé consolidé vide.", "empty_consolidated");
+    if (!text) throw new ProviderError("Réponse vide de Gemini.", "empty_completion");
     return text;
   },
 };

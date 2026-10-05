@@ -71,7 +71,7 @@ Points à noter :
 
 1. Clic sur l'icône : le panneau s'ouvre et `activeTab` est accordé pour l'onglet courant.
 2. « Analyser la page » : le panneau demande la permission vers l'API du provider (avant tout `await`), puis envoie `{type: "analyze-tab", tabId, force}` au script de fond. **Toute la suite se déroule dans le script de fond** (`src/runner.ts`), qui publie l'état de l'onglet (`run-update`) à chaque étape ; le panneau ne fait que l'afficher. Le script de fond injecte le content script (`scripting.executeScript`), puis lui envoie `{type: "extract"}` (`tabs.sendMessage`).
-3. Le content script exécute `new Readability(document.cloneNode(true)).parse()` et renvoie `{ok: true, article: {title, paragraphs, lang}}`.
+3. Le content script exécute `new Readability(document.cloneNode(true)).parse()` et renvoie `{ok: true, article: {title, paragraphs, lang, publishedTime?, byline?, siteName?}}`. Les métadonnées de publication sont transmises au modèle, qui juge les allégations à la date de publication (C1).
 4. Le script de fond appelle le LLM en streaming via `ProgressiveJsonParser` (`src/streaming-json.ts`). Le résumé est affiché et mis à jour progressivement. Chaque annotation est extraite dès complétion de ses accolades, validée unitairement (`validateAnnotation`), assainie selon la politique D3 (`enforceAnnotationSourcePolicy`) et publiée immédiatement ; le panneau l'affiche sous forme de carte, avec incrémentation en temps réel des compteurs de filtres et préfixage des identifiants en cas de découpage.
 5. Une fois l'analyse terminée, le script de fond envoie `{type: "highlight", annotations: [{id, exact_quote, category}]}` au content script.
 6. Le content script localise chaque citation (§4), crée les `Range`, alimente les highlights et répond avec la liste des ids **non localisés**. Le panneau les affiche en mode dégradé (carte sans lien vers la page).
@@ -139,19 +139,21 @@ Trois adaptateurs (décision D2) implémentent la même interface :
 interface LlmProvider {
   supportsWebSearch(config: Config): boolean;
   analyze(input: AnalyzeInput, config: Config, signal: AbortSignal): Promise<ProviderResult>;
-  consolidateSummary?(
-    title: string,
-    summaries: string[],
-    language: string,
-    config: Config,
-    signal: AbortSignal,
-    onProgressText?: (text: string) => void,
-  ): Promise<string>;
+  // Appel textuel sans outil : consolidation, cartographie, relecture.
+  complete(request: CompletionRequest, config: Config, signal: AbortSignal, callbacks?: CompletionCallbacks): Promise<string>;
 }
-// ProviderResult = { raw: unknown; searchedUrls?: Set<string> }
+// ProviderResult = { raw: unknown; searchedUrls?: Set<string>; usage?: TokenUsage }
+// CompletionRequest = { system; user; json?; maxTokens? }
 ```
 
-L'orchestration (`src/analyze.ts`) enchaîne : découpage, streaming des morceaux, `validateAnalysis`, `enforceSourcePolicy`, consolidation éventuelle et fusion.
+L'orchestration (`src/analyze.ts`) enchaîne les passes suivantes. Celles marquées « approfondi » ne sont faites qu'avec le réglage « Analyse : approfondie » (D10) ; une passe secondaire en échec est ignorée, sans faire échouer l'analyse.
+
+| Passe | Quand | Appel |
+|---|---|---|
+| Cartographie (B1) | approfondi, article découpé | `complete` sur l'article entier, ou son début et sa fin s'il dépasse le budget (100 000 tokens pour Anthropic et Gemini, la taille de morceau sinon) : thèse, arguments, positions attribuées, engagements. Le plan est joint à chaque morceau |
+| Analyse | toujours | `analyze` par morceau, deux à la fois, puis `validateAnalysis`, `enforceSourcePolicy` et fusion |
+| Consolidation (B2) | article découpé | `complete` en JSON : `summary`, `clickbait_gap` et `blind_spot` jugés sur l'ensemble à partir des constats de chaque morceau ; repli sur la fusion |
+| Relecture (Q2) | approfondi, au moins une annotation | `complete` en JSON : chaque annotation avec le paragraphe qui contient sa citation ; les annotations écartées sont retirées |
 
 | Adaptateur | Sortie structurée | Recherche web (D3) |
 |---|---|---|
@@ -168,7 +170,7 @@ Quand `supportsWebSearch` est faux, le client force `fact_check.status = "unveri
 - **Internationalisation (`src/i18n.ts`).** L'interface et les messages d'erreurs (extraction et providers) sont traduits dans les 5 langues supportées (fr, en, es, de, it).
 - **Langue (D5).** Le prompt impose la langue de l'interface pour `summary`, `rhetoric_critique` et `context`, mais `exact_quote` reste recopié tel quel depuis l'article.
 - **Labels (D4).** `label` est une énumération fermée de 31 labels traduits par catégorie, plus `"autre"`.
-- **Longueur (D6).** Au-delà d'une limite configurable (8 000 tokens par défaut, soit ~6 000 mots), le texte est découpé en morceaux sur des frontières de paragraphes. Les morceaux sont analysés en parallèle, deux à la fois (`mapSettled`), puis fusionnés : ids renumérotés et doublons retirés (`dedupeAnnotations` : citation identique, ou citations de même catégorie dont l'une contient l'autre ou qui se recouvrent sur au moins 60 % de la plus courte ; la plus sévère est gardée). Le `summary` est consolidé par un appel dédié `consolidateSummary` (avec streaming textuel), ou repli gracieux sur la concaténation en cas d'erreur.
+- **Longueur (D6).** Au-delà d'une limite configurable (8 000 tokens par défaut, soit ~6 000 mots), le texte est découpé en morceaux sur des frontières de paragraphes. Les morceaux sont analysés en parallèle, deux à la fois (`mapSettled`), puis fusionnés : ids renumérotés et doublons retirés (`dedupeAnnotations` : citation identique, ou citations de même catégorie dont l'une contient l'autre ou qui se recouvrent sur au moins 60 % de la plus courte ; la plus sévère est gardée). Les éléments globaux sont ensuite consolidés (passe B2 ci-dessus), avec affichage progressif du résumé ; en cas d'échec, le résumé est la concaténation des résumés partiels, le décalage titre / contenu le premier non vide et les angles morts leur réunion.
 - **Échecs partiels (A3).** L'échec d'un morceau n'interrompt pas les autres. Si au moins un morceau a abouti, l'analyse est publiée comme partielle (`RunSnapshot.skipped` : début des passages non analysés) et n'est pas mise en cache, pour être retentée. En cas d'erreur ou d'annulation, les annotations déjà reçues restent affichées et surlignées.
 - **Nouvelles tentatives (A4).** `postJson` retente les statuts 429, 500, 502, 503 et 529 : 3 essais au plus, délai de 2 s puis 4 s, ou celui de `Retry-After` (au-delà de 60 s, quota épuisé : pas de nouvel essai). L'attente est interrompue par l'annulation et signalée dans le message d'avancement (`RunSnapshot.retrying`). Le SDK Anthropic applique sa propre politique, réglée sur le même nombre d'essais (`maxRetries`).
 - **Filtres de catégories.** Des filtres interactifs par catégorie avec compteurs en temps réel permettent d'isoler rapidement les sophismes, biais ou allégations.

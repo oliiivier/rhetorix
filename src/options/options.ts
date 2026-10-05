@@ -57,6 +57,10 @@ function applyOptionsI18n(lang: string): void {
   setTxt("opt-mode-inline", t.displayModes.inline);
   setTxt("opt-mode-sidepanel", t.displayModes.sidepanel);
   setTxt("lbl-web-search", t.webSearchLabel);
+  setTxt("lbl-analysis-depth", t.analysisDepthLabel);
+  setTxt("opt-depth-fast", t.analysisDepths.fast);
+  setTxt("opt-depth-deep", t.analysisDepths.deep);
+  setTxt("analysis-depth-hint", t.analysisDepthHint);
   setTxt("lbl-max-chunk", t.maxChunkLabel);
   setTxt("max-chunk-hint", t.maxChunkHint);
   setTxt("btn-save", t.saveBtn);
@@ -328,6 +332,7 @@ function readForm(): Config {
     displayMode: field<HTMLSelectElement>("displayMode").value as DisplayMode,
     webSearch: field<HTMLInputElement>("webSearch").checked,
     maxChunkTokens: Math.max(2000, Number(field<HTMLInputElement>("maxChunkTokens").value) || 8_000),
+    analysisDepth: field<HTMLSelectElement>("analysisDepth").value === "deep" ? "deep" : "fast",
     youtubeChunkMinutes: Math.max(5, Math.min(60, Number(field<HTMLInputElement>("youtubeChunkMinutes").value) || 15)),
     youtubeMinDisplayDuration: Math.max(2, Math.min(30, Number(field<HTMLInputElement>("youtubeMinDisplayDuration").value) || 6)),
     youtubePauseMode: (field<HTMLSelectElement>("youtubePauseMode")?.value || "none") as YouTubePauseMode,
@@ -346,6 +351,7 @@ function fillForm(c: Config): void {
   field<HTMLSelectElement>("displayMode").value = c.displayMode ?? "both";
   field<HTMLInputElement>("webSearch").checked = c.webSearch;
   field<HTMLInputElement>("maxChunkTokens").value = String(c.maxChunkTokens);
+  field<HTMLSelectElement>("analysisDepth").value = c.analysisDepth ?? "fast";
   field<HTMLInputElement>("youtubeChunkMinutes").value = String(c.youtubeChunkMinutes ?? 15);
   field<HTMLInputElement>("youtubeMinDisplayDuration").value = String(c.youtubeMinDisplayDuration ?? 6);
   field<HTMLSelectElement>("youtubePauseMode").value = c.youtubePauseMode ?? "none";

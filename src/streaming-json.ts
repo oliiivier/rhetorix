@@ -41,6 +41,24 @@ export function stripCodeFence(s: string): string {
 }
 
 /**
+ * Objet JSON contenu dans une réponse textuelle (appels sans sortie structurée) :
+ * balises de code retirées, puis du premier « { » au dernier « } ». Null si absent
+ * ou invalide.
+ */
+export function parseJsonObject(text: string): Record<string, unknown> | null {
+  const s = stripCodeFence(text);
+  const start = s.indexOf("{");
+  const end = s.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  try {
+    const value: unknown = JSON.parse(s.slice(start, end + 1));
+    return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Lit un ReadableStream de réponse HTTP ligne par ligne (SSE).
  */
 export async function* readSseLines(response: Response): AsyncGenerator<string> {

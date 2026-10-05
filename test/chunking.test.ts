@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chunkParagraphs, dedupeAnnotations, mapSettled, mergeAnalyses, quotesOverlap } from "../src/chunking";
+import { chunkParagraphs, dedupeAnnotations, mapSettled, mergeAnalyses, outlineSource, quotesOverlap } from "../src/chunking";
 import type { Analysis, Annotation } from "../src/schema";
 
 describe("chunkParagraphs", () => {
@@ -10,6 +10,19 @@ describe("chunkParagraphs", () => {
 
   it("garde un paragraphe trop long dans son propre morceau", () => {
     expect(chunkParagraphs(["a", "y".repeat(4000), "b"], 100)).toHaveLength(3);
+  });
+});
+
+describe("outlineSource (B1)", () => {
+  it("garde l'article entier s'il tient dans le budget", () => {
+    expect(outlineSource(["a", "b"], 100)).toEqual({ text: "a\n\nb", truncated: false });
+  });
+
+  it("garde le début et la fin d'un article trop long", () => {
+    const p = (c: string) => c.repeat(400); // ~100 tokens
+    const { text, truncated } = outlineSource([p("1"), p("2"), p("3"), p("4"), p("5"), p("6")], 300);
+    expect(truncated).toBe(true);
+    expect(text.split("\n\n").map((x) => x[0])).toEqual(["1", "2", "[", "6"]);
   });
 });
 

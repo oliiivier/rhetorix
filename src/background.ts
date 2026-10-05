@@ -190,6 +190,8 @@ function mobileNotifier(tabId: number): (s: RunSnapshot) => void {
       if (s.retrying) text = t.retryingStatus;
       else if (s.phase === "extracting") text = t.extractingStatus;
       else if (s.phase === "consolidating") text = t.consolidatingStatus;
+      else if (s.phase === "mapping") text = t.mappingStatus;
+      else if (s.phase === "reviewing") text = t.reviewingStatus;
       else text = s.total > 1 ? t.analyzingPartStatus(s.done, s.total) : t.analyzingStatus;
     } else if (s.status === "done") {
       durationMs = 5000;

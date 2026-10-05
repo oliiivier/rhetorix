@@ -3,7 +3,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { Config } from "../config";
-import { consolidatePrompt, systemPrompt, userPrompt } from "../prompt";
+import { systemPrompt, userPrompt } from "../prompt";
 import { ANALYSIS_JSON_SCHEMA, enforceAnnotationSourcePolicy, normalizeSourceUrl } from "../schema";
 import { ProgressiveJsonParser } from "../streaming-json";
 import { MAX_ATTEMPTS } from "./http";
@@ -175,31 +175,27 @@ export const anthropicProvider: LlmProvider = {
     throw new ProviderError("Trop de reprises de la recherche web.", "too_many_turns");
   },
 
-  async consolidateSummary(title, summaries, language, config, signal, onProgressText, onUsage) {
+  async complete(request, config, signal, callbacks) {
     const cleanKey = config.apiKey.trim();
     const isOAuth = cleanKey.startsWith("sk-ant-oat") || cleanKey.startsWith("Bearer ");
     const client = createAnthropicClient(config.apiKey, config.endpoint);
-    const { system: baseSystem, user } = consolidatePrompt(title, summaries, language);
-    const system = isOAuth
-      ? `You are Claude Code, Anthropic's official CLI for Claude.\n\n${baseSystem}`
-      : baseSystem;
+    const system = isOAuth ? `You are Claude Code, Anthropic's official CLI for Claude.\n\n${request.system}` : request.system;
     const stream = client.messages.stream(
       {
         model: config.model,
-        max_tokens: 1000,
+        max_tokens: request.maxTokens ?? 4000,
         system,
-        messages: [{ role: "user", content: user }],
+        messages: [{ role: "user", content: request.user }],
       },
       { signal },
     );
-    if (onProgressText) {
-      stream.on("text", (_delta, snapshot) => {
-        onProgressText(snapshot);
-      });
+    if (callbacks?.onText) {
+      const onText = callbacks.onText;
+      stream.on("text", (_delta, snapshot) => onText(snapshot));
     }
     const message = await stream.finalMessage();
-    if (onUsage && message.usage) {
-      onUsage({
+    if (message.usage) {
+      callbacks?.onUsage?.({
         inputTokens: message.usage.input_tokens,
         outputTokens: message.usage.output_tokens,
         totalTokens: message.usage.input_tokens + message.usage.output_tokens,
@@ -210,7 +206,7 @@ export const anthropicProvider: LlmProvider = {
       .map((b) => b.text)
       .join("")
       .trim();
-    if (!text) throw new ProviderError("Résumé consolidé vide.", "empty_consolidated");
+    if (!text) throw new ProviderError("Réponse vide du modèle.", "empty_completion");
     return text;
   },
 };
