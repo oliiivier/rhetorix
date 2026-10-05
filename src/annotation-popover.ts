@@ -215,6 +215,8 @@ const STYLE = `
   .evidence { margin: 4px 0 6px 0; font-size: 12px; }
   .evidence-kind { display: block; color: #5f6670; }
   .evidence-record { color: #1c64d1; text-decoration: underline; overflow-wrap: anywhere; }
+  .evidence-funders, .evidence-disclosure { display: block; margin-top: 4px; overflow-wrap: anywhere; }
+  .evidence-disclosure.none { color: #5f6670; font-style: italic; }
   @media (prefers-color-scheme: dark) {
     .study-flag { background: #2b3038; color: #adb5bd; }
     .study-flag.retracted, .study-flag.concern { background: #4a1515; color: #ff8787; }

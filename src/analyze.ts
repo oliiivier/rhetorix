@@ -6,7 +6,7 @@
 
 import { chunkParagraphs, mapSettled, mergeAnalyses, outlineSource, renumber } from "./chunking";
 import { resolveLanguage, type Config, type ProviderId } from "./config";
-import { attachStudyRecords } from "./crossref";
+import { attachStudyRecords } from "./studies";
 import { webSearchEnabled } from "./engine-settings";
 import type { Extracted } from "./messages";
 import { consolidatePrompt, mapPrompt, reviewPrompt, type ArticleMeta, type ReviewItem } from "./prompt";

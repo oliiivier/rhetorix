@@ -66,7 +66,7 @@ Points à noter :
 - **`host_permissions` vers l'endpoint LLM.** Une page d'extension ne contourne CORS que pour les hôtes déclarés. Comme l'endpoint est configurable, utiliser `optional_host_permissions` et demander la permission depuis la page d'options (`permissions.request`) au moment de l'enregistrement.
 - **Script de fond** : `service_worker` sous Chromium, `scripts` sous Firefox (voir §9).
 - **Aucun code distant.** Readability.js doit être embarqué dans le paquet.
-- **Crossref (D16)** : `api.crossref.org` est couvert par les permissions d'hôte demandées par le panneau (`https://*/*`). Sur Firefox Android, le clic sur l'icône demande l'origine du provider et `https://api.crossref.org/*`.
+- **Crossref et PubMed (D16, D17)** : `api.crossref.org` et `eutils.ncbi.nlm.nih.gov` sont couverts par les permissions d'hôte demandées par le panneau (`https://*/*`). Sur Firefox Android, le clic sur l'icône demande l'origine du provider, `https://api.crossref.org/*` et `https://eutils.ncbi.nlm.nih.gov/*`.
 
 ## 3. Flux d'analyse
 
@@ -167,7 +167,7 @@ L'orchestration (`src/analyze.ts`) enchaîne les passes suivantes. Celles marqu�
 | Analyse | toujours | `analyze` par morceau, deux à la fois, puis `validateAnalysis`, `enforceSourcePolicy` et fusion |
 | Consolidation (B2) | article découpé | `complete` en JSON : `summary`, `clickbait_gap` et `blind_spot` jugés sur l'ensemble à partir des constats de chaque morceau ; repli sur la fusion |
 | Relecture (Q2) | approfondi, au moins une annotation | `complete` en JSON : chaque annotation avec la définition de son étiquette et le paragraphe qui contient sa citation (ou la mention d'une annotation d'ensemble) ; les annotations écartées sont retirées |
-| Études (C3, D16) | recherche web utilisée, au moins un DOI | `attachStudyRecords` ([crossref.ts](../../src/crossref.ts)) : `GET https://api.crossref.org/works/{doi}`, sans clé, deux à la fois, 8 s au plus ; notice jointe à `fact_check.evidence.record`, DOI inconnu retiré, erreur ignorée |
+| Études (C3, D16, D17) | recherche web utilisée, au moins un DOI | `attachStudyRecords` ([studies.ts](../../src/studies.ts)), deux études à la fois, 8 s au plus par requête : `GET https://api.crossref.org/works/{doi}` ([crossref.ts](../../src/crossref.ts)) pour la notice, les financeurs et la déclaration d'intérêts déposée ; à défaut de déclaration et hors prépublication, `esearch` puis `efetch` sur `eutils.ncbi.nlm.nih.gov` ([pubmed.ts](../../src/pubmed.ts)) pour la `CoiStatement` PubMed, lue par expression régulière (pas de `DOMParser` dans le service worker). Notice jointe à `fact_check.evidence.record`, DOI inconnu de Crossref retiré, erreurs ignorées |
 | Vérification (C2, D14) | à la demande, après l'analyse | `complete` avec `webSearch` sur une allégation : citation, paragraphe, titre et métadonnées de publication ([verify.ts](../../src/verify.ts)). Réponse `{status, context, sources, evidence}` soumise à D3 avec les URL reçues par `onSource`, puis notice Crossref de l'étude citée (D16). Anthropic : outil `web_search`, reprise de `pause_turn` ; Gemini : `googleSearch`, sans mode JSON ; compatible OpenAI : `citations`. Pas avec Chrome Built-in AI |
 
 | Adaptateur | Sortie structurée | Recherche web (D3) |

@@ -25,7 +25,7 @@ Ce fournisseur est un tiers que vous choisissez, avec lequel vous avez votre pro
 
 Sur YouTube, Rhetorix récupère les sous-titres de la vidéo auprès de YouTube lui-même (`www.youtube.com`), comme le ferait la page YouTube que vous consultez. Ces sous-titres sont ensuite traités comme le texte d'un article.
 
-Quand une allégation cite une étude scientifique identifiée par un DOI (identifiant de publication), et seulement si la recherche web est activée ou si vous demandez la vérification de cette allégation, Rhetorix interroge **Crossref** (`api.crossref.org`), registre public des publications scientifiques, pour savoir si l'étude existe, où elle a été publiée et si elle a été rétractée. Seul le DOI est envoyé, sans clé, sans compte, sans le texte de l'article ni l'adresse de la page.
+Quand une allégation cite une étude scientifique identifiée par un DOI (identifiant de publication), et seulement si la recherche web est activée ou si vous demandez la vérification de cette allégation, Rhetorix interroge **Crossref** (`api.crossref.org`), registre public des publications scientifiques, pour savoir si l'étude existe, où elle a été publiée et si elle a été rétractée. Rhetorix y lit aussi les financeurs et la déclaration d'intérêts des auteurs. Si Crossref n'a pas de déclaration d'intérêts, le DOI est envoyé à **PubMed** (`eutils.ncbi.nlm.nih.gov`, service de la Bibliothèque nationale de médecine des États-Unis), qui répond pour les études biomédicales. Seul le DOI est envoyé, sans clé, sans compte, sans le texte de l'article ni l'adresse de la page.
 
 ## Données conservées sur votre appareil
 
@@ -49,7 +49,7 @@ Vous pouvez vider le cache des analyses et remettre à zéro le décompte des to
 ## Autorisations demandées
 
 - **Accès à l'onglet actif et injection de scripts** : extraire le texte de la page et surligner les passages relevés.
-- **Accès aux sites web** : joindre l'API du fournisseur LLM, les sous-titres YouTube et Crossref.
+- **Accès aux sites web** : joindre l'API du fournisseur LLM, les sous-titres YouTube, Crossref et PubMed.
 - **Stockage** : conserver vos réglages et le cache décrit ci-dessus.
 
 ## Contact
@@ -85,7 +85,7 @@ This provider is a third party you choose and hold your own account with. Its te
 
 On YouTube, Rhetorix fetches the video's captions from YouTube itself (`www.youtube.com`), just as the YouTube page you are viewing would. The captions are then handled like an article's text.
 
-When a claim cites a scientific study identified by a DOI (publication identifier), and only if web search is enabled or you ask for that claim to be checked, Rhetorix queries **Crossref** (`api.crossref.org`), the public registry of scholarly publications, to learn whether the study exists, where it was published and whether it was retracted. Only the DOI is sent: no key, no account, neither the article text nor the page address.
+When a claim cites a scientific study identified by a DOI (publication identifier), and only if web search is enabled or you ask for that claim to be checked, Rhetorix queries **Crossref** (`api.crossref.org`), the public registry of scholarly publications, to learn whether the study exists, where it was published and whether it was retracted. Rhetorix also reads the funders and the authors' declaration of interests. If Crossref has no declaration of interests, the DOI is sent to **PubMed** (`eutils.ncbi.nlm.nih.gov`, a service of the US National Library of Medicine), which answers for biomedical studies. Only the DOI is sent: no key, no account, neither the article text nor the page address.
 
 ## Data kept on your device
 
@@ -109,7 +109,7 @@ You can clear the analysis cache and reset the token count from the options page
 ## Permissions
 
 - **Active tab and script injection**: extract the page text and highlight flagged passages.
-- **Website access**: reach the LLM provider's API, YouTube captions and Crossref.
+- **Website access**: reach the LLM provider's API, YouTube captions, Crossref and PubMed.
 - **Storage**: keep your settings and the cache described above.
 
 ## Contact

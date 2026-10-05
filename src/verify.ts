@@ -3,7 +3,7 @@
 
 import { resolveLanguage, type Config } from "./config";
 import { verifyPrompt, type ArticleMeta } from "./prompt";
-import { attachStudyRecords } from "./crossref";
+import { attachStudyRecords } from "./studies";
 import { PROVIDERS } from "./providers";
 import { ProviderError } from "./providers/types";
 import { enforceFactCheckSourcePolicy, normalizeSourceUrl, validateFactCheck, type Annotation, type FactCheck } from "./schema";

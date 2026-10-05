@@ -77,6 +77,10 @@ export interface UiStrings {
   studyConcern: string;
   studyLinkTitle: string;
   studiesStatus: string;
+  /** Financeurs et déclarations d'intérêts d'une étude (D17). */
+  fundersLabel: string;
+  disclosureLabel: (source: string) => string;
+  noDisclosure: string;
 
   // Popover (icône d'extension)
   brandSubtitle: string;
@@ -331,6 +335,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     studyConcern: "Avis de réserve de l'éditeur",
     studyLinkTitle: "Notice de l'étude (DOI confirmé par Crossref)",
     studiesStatus: "Vérification des études citées…",
+    fundersLabel: "Financement déclaré :",
+    disclosureLabel: (source) => `Déclaration d'intérêts des auteurs (${source}) :`,
+    noDisclosure: "Aucune déclaration d'intérêts trouvée dans Crossref ni PubMed (ce qui ne signifie pas qu'il n'y en a pas).",
 
     brandSubtitle: "Esprit critique & rhétorique",
     activePageLabel: "Page active",
@@ -385,7 +392,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Annuler",
     privacySectionTitle: "Vie privée",
     privacyText:
-      "Le texte des articles analysés est envoyé uniquement au fournisseur que vous avez configuré. Pour vérifier une étude citée, son seul DOI est envoyé à Crossref (api.crossref.org). Rhetorix ne dispose d'aucun serveur central.",
+      "Le texte des articles analysés est envoyé uniquement au fournisseur que vous avez configuré. Pour vérifier une étude citée, son seul DOI est envoyé à Crossref (api.crossref.org) et, pour une étude biomédicale, à PubMed (eutils.ncbi.nlm.nih.gov). Rhetorix ne dispose d'aucun serveur central.",
     getGeminiKeyBtn: "✨ Obtenir une clé Gemini gratuite (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Obtenir une clé Anthropic ↗",
     presetOllamaBtn: "🦙 Configurer pour Ollama local (zéro clé)",
@@ -613,6 +620,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     studyConcern: "Publisher's expression of concern",
     studyLinkTitle: "Study record (DOI confirmed by Crossref)",
     studiesStatus: "Checking cited studies…",
+    fundersLabel: "Declared funding:",
+    disclosureLabel: (source) => `Authors' declaration of interests (${source}):`,
+    noDisclosure: "No declaration of interests found in Crossref or PubMed (which does not mean there is none).",
 
     brandSubtitle: "Critical thinking & rhetoric",
     activePageLabel: "Active page",
@@ -667,7 +677,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Cancel",
     privacySectionTitle: "Privacy",
     privacyText:
-      "The text of analyzed articles is sent exclusively to the provider you configured. To check a cited study, only its DOI is sent to Crossref (api.crossref.org). Rhetorix does not run any central server.",
+      "The text of analyzed articles is sent exclusively to the provider you configured. To check a cited study, only its DOI is sent to Crossref (api.crossref.org) and, for a biomedical study, to PubMed (eutils.ncbi.nlm.nih.gov). Rhetorix does not run any central server.",
     getGeminiKeyBtn: "✨ Get a free Gemini API key (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Get an Anthropic API key ↗",
     presetOllamaBtn: "🦙 Configure for local Ollama (no key)",
@@ -895,6 +905,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     studyConcern: "Expresión de preocupación del editor",
     studyLinkTitle: "Ficha del estudio (DOI confirmado por Crossref)",
     studiesStatus: "Verificando los estudios citados…",
+    fundersLabel: "Financiación declarada:",
+    disclosureLabel: (source) => `Declaración de intereses de los autores (${source}):`,
+    noDisclosure: "No se ha encontrado ninguna declaración de intereses en Crossref ni en PubMed (lo que no significa que no la haya).",
 
     brandSubtitle: "Pensamiento crítico y retórica",
     activePageLabel: "Página activa",
@@ -949,7 +962,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Cancelar",
     privacySectionTitle: "Privacidad",
     privacyText:
-      "El texto de los artículos analizados se envía únicamente al proveedor que haya configurado. Para verificar un estudio citado, solo se envía su DOI a Crossref (api.crossref.org). Rhetorix no dispone de ningún servidor central.",
+      "El texto de los artículos analizados se envía únicamente al proveedor que haya configurado. Para verificar un estudio citado, solo se envía su DOI a Crossref (api.crossref.org) y, para un estudio biomédico, a PubMed (eutils.ncbi.nlm.nih.gov). Rhetorix no dispone de ningún servidor central.",
     getGeminiKeyBtn: "✨ Obtener una clave Gemini gratuita (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Obtener una clave Anthropic ↗",
     presetOllamaBtn: "🦙 Configurar para Ollama local (sin clave)",
@@ -1177,6 +1190,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     studyConcern: "Bedenkenhinweis des Verlags",
     studyLinkTitle: "Eintrag der Studie (DOI von Crossref bestätigt)",
     studiesStatus: "Zitierte Studien werden geprüft…",
+    fundersLabel: "Angegebene Finanzierung:",
+    disclosureLabel: (source) => `Interessenerklärung der Autoren (${source}):`,
+    noDisclosure: "Keine Interessenerklärung in Crossref oder PubMed gefunden (das bedeutet nicht, dass es keine gibt).",
 
     brandSubtitle: "Kritisches Denken & Rhetorik",
     activePageLabel: "Aktive Seite",
@@ -1231,7 +1247,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Abbrechen",
     privacySectionTitle: "Datenschutz",
     privacyText:
-      "Der Text analysierter Artikel wird ausschließlich an den von Ihnen konfigurierten Anbieter gesendet. Zur Prüfung einer zitierten Studie wird nur deren DOI an Crossref (api.crossref.org) gesendet. Rhetorix betreibt keinen zentralen Server.",
+      "Der Text analysierter Artikel wird ausschließlich an den von Ihnen konfigurierten Anbieter gesendet. Zur Prüfung einer zitierten Studie wird nur deren DOI an Crossref (api.crossref.org) und, bei einer biomedizinischen Studie, an PubMed (eutils.ncbi.nlm.nih.gov) gesendet. Rhetorix betreibt keinen zentralen Server.",
     getGeminiKeyBtn: "✨ Kostenlosen Gemini-API-Schlüssel holen (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Anthropic-API-Schlüssel holen ↗",
     presetOllamaBtn: "🦙 Für lokales Ollama vorkonfigurieren (kein Schlüssel)",
@@ -1459,6 +1475,9 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     studyConcern: "Espressione di preoccupazione dell'editore",
     studyLinkTitle: "Scheda dello studio (DOI confermato da Crossref)",
     studiesStatus: "Verifica degli studi citati…",
+    fundersLabel: "Finanziamento dichiarato:",
+    disclosureLabel: (source) => `Dichiarazione di interessi degli autori (${source}):`,
+    noDisclosure: "Nessuna dichiarazione di interessi trovata in Crossref né in PubMed (il che non significa che non ce ne siano).",
 
     brandSubtitle: "Pensiero critico e retorica",
     activePageLabel: "Pagina attiva",
@@ -1513,7 +1532,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Annulla",
     privacySectionTitle: "Privacy",
     privacyText:
-      "Il testo degli articoli analizzati viene inviato esclusivamente al fornitore configurato. Per verificare uno studio citato, solo il suo DOI viene inviato a Crossref (api.crossref.org). Rhetorix non dispone di alcun server centrale.",
+      "Il testo degli articoli analizzati viene inviato esclusivamente al fornitore configurato. Per verificare uno studio citato, solo il suo DOI viene inviato a Crossref (api.crossref.org) e, per uno studio biomedico, a PubMed (eutils.ncbi.nlm.nih.gov). Rhetorix non dispone di alcun server centrale.",
     getGeminiKeyBtn: "✨ Ottieni una chiave Gemini gratuita (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Ottieni una chiave Anthropic ↗",
     presetOllamaBtn: "🦙 Configura per Ollama locale (senza chiave)",

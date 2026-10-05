@@ -292,6 +292,8 @@ button.filter-btn.badge.active {
 .evidence { margin: 0 0 6px; font-size: 12px; }
 .evidence-kind { display: block; color: var(--muted); }
 .evidence-record { color: var(--accent); overflow-wrap: anywhere; }
+.evidence-funders, .evidence-disclosure { display: block; margin-top: 4px; overflow-wrap: anywhere; }
+.evidence-disclosure.none { color: var(--muted); font-style: italic; }
 
 .privacy { padding: 8px 12px 12px; font-size: 11px; color: var(--muted); }
 

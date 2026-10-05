@@ -1,6 +1,7 @@
 // Affichage du niveau de preuve d'une allégation scientifique (D16), commun au panneau
 // et aux bulles : type d'étude, notice Crossref et signalements (prépublication,
-// rétractation, avis de réserve). Le lien doi.org n'est affiché que pour un DOI
+// rétractation, avis de réserve), financeurs et déclarations d'intérêts (D17), cités
+// tels quels et sans conclusion. Le lien doi.org n'est affiché que pour un DOI
 // confirmé par Crossref.
 
 import { doiUrl } from "./crossref";
@@ -41,6 +42,22 @@ export function renderEvidence(evidence: Evidence | undefined, t: UiStrings): HT
     const where = [record.journal, record.year].filter(Boolean).join(", ");
     link.textContent = [record.title, where].filter(Boolean).join(" — ") || record.doi;
     box.append(link);
+    // D17 : ce qui a été déclaré, et seulement cela. Faute de déclaration trouvée, rien
+    // n'est affirmé sur l'absence de conflit d'intérêts.
+    if (record.funders?.length) box.append(el("span", "evidence-funders", `${t.fundersLabel} ${record.funders.join(", ")}`));
+    if (record.disclosures?.length) {
+      for (const d of record.disclosures) {
+        box.append(el("span", "evidence-disclosure", `${t.disclosureLabel(d.source === "pubmed" ? "PubMed" : "Crossref")} ${clip(d.text)}`));
+      }
+    } else {
+      box.append(el("span", "evidence-disclosure none", t.noDisclosure));
+    }
   }
   return box;
+}
+
+const MAX_DISCLOSURE = 500;
+
+function clip(s: string): string {
+  return s.length > MAX_DISCLOSURE ? `${s.slice(0, MAX_DISCLOSURE).trimEnd()}…` : s;
 }

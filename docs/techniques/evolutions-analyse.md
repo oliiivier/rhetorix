@@ -1,6 +1,6 @@
 # Évolutions du moteur d'analyse
 
-État des lieux du moteur d'analyse (extraction, découpage, appels LLM, fusion, cache) au 2026-10-04, et pistes d'amélioration. Ce document sert de base de réflexion. Les orientations retenues le 2026-10-05 (D10 à D16) sont consignées dans [points-ouverts.md](../fonctionnelles/points-ouverts.md) et rappelées en §4, l'état de mise en œuvre en §5.
+État des lieux du moteur d'analyse (extraction, découpage, appels LLM, fusion, cache) au 2026-10-04, et pistes d'amélioration. Ce document sert de base de réflexion. Les orientations retenues le 2026-10-05 (D10 à D17) sont consignées dans [points-ouverts.md](../fonctionnelles/points-ouverts.md) et rappelées en §4, l'état de mise en œuvre en §5.
 
 Rappel du flux actuel (voir [architecture](architecture.md) §3 et §7) : `runner.ts` extrait l'article par Readability, `analyze.ts` le découpe par paragraphes (`chunkParagraphs`, 8 000 tokens par défaut), analyse les morceaux avec 2 appels simultanés, valide chaque réponse, applique la politique des sources (D3), fusionne (`mergeAnalyses`) puis consolide le résumé par un appel dédié.
 
@@ -67,7 +67,7 @@ Les appels supplémentaires de ce lot, du lot C et de la relecture Q2 ne sont fa
 - **C1. Métadonnées de publication.** Transmettre `publishedTime`, `byline` et `siteName` dans le prompt, avec la consigne d'évaluer les allégations à la date de publication et de signaler ce qui a changé depuis. Ajout au type `Extracted` et au prompt.
 - **C2. Vérification séparée, à la demande (D14).** Une allégation restée « non vérifiée » (recherche web désactivée, budget de recherche épuisé, résultat non concluant) peut être vérifiée en ligne depuis sa carte ou sa bulle : un appel `complete` avec la recherche web activée pour lui seul (`verify.ts`, `verifyPrompt`), soumis à la politique des sources. Le résultat remplace la vérification et complète le cache. L'utilisateur choisit ainsi les allégations qui valent un appel, sans budget fixé à l'avance ni motif supplémentaire dans le contrat.
 
-- **C3. Citations scientifiques (D16).** Pour une allégation qui repose sur une étude, le prompt demande d'identifier l'étude, de juger la fidélité de l'article et de renseigner `fact_check.evidence` (type d'étude, DOI). La notice Crossref du DOI (`crossref.ts`) signale prépublication, rétractation et avis de réserve, sans note de qualité des revues.
+- **C3. Citations scientifiques (D16).** Pour une allégation qui repose sur une étude, le prompt demande d'identifier l'étude, de juger la fidélité de l'article et de renseigner `fact_check.evidence` (type d'étude, DOI). La notice Crossref du DOI (`crossref.ts`) signale prépublication, rétractation et avis de réserve, sans note de qualité des revues. Elle donne aussi les financeurs et, si l'éditeur l'a déposée, la déclaration d'intérêts des auteurs ; à défaut, celle-ci est cherchée dans PubMed (`pubmed.ts`, D17).
 
 ### Lot Q : qualité mesurée
 
@@ -94,10 +94,11 @@ Les appels supplémentaires de ce lot, du lot C et de la relecture Q2 ne sont fa
 | D14 | Vérification factuelle séparée (C2) | **À la demande**, allégation par allégation, recherche web activée pour ce seul appel ; le résultat complète le cache |
 | D15 | Signalement par l'utilisateur (Q4) | **Contestation locale**, puis ticket GitHub prérempli ouvert dans un onglet, après avertissement, adresse de la page facultative |
 | D16 | Citations scientifiques (C3) | **Niveau de preuve** dans le contrat et **notice Crossref** (sans clé ; pas d'OpenAlex), automatique avec la recherche web, sinon à la vérification à la demande |
+| D17 | Conflits d'intérêts des auteurs (C3) | **Déclarations publiées seulement** : financeurs et déclarations Crossref, puis PubMed pour une étude biomédicale ; jamais du modèle, citées sans conclusion |
 
 ## 5. État de mise en œuvre (2026-10-05)
 
-`ENGINE_VERSION` vaut 7 : les analyses en cache antérieures sont réaffichées avec l'avertissement « peut-être obsolète » (D11) et refaites à la demande.
+`ENGINE_VERSION` vaut 8 : les analyses en cache antérieures sont réaffichées avec l'avertissement « peut-être obsolète » (D11) et refaites à la demande.
 
 | Piste | État | Écarts et remarques |
 |---|---|---|
@@ -111,7 +112,7 @@ Les appels supplémentaires de ce lot, du lot C et de la relecture Q2 ne sont fa
 | B3 | Fait | `exact_quote` vide, pour `sophism` et `bias` seulement. Les annotations d'ensemble sont dédoublonnées par étiquette et soumises à la relecture. Le titre est localisé par un `<h1>` qui lui correspond, sinon par sa première occurrence, sinon par le seul `<h1>` de la page. Sur YouTube, titre de la vidéo sous le lecteur. Le score du corpus les liste à part, hors précision |
 | C1 | Fait | Date, auteur et site transmis avec la date de l'analyse. Rien pour YouTube, dont l'extraction ne fournit pas ces métadonnées |
 | C2 | Fait, autrement | À la demande (D14) plutôt qu'en seconde passe budgétée : pas de modification du contrat d'analyse. Le provider déclare la capacité (`searchesOnDemand`) ; Anthropic utilise l'outil `web_search` dans `complete`, Gemini le grounding Google Search sans mode JSON, un endpoint compatible OpenAI ses citations |
-| C3 | Fait | Passe « études » après la relecture, deux requêtes Crossref à la fois, ignorée en cas d'échec. Un DOI inconnu de Crossref est retiré. La rétractation est lue dans `updated-by` (données Retraction Watch intégrées à Crossref) et dans un titre préfixé « RETRACTED ». Le statut de l'allégation n'est pas modifié par une rétractation : le signalement s'affiche à côté. Le corpus ne contient pas encore d'article qui cite une étude rétractée ou une prépublication |
+| C3 | Fait | Passe « études » après la relecture, deux requêtes Crossref à la fois, ignorée en cas d'échec. Un DOI inconnu de Crossref est retiré. La rétractation est lue dans `updated-by` (données Retraction Watch intégrées à Crossref) et dans un titre préfixé « RETRACTED ». Le statut de l'allégation n'est pas modifié par une rétractation : le signalement s'affiche à côté. Le corpus ne contient pas encore d'article qui cite une étude rétractée ou une prépublication. D17 : `studies.ts` interroge PubMed (recherche par DOI, puis notice) quand Crossref n'a pas de déclaration d'intérêts, sauf pour une prépublication ; un DOI qui renvoie plusieurs notices PubMed est ignoré. Le champ `assertion` n'est rempli que par certains éditeurs ; sa lecture (noms et libellés qui évoquent les conflits d'intérêts) n'a été testée que sur des réponses simulées |
 | Q1 | Fait | `npm run corpus:eval`. Premières mesures en §6 ; les annotations attendues restent à relire |
 | Q2 | Fait | Une relecture en échec garde toutes les annotations. Elle reçoit la définition de chaque étiquette ; effet mesuré en §6 |
 | Q3 | Fait | Grille de sévérité et champ `confidence` ; la confiance n'est pas encore utilisée par la relecture ni par le score du corpus |
@@ -119,7 +120,7 @@ Les appels supplémentaires de ce lot, du lot C et de la relecture Q2 ne sont fa
 
 Non traités : le dimensionnement (§1.2 : estimation des tokens, concurrence par provider, fenêtre de Gemini Nano) et le traitement particulier des intertitres (§1.6).
 
-Prochaine étape : relire les fiches du corpus signalées en §6 et y ajouter des articles qui citent des études (dont une rétractée et une prépublication), puis refaire les mesures avec la version 7 du moteur (annotations d'ensemble, confiance, niveau de preuve), sur 3 passes et sur un autre provider, avant de trancher le défaut de D10.
+Prochaine étape : relire les fiches du corpus signalées en §6 et y ajouter des articles qui citent des études (dont une rétractée et une prépublication), puis refaire les mesures avec la version 8 du moteur (annotations d'ensemble, confiance, niveau de preuve), sur 3 passes et sur un autre provider, avant de trancher le défaut de D10.
 
 ## 6. Mesures sur le corpus (2026-10-05)
 

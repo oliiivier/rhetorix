@@ -35,6 +35,16 @@ export interface StudyRecord {
   retracted: boolean;
   /** Avis de réserve (expression of concern) publié par l'éditeur. */
   concern: boolean;
+  /** Financeurs déclarés dans Crossref (D17). */
+  funders?: string[];
+  /** Déclarations d'intérêts publiées avec l'étude, telles quelles (D17). */
+  disclosures?: Disclosure[];
+}
+
+/** Déclaration d'intérêts des auteurs, reprise d'une source structurée, jamais du modèle (D17). */
+export interface Disclosure {
+  source: "crossref" | "pubmed";
+  text: string;
 }
 
 /** Étude sur laquelle repose une allégation scientifique (D16). */
