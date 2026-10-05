@@ -22,14 +22,14 @@ Orientations pour l'évolution du moteur d'analyse, détaillées dans [evolution
 
 | # | Sujet | Décision | Conséquences |
 |---|---|---|---|
-| D10 | Coût de l'analyse | **Réglage « rapide / approfondi »** | Le mode rapide conserve le comportement actuel. Le mode approfondi ajoute la cartographie préalable des articles découpés, la vérification factuelle séparée et la relecture des annotations. Nouveau réglage dans les options et textes d'interface en 5 langues |
+| D10 | Coût de l'analyse | **Réglage « rapide / approfondi »** | Le mode rapide conserve le comportement actuel. Le mode approfondi ajoute la cartographie préalable des articles découpés, la vérification factuelle séparée et la relecture des annotations. Un seul réglage, « rapide » par défaut, libellé « Analyse : rapide / approfondie » avec une aide qui annonce le surcoût (jusqu'à 3 appels supplémentaires). Sans recherche web, le mode approfondi se réduit à la cartographie et à la relecture ; l'aide l'indique. Textes d'interface en 5 langues. Le défaut sera réexaminé au vu du corpus d'évaluation |
 | D11 | Cache au rechargement | **Affichage immédiat avec avertissement** | Une analyse en cache dont la configuration ne correspond plus (provider, modèle, langue, version du moteur…) est affichée avec la mention « peut-être obsolète » et le bouton « Ré-analyser ». Le texte n'est pas ré-extrait au rechargement. Corrige l'écart actuel avec l'architecture §8 |
 | D12 | Annotations sans citation | **Acceptées, ancrées sur le titre** | Pour les défauts de structure de l'argumentation. Modifie le contrat (spec §3). Section dédiée dans le panneau ; sur mobile, bulle au toucher du titre et rappel dans le message bref |
 | D13 | Corpus d'évaluation | **Textes intégraux hors dépôt** | Le dépôt ne contient que le script d'évaluation, les références des articles et les annotations attendues ; les textes restent dans un dossier local ignoré par git |
 
 ## Reste à préciser
 
-- **Évolutions du moteur d'analyse** : constats et pistes (contexte global pour les articles découpés, vérification factuelle séparée, cache, robustesse, mesure de la qualité) recensés dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). Orientations D10 à D13 retenues ; restent à préciser le libellé et la valeur par défaut du réglage D10, et le comportement de D12 sur les vidéos YouTube.
+- **Évolutions du moteur d'analyse** : constats et pistes (contexte global pour les articles découpés, vérification factuelle séparée, cache, robustesse, mesure de la qualité) recensés dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). Orientations D10 à D13 retenues ; reste à préciser le comportement de D12 sur les vidéos YouTube.
 - **Firefox pour Android (D9), à tester sur un appareil réel** (`npx web-ext run -t firefox-android`) :
   - le script de fond est maintenu actif pendant l'analyse par un appel d'API toutes les 20 s ; il faut vérifier que Firefox Android ne le suspend pas pendant un appel LLM long ;
   - l'octroi d'`activeTab` et la demande de permission depuis `action.onClicked` ;

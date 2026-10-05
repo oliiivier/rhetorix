@@ -85,9 +85,9 @@ Les appels supplémentaires de ce lot, du lot C et de la relecture Q2 ne sont fa
 
 | # | Question | Décision |
 |---|---|---|
-| D10 | Coût des appels supplémentaires (B1, C2, Q2) | Réglage **« rapide / approfondi »** dans les options. Le mode rapide conserve le comportement actuel ; le mode approfondi active les appels supplémentaires |
+| D10 | Coût des appels supplémentaires (B1, C2, Q2) | Réglage **« rapide / approfondi »** dans les options. Le mode rapide conserve le comportement actuel ; le mode approfondi active les appels supplémentaires. Un **seul réglage** global, **« rapide » par défaut**, libellé « Analyse : rapide / approfondie » avec une aide qui annonce le surcoût (jusqu'à 3 appels supplémentaires, plus lent, plus fiable). Sans recherche web (Gemini Nano, Ollama…), le mode approfondi se réduit à la cartographie et à la relecture ; l'aide l'indique, le choix reste disponible. Le défaut pourra passer à « approfondi » si le corpus (Q1) montre un gain net |
 | D11 | Analyse en cache peut-être obsolète au rechargement (A2) | **Affichage immédiat avec avertissement** « peut-être obsolète » et bouton « Ré-analyser », sans ré-extraction |
 | D12 | Annotations sans citation (B3) | **Acceptées, ancrées sur le titre** : section dédiée du panneau sur desktop ; sur mobile, bulle au toucher du titre et rappel dans le message bref |
 | D13 | Emplacement du corpus d'évaluation (Q1) | **Textes intégraux hors dépôt** ; seuls le script, les références des articles et les annotations attendues sont versionnés |
 
-Reste à préciser : le libellé et la valeur par défaut du réglage D10, et le comportement de D12 sur les vidéos YouTube, qui n'ont pas de titre surlignable dans la transcription.
+Reste à préciser : le comportement de D12 sur les vidéos YouTube, qui n'ont pas de titre surlignable dans la transcription.
