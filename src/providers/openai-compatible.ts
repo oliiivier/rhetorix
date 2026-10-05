@@ -39,6 +39,7 @@ export const openAiCompatibleProvider: LlmProvider = {
       },
       signal,
       "l'endpoint",
+        input.onStream?.onRetry,
     );
 
     const searchedUrls = webSearch ? new Set<string>() : undefined;

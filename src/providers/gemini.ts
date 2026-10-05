@@ -60,6 +60,7 @@ export const geminiProvider: LlmProvider = {
         body,
         signal,
         "Gemini",
+        input.onStream?.onRetry,
       );
     } catch (err) {
       if (webSearch && err instanceof ProviderError) {

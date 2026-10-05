@@ -138,6 +138,42 @@ describe("runAnalysis (script de fond, D9)", () => {
     expect((await pending).status).toBe("cancelled");
   });
 
+  it("conserve et surligne les annotations reçues avant une erreur (A3)", async () => {
+    mockAnalyze.mockImplementation(async (_a, _c, _s, cb) => {
+      cb.onAnnotation(annotation("p1-ann-1"));
+      throw new Error("réseau");
+    });
+    const final = await runAnalysis(20, "https://ex.test/err", { force: false }, () => {});
+    expect(final.status).toBe("error");
+    expect(final.annotations.map((a) => a.id)).toEqual(["p1-ann-1"]);
+    expect(tabMessages.find((m) => m.type === "highlight")).toMatchObject({ annotations: [{ id: "p1-ann-1" }] });
+    expect(mockPutCached).not.toHaveBeenCalled();
+  });
+
+  it("publie une analyse partielle sans la mettre en cache (A3)", async () => {
+    mockAnalyze.mockResolvedValue({
+      summary: "S",
+      annotations: [annotation("ann-1")],
+      skipped: [{ index: 1, excerpt: "Deuxième partie…" }],
+    });
+    const final = await runAnalysis(21, "https://ex.test/partial", { force: false }, () => {});
+    expect(final.status).toBe("done");
+    expect(final.skipped).toEqual(["Deuxième partie…"]);
+    expect(mockPutCached).not.toHaveBeenCalled();
+  });
+
+  it("signale une nouvelle tentative pendant l'analyse (A4)", async () => {
+    mockAnalyze.mockImplementation(async (_a, _c, _s, cb) => {
+      cb.onRetry({ attempt: 1, delayMs: 2000, status: 429 });
+      cb.onProgress({ phase: "analyzing", done: 1, total: 1 });
+      return { summary: "", annotations: [] };
+    });
+    const updates: RunSnapshot[] = [];
+    const final = await runAnalysis(22, undefined, { force: false }, (s) => updates.push(s));
+    expect(updates.some((s) => s.retrying)).toBe(true);
+    expect(final.retrying).toBe(false);
+  });
+
   it("ne publie plus rien pour un onglet oublié (rechargé ou fermé)", async () => {
     let release!: () => void;
     mockAnalyze.mockImplementation(() => new Promise((resolve) => (release = () => resolve({ summary: "", annotations: [] }))));

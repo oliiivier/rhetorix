@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chunkParagraphs, mapLimit, mergeAnalyses } from "../src/chunking";
+import { chunkParagraphs, dedupeAnnotations, mapSettled, mergeAnalyses, quotesOverlap } from "../src/chunking";
 import type { Analysis, Annotation } from "../src/schema";
 
 describe("chunkParagraphs", () => {
@@ -50,17 +50,87 @@ describe("mergeAnalyses", () => {
   });
 });
 
-describe("mapLimit", () => {
+describe("quotesOverlap (A5)", () => {
+  it("détecte une citation contenue dans l'autre, à la typographie près", () => {
+    expect(quotesOverlap("« Le nucléaire est sûr. »", "Tout le monde le sait : le nucléaire est sûr")).toBe(true);
+  });
+
+  it("détecte un recouvrement de la fin de l'une sur le début de l'autre", () => {
+    expect(quotesOverlap("Les prix ont doublé en dix ans", "ont doublé en dix ans, selon l'Insee")).toBe(true);
+  });
+
+  it("ignore un recouvrement marginal", () => {
+    expect(quotesOverlap("Les prix ont doublé en dix ans", "en dix ans, la population a changé")).toBe(false);
+    expect(quotesOverlap("première phrase", "seconde phrase")).toBe(false);
+  });
+});
+
+describe("dedupeAnnotations (A5)", () => {
+  const ann = (id: string, quote: string, category: Annotation["category"], severity: Annotation["severity"]): Annotation => ({
+    id,
+    exact_quote: quote,
+    category,
+    label: "autre",
+    severity,
+    rhetoric_critique: "",
+    fact_check: { status: "unverified", context: "", sources: [] },
+  });
+
+  it("garde la plus sévère de deux annotations de même catégorie qui se recouvrent, à la place de la première", () => {
+    const out = dedupeAnnotations([
+      ann("a", "Les prix ont doublé en dix ans", "bias", "low"),
+      ann("b", "Autre passage", "bias", "low"),
+      ann("c", "prix ont doublé en dix ans", "bias", "high"),
+    ]);
+    expect(out.map((a) => a.id)).toEqual(["c", "b"]);
+  });
+
+  it("garde deux catégories différentes sur un même passage, sauf citation identique", () => {
+    const out = dedupeAnnotations([
+      ann("a", "Les prix ont doublé en dix ans", "bias", "low"),
+      ann("b", "prix ont doublé", "factual_claim", "medium"),
+      ann("c", "les prix ont doublé en dix ans", "sophism", "high"),
+    ]);
+    expect(out.map((a) => a.id)).toEqual(["c", "b"]);
+  });
+});
+
+describe("mapSettled (A3)", () => {
   it("borne la concurrence et conserve l'ordre", async () => {
     let active = 0;
     let peak = 0;
-    const out = await mapLimit([1, 2, 3, 4, 5], 2, async (n) => {
+    const out = await mapSettled([1, 2, 3, 4, 5], 2, async (n) => {
       peak = Math.max(peak, ++active);
       await new Promise((r) => setTimeout(r, 5));
       active--;
       return n * 10;
     });
-    expect(out).toEqual([10, 20, 30, 40, 50]);
+    expect(out.map((r) => (r.ok ? r.value : null))).toEqual([10, 20, 30, 40, 50]);
     expect(peak).toBe(2);
+  });
+
+  it("isole les échecs", async () => {
+    const out = await mapSettled([1, 2, 3], 2, async (n) => {
+      if (n === 2) throw new Error("boom");
+      return n;
+    });
+    expect(out.map((r) => r.ok)).toEqual([true, false, true]);
+  });
+
+  it("ne lance plus rien après une annulation", async () => {
+    const controller = new AbortController();
+    const calls: number[] = [];
+    const out = await mapSettled(
+      [1, 2, 3, 4],
+      1,
+      async (n) => {
+        calls.push(n);
+        if (n === 2) controller.abort();
+        return n;
+      },
+      controller.signal,
+    );
+    expect(calls).toEqual([1, 2]);
+    expect(out.map((r) => r.ok)).toEqual([true, true, false, false]);
   });
 });

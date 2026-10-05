@@ -181,6 +181,25 @@ describe("analyzeArticle", () => {
     expect(result.summary).toBe("Résumé partie 1\n\nRésumé partie 2");
   });
 
+  it("publie les morceaux réussis quand un morceau échoue (A3)", async () => {
+    mockAnalyze
+      .mockResolvedValueOnce({ raw: { summary: "Résumé partie 1", annotations: [] } })
+      .mockRejectedValueOnce(new Error("503"));
+
+    const article: Extracted = { title: "Grand article", lang: "fr", paragraphs: ["A".repeat(300), "B".repeat(300)] };
+    const result = await analyzeArticle(article, baseConfig, new AbortController().signal);
+
+    expect(result.summary).toBe("Résumé partie 1");
+    expect(result.skipped).toEqual([{ index: 1, excerpt: `${"B".repeat(120)}…` }]);
+    expect(mockConsolidate).not.toHaveBeenCalled();
+  });
+
+  it("échoue si tous les morceaux échouent", async () => {
+    mockAnalyze.mockRejectedValue(new Error("quota"));
+    const article: Extracted = { title: "T", lang: "fr", paragraphs: ["A".repeat(300), "B".repeat(300)] };
+    await expect(analyzeArticle(article, baseConfig, new AbortController().signal)).rejects.toThrow("quota");
+  });
+
   it("transmet les callbacks de streaming au provider", async () => {
     mockAnalyze.mockImplementation(async (input) => {
       // Simule un appel streaming émis par le provider

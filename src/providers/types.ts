@@ -1,11 +1,14 @@
 import type { Config } from "../config";
 import type { Annotation } from "../schema";
 import type { TokenUsage } from "../tokens";
+import type { RetryInfo } from "./http";
 
 export interface StreamCallbacks {
   onSummary?: (summary: string, isComplete: boolean) => void;
   onAnnotation?: (annotation: Annotation) => void;
   onUsage?: (usage: TokenUsage) => void;
+  /** Statut passager reçu : nouvel essai après `delayMs` (A4). */
+  onRetry?: (info: RetryInfo) => void;
 }
 
 export interface AnalyzeInput {

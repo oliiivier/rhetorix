@@ -187,13 +187,15 @@ function mobileNotifier(tabId: number): (s: RunSnapshot) => void {
     let isError = false;
     let durationMs = 0;
     if (s.status === "running") {
-      if (s.phase === "extracting") text = t.extractingStatus;
+      if (s.retrying) text = t.retryingStatus;
+      else if (s.phase === "extracting") text = t.extractingStatus;
       else if (s.phase === "consolidating") text = t.consolidatingStatus;
       else text = s.total > 1 ? t.analyzingPartStatus(s.done, s.total) : t.analyzingStatus;
     } else if (s.status === "done") {
       durationMs = 5000;
       const counts = CATEGORIES.map((c) => [c, s.annotations.filter((a) => a.category === c).length] as const).filter(([, n]) => n > 0);
       text = counts.length ? counts.map(([c, n]) => `${t.categoriesPlural[c]} (${n})`).join(" · ") : t.emptyResults;
+      if (s.skipped?.length) text += ` · ${t.partialShort(s.skipped.length)}`;
     } else if (s.status === "cancelled") {
       durationMs = 3000;
       text = t.cancelledStatus;

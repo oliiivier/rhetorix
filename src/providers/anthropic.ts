@@ -6,6 +6,7 @@ import type { Config } from "../config";
 import { consolidatePrompt, systemPrompt, userPrompt } from "../prompt";
 import { ANALYSIS_JSON_SCHEMA, enforceAnnotationSourcePolicy, normalizeSourceUrl } from "../schema";
 import { ProgressiveJsonParser } from "../streaming-json";
+import { MAX_ATTEMPTS } from "./http";
 import { ProviderError, type LlmProvider } from "./types";
 
 const SUBMIT_TOOL = "submit_analysis";
@@ -24,6 +25,8 @@ export function createAnthropicClient(apiKey: string, endpoint?: string): Anthro
     authToken: isOAuth ? token : undefined,
     baseURL: baseUrl || undefined,
     dangerouslyAllowBrowser: true,
+    // Le SDK retente lui-même 429, 5xx et 529 en respectant Retry-After (A4).
+    maxRetries: MAX_ATTEMPTS - 1,
     defaultHeaders: isOAuth
       ? {
           "anthropic-beta": "oauth-2025-04-20",

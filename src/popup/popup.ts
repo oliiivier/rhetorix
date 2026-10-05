@@ -103,6 +103,7 @@ function setRunningUi(running: boolean): void {
 
 function statusText(s: RunSnapshot): string {
   const t = strings();
+  if (s.retrying) return t.retryingStatus;
   if (s.phase === "extracting") return t.extractingStatus;
   if (s.phase === "consolidating") return t.consolidatingStatus;
   return s.total > 1 ? t.analyzingPartStatus(s.done, s.total) : t.analyzingStatus;
@@ -166,6 +167,13 @@ function renderSnapshot(s: RunSnapshot | null): void {
       const chip = document.createElement("div");
       chip.className = "results-extra-item blind-spot";
       chip.textContent = `👁️ ${t.blindSpotHeading} : ${s.blindSpot}`;
+      resultsExtras.append(chip);
+    }
+    if (s.skipped?.length) {
+      hasExtras = true;
+      const chip = document.createElement("div");
+      chip.className = "results-extra-item clickbait";
+      chip.textContent = `⚠️ ${t.partialShort(s.skipped.length)}`;
       resultsExtras.append(chip);
     }
     resultsExtras.hidden = !hasExtras;

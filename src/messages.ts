@@ -82,6 +82,10 @@ export interface RunSnapshot {
   cachedAt?: number;
   /** Analyse en cache produite avec d'autres réglages du moteur : peut-être obsolète (D11). */
   stale?: boolean;
+  /** Analyse partielle (A3) : début des passages non analysés. */
+  skipped?: string[];
+  /** Le provider a renvoyé une erreur passagère : nouvel essai en attente (A4). */
+  retrying?: boolean;
   error?: string;
   /** Consommation de tokens mesurée en continu pour cette analyse. */
   usage?: TokenUsage;

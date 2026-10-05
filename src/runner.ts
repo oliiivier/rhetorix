@@ -2,7 +2,7 @@
 // content script, extraction, cache (D7), appel au LLM, surlignage. Le panneau
 // (desktop) et les bulles (mobile) ne sont que des vues de l'état publié ici.
 
-import { analyzeArticle } from "./analyze";
+import { analyzeArticle, type EngineAnalysis } from "./analyze";
 import { getCached, getCachedByUrl, putCached, sha256 } from "./cache";
 import { isConfigured, loadConfig, resolveLanguage, type DisplayMode } from "./config";
 import { analysisSettings, sameSettings } from "./engine-settings";
@@ -192,6 +192,11 @@ export async function loadCachedRun(tabId: number, url: string | undefined): Pro
   return snapshot;
 }
 
+function withoutSkipped<T extends { skipped?: unknown }>(analysis: T): Omit<T, "skipped"> {
+  const { skipped: _skipped, ...rest } = analysis;
+  return rest;
+}
+
 export function isRunning(tabId: number): boolean {
   return runs.get(tabId)?.snapshot.status === "running";
 }
@@ -296,12 +301,13 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
       };
 
       const cached = !opts.force ? await getCached(cacheUrl, fingerprint) : null;
-      let analysis = cached?.analysis;
+      let analysis: EngineAnalysis | undefined = cached?.analysis;
       if (!analysis) {
         snapshot.phase = "analyzing";
         publish();
         analysis = await analyzeArticle(article, config, controller.signal, {
           onProgress: ({ phase, done, total }) => {
+            snapshot.retrying = false;
             snapshot.phase = phase ?? "analyzing";
             snapshot.done = done;
             snapshot.total = total;
@@ -318,6 +324,10 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
           onUsage: (usage) => {
             currentUsage = usage;
             snapshot.usage = usage;
+            publish();
+          },
+          onRetry: () => {
+            snapshot.retrying = true;
             publish();
           },
         });
@@ -338,9 +348,9 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         lang,
       });
 
-      await putCached(cacheUrl, {
+      if (!analysis.skipped) await putCached(cacheUrl, {
         ...fingerprint,
-        analysis,
+        analysis: withoutSkipped(analysis),
         createdAt: cached?.createdAt ?? Date.now(),
         isVideo: true,
         videoAnnotations,
@@ -357,6 +367,8 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         annotations: videoAnnotations,
         unlocated: videoAnnotations.filter((a) => a.startTime < 0).map((a) => a.id),
         cachedAt: cached?.createdAt,
+        skipped: analysis.skipped?.map((p) => p.excerpt),
+        retrying: false,
         usage: snapshot.usage ?? currentUsage,
         isVideo: true,
         videoChunkRange: analyzedRange,
@@ -378,12 +390,13 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         ...analysisSettings(config),
       };
       const cached = !opts.force && url ? await getCached(url, fingerprint) : null;
-      let analysis = cached?.analysis;
+      let analysis: EngineAnalysis | undefined = cached?.analysis;
       if (!analysis) {
         snapshot.phase = "analyzing";
         publish();
         analysis = await analyzeArticle(article, config, controller.signal, {
           onProgress: ({ phase, done, total }) => {
+            snapshot.retrying = false;
             snapshot.phase = phase ?? "analyzing";
             snapshot.done = done;
             snapshot.total = total;
@@ -402,8 +415,13 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
             snapshot.usage = usage;
             publish();
           },
+          onRetry: () => {
+            snapshot.retrying = true;
+            publish();
+          },
         });
-        if (url) await putCached(url, { ...fingerprint, analysis, createdAt: Date.now() });
+        // A3 : une analyse partielle n'est pas mise en cache, pour être retentée.
+        if (url && !analysis.skipped) await putCached(url, { ...fingerprint, analysis, createdAt: Date.now() });
         if (currentUsage) {
           await recordTokenUsage(currentUsage);
         }
@@ -425,15 +443,31 @@ export async function runAnalysis(tabId: number, url: string | undefined, opts: 
         annotations: analysis.annotations,
         unlocated,
         cachedAt: cached?.createdAt,
+        skipped: analysis.skipped?.map((p) => p.excerpt),
+        retrying: false,
         usage: snapshot.usage ?? currentUsage,
       } satisfies Partial<RunSnapshot>);
     }
   } catch (err) {
-    snapshot.annotations = [];
+    // A3 : les annotations déjà reçues restent affichées et surlignées.
+    snapshot.retrying = false;
     if (controller.signal.aborted) snapshot.status = "cancelled";
     else {
       snapshot.status = "error";
       snapshot.error = formatErrorMessage(err, t);
+    }
+    if (snapshot.annotations.length > 0 && !snapshot.isVideo && !(url && isYouTubeWatchUrl(url))) {
+      try {
+        const res = await sendToTab<HighlightResult>(tabId, {
+          type: "highlight",
+          annotations: snapshot.annotations,
+          displayMode: opts.displayMode ?? config.displayMode,
+          lang: resolveLanguage(config),
+        });
+        snapshot.unlocated = res.unlocated ?? [];
+      } catch {
+        // Page inaccessible : les annotations restent consultables dans le panneau
+      }
     }
   } finally {
     clearInterval(keepAlive);

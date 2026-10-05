@@ -22,6 +22,7 @@ export interface UiStrings {
   analyzingStatus: string;
   analyzingPartStatus: (done: number, total: number) => string;
   consolidatingStatus: string;
+  retryingStatus: string;
   cancelledStatus: string;
   accessErrorStatus: string;
   internalPageNotice: string;
@@ -34,6 +35,8 @@ export interface UiStrings {
   blindSpotHeading: string;
   cacheNote: (date: string) => string;
   staleCacheNote: (date: string) => string;
+  partialNote: (count: number) => string;
+  partialShort: (count: number) => string;
   emptyResults: string;
   unlocatedQuote: string;
   factCheckLabel: string;
@@ -212,6 +215,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analyse en cours…",
     analyzingPartStatus: (done, total) => `Analyse en cours… (${done}/${total} parties)`,
     consolidatingStatus: "Synthèse du résumé global…",
+    retryingStatus: "Fournisseur saturé ou indisponible : nouvelle tentative…",
     cancelledStatus: "Analyse annulée.",
     accessErrorStatus:
       "Impossible d'accéder au contenu de cette page. Les pages internes du navigateur et les boutiques d'extensions ne sont pas analysables.",
@@ -226,6 +230,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     blindSpotHeading: "Angle mort / Omission clé",
     cacheNote: (date) => `Analyse du ${date} (cache).`,
     staleCacheNote: (date) => `Analyse du ${date} (cache), produite avec d'autres réglages ou une version antérieure du moteur : peut-être obsolète. « Ré-analyser » pour la mettre à jour.`,
+    partialNote: (n) => `Analyse partielle : ${n} passage${n > 1 ? "s n'ont" : " n'a"} pas pu être analysé${n > 1 ? "s" : ""}. « Ré-analyser » pour réessayer.`,
+    partialShort: (n) => `${n} passage${n > 1 ? "s" : ""} non analysé${n > 1 ? "s" : ""}`,
     emptyResults: "Aucun procédé rhétorique notable relevé.",
     unlocatedQuote: "Citation introuvable dans la page.",
     factCheckLabel: "Vérification :",
@@ -453,6 +459,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analyzing…",
     analyzingPartStatus: (done, total) => `Analyzing… (${done}/${total} parts)`,
     consolidatingStatus: "Synthesizing overall summary…",
+    retryingStatus: "Provider busy or unavailable: retrying…",
     cancelledStatus: "Analysis cancelled.",
     accessErrorStatus:
       "Cannot access this page. Browser internal pages and extension stores cannot be analyzed.",
@@ -467,6 +474,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     blindSpotHeading: "Blind Spot / Key Omission",
     cacheNote: (date) => `Analysis from ${date} (cached).`,
     staleCacheNote: (date) => `Analysis from ${date} (cached), produced with different settings or an earlier engine version: possibly outdated. Use “Re-analyze” to update it.`,
+    partialNote: (n) => `Partial analysis: ${n} passage${n > 1 ? "s" : ""} could not be analyzed. Use “Re-analyze” to try again.`,
+    partialShort: (n) => `${n} passage${n > 1 ? "s" : ""} not analyzed`,
     emptyResults: "No significant rhetorical devices found.",
     unlocatedQuote: "Quote could not be located in the page.",
     factCheckLabel: "Fact-check:",
@@ -694,6 +703,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analizando…",
     analyzingPartStatus: (done, total) => `Analizando… (${done}/${total} partes)`,
     consolidatingStatus: "Sintetizando el resumen global…",
+    retryingStatus: "Proveedor saturado o no disponible: reintentando…",
     cancelledStatus: "Análisis cancelado.",
     accessErrorStatus:
       "No se puede acceder a esta página. Las páginas internas del navegador y las tiendas de extensiones no se pueden analizar.",
@@ -708,6 +718,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     blindSpotHeading: "Punto ciego / Omisión clave",
     cacheNote: (date) => `Análisis del ${date} (caché).`,
     staleCacheNote: (date) => `Análisis del ${date} (caché), realizado con otros ajustes o una versión anterior del motor: posiblemente obsoleto. Use «Reanalizar» para actualizarlo.`,
+    partialNote: (n) => `Análisis parcial: ${n} pasaje${n > 1 ? "s" : ""} no ${n > 1 ? "pudieron" : "pudo"} analizarse. Use «Reanalizar» para intentarlo de nuevo.`,
+    partialShort: (n) => `${n} pasaje${n > 1 ? "s" : ""} sin analizar`,
     emptyResults: "No se detectaron recursos retóricos relevantes.",
     unlocatedQuote: "Cita no encontrada en la página.",
     factCheckLabel: "Verificación:",
@@ -935,6 +947,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analyse läuft…",
     analyzingPartStatus: (done, total) => `Analyse läuft… (${done}/${total} Abschnitte)`,
     consolidatingStatus: "Gesamtzusammenfassung wird erstellt…",
+    retryingStatus: "Anbieter überlastet oder nicht erreichbar: neuer Versuch…",
     cancelledStatus: "Analyse abgebrochen.",
     accessErrorStatus:
       "Auf diese Seite kann nicht zugegriffen werden. Interne Browserseiten und Add-on-Stores können nicht analysiert werden.",
@@ -949,6 +962,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     blindSpotHeading: "Blinder Fleck / Zentrale Auslassung",
     cacheNote: (date) => `Analyse vom ${date} (Cache).`,
     staleCacheNote: (date) => `Analyse vom ${date} (Cache), mit anderen Einstellungen oder einer älteren Version der Analyse erstellt: möglicherweise veraltet. Mit „Erneut analysieren“ aktualisieren.`,
+    partialNote: (n) => `Teilanalyse: ${n} ${n > 1 ? "Passagen konnten" : "Passage konnte"} nicht analysiert werden. Mit „Erneut analysieren“ erneut versuchen.`,
+    partialShort: (n) => `${n} ${n > 1 ? "Passagen" : "Passage"} nicht analysiert`,
     emptyResults: "Keine auffälligen rhetorischen Mittel festgestellt.",
     unlocatedQuote: "Zitat auf der Seite nicht gefunden.",
     factCheckLabel: "Faktencheck:",
@@ -1176,6 +1191,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     analyzingStatus: "Analisi in corso…",
     analyzingPartStatus: (done, total) => `Analisi in corso… (${done}/${total} parti)`,
     consolidatingStatus: "Sintesi del riassunto generale…",
+    retryingStatus: "Fornitore sovraccarico o non disponibile: nuovo tentativo…",
     cancelledStatus: "Analisi annullata.",
     accessErrorStatus:
       "Impossibile accedere al contenuto di questa pagina. Le pagine interne del browser e gli store di estensioni non sono analizzabili.",
@@ -1190,6 +1206,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     blindSpotHeading: "Punto cieco / Omissione chiave",
     cacheNote: (date) => `Analisi del ${date} (cache).`,
     staleCacheNote: (date) => `Analisi del ${date} (cache), prodotta con altre impostazioni o una versione precedente del motore: forse obsoleta. Usa «Rianalizza» per aggiornarla.`,
+    partialNote: (n) => `Analisi parziale: ${n} ${n > 1 ? "passaggi non sono stati analizzati" : "passaggio non è stato analizzato"}. Usa «Rianalizza» per riprovare.`,
+    partialShort: (n) => `${n} ${n > 1 ? "passaggi non analizzati" : "passaggio non analizzato"}`,
     emptyResults: "Nessun artificio retorico rilevante individuato.",
     unlocatedQuote: "Citazione non trovata nella pagina.",
     factCheckLabel: "Verifica:",

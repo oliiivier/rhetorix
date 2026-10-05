@@ -19,6 +19,8 @@ interface TabState {
   unlocated: Set<string>;
   cachedAt?: number;
   stale?: boolean;
+  /** Passages non analysés d'une analyse partielle (A3). */
+  skipped?: string[];
   usage?: TokenUsage;
 }
 
@@ -336,6 +338,7 @@ function render(state: TabState): void {
     const date = new Date(state.cachedAt).toLocaleString();
     note.textContent = state.stale ? t.staleCacheNote(date) : t.cacheNote(date);
   }
+  renderPartialNote(state.skipped);
   analyzeBtn.textContent = t.reanalyzeBtn;
 
   updateFilterCounts(state.analysis.annotations);
@@ -351,6 +354,20 @@ function render(state: TabState): void {
   applyCategoryFilter(activeCategoryFilter);
   renderTokenUsage(state.usage, Boolean(state.cachedAt));
   updateDisplayModeBanner();
+}
+
+function renderPartialNote(skipped: string[] | undefined): void {
+  const note = $("partial-note");
+  note.hidden = !skipped?.length;
+  if (!skipped?.length) return;
+  $("partial-text").textContent = strings().partialNote(skipped.length);
+  $("partial-list").replaceChildren(
+    ...skipped.map((excerpt) => {
+      const li = document.createElement("li");
+      li.textContent = `« ${excerpt} »`;
+      return li;
+    }),
+  );
 }
 
 function selectCard(id: string, scroll: boolean): void {
@@ -452,6 +469,7 @@ function analyzeYouTube(isFull: boolean): void {
 
 function statusText(s: RunSnapshot): string {
   const t = strings();
+  if (s.retrying) return t.retryingStatus;
   if (s.isVideo && s.phase === "analyzing") {
     if (s.videoChunkRange) {
       return t.youtubeAnalyzingChunkStatus(
@@ -478,6 +496,7 @@ function toState(s: RunSnapshot): TabState {
     unlocated: new Set(s.unlocated),
     cachedAt: s.cachedAt,
     stale: s.stale,
+    skipped: s.skipped,
     usage: s.usage,
   };
 }
@@ -524,6 +543,7 @@ function renderSnapshot(s: RunSnapshot): void {
         }
       }
       $("cache-note").hidden = true;
+      $("partial-note").hidden = true;
       // Ajout incrémental : seules les annotations nouvelles reçoivent une carte.
       const shown = new Set([...cardsEl.querySelectorAll<HTMLElement>(".card")].map((c) => c.dataset.id));
       for (const a of s.annotations) {
@@ -543,6 +563,15 @@ function renderSnapshot(s: RunSnapshot): void {
     }
     case "error":
     case "cancelled":
+      // A3 : les annotations reçues avant l'échec ou l'annulation restent affichées.
+      if (s.annotations.length > 0) {
+        const state = toState(s);
+        states.set(s.tabId, state);
+        render(state);
+        if (s.status === "cancelled") setStatus(t.cancelledStatus);
+        else setStatus(s.error ?? "", true);
+        return;
+      }
       cardsEl.replaceChildren();
       resultEl.hidden = true;
       const cb = $("clickbait-banner");
