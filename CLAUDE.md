@@ -11,6 +11,7 @@ npm test            # vitest, modules purs (test/)
 npm run typecheck   # tsc --noEmit
 npx web-ext lint -s dist/firefox
 npm run corpus:fetch  # textes du corpus d'évaluation (eval/corpus)
+npm run corpus:eval -- -p <provider>  # évaluation du moteur sur le corpus (appelle le provider)
 ```
 
 Après une modification, lancer `typecheck`, `test` et `build`.

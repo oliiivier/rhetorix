@@ -15,7 +15,8 @@
     "package": "npm run package:chrome && npm run package:firefox",
     "test": "vitest run",
     "test:live": "node scripts/test-live-provider.mjs",
-    "corpus:fetch": "node scripts/corpus-fetch.mjs"
+    "corpus:fetch": "node scripts/corpus-fetch.mjs",
+    "corpus:eval": "node scripts/corpus-eval.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

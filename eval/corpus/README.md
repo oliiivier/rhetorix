@@ -2,7 +2,16 @@
 
 Articles annotés à la main pour mesurer la qualité du moteur d'analyse : précision et rappel par catégorie, neutralité, vérification factuelle, contexte global des articles découpés. Voir la piste Q1 et la décision D13 dans [evolutions-analyse.md](../../docs/techniques/evolutions-analyse.md).
 
-Le corpus ne sert pas aux tests unitaires : `npm test` vérifie seulement sa cohérence (`test/corpus.test.ts`). Le script d'évaluation, qui appellera un vrai provider, reste à écrire.
+Le corpus ne sert pas aux tests unitaires : `npm test` vérifie seulement sa cohérence (`test/corpus.test.ts`). L'évaluation, qui appelle un vrai provider, se lance à part :
+
+```sh
+npm run corpus:eval -- -p anthropic                  # clé dans ANTHROPIC_API_KEY
+npm run corpus:eval -- -p gemini --depth deep --runs 3 -v
+npm run corpus:eval -- -p openai-compatible -e http://localhost:11434/v1 -m mistral --no-web-search
+npm run corpus:eval -- --only synth-fr-30kmh-long --out resultats.json
+```
+
+Le script ([scripts/corpus-eval.mjs](../../scripts/corpus-eval.mjs)) exécute le moteur de l'extension (`analyzeArticle`) sur chaque fiche dont le texte est disponible, avec la taille de morceau imposée par `eval.max_chunk_tokens`, et note chaque analyse ([eval/score.ts](../score.ts)). `--runs` répète les analyses pour mesurer la stabilité, `-v` détaille les écarts, `--out` enregistre les analyses complètes pour relecture. Un texte non libre absent de `.local/`, ou modifié depuis l'annotation, est ignoré.
 
 ## Organisation
 
@@ -68,13 +77,17 @@ Une licence « pas de modification » (CC BY-ND) est compatible avec `texts/`, p
 }
 ```
 
-Règles d'évaluation prévues :
+Règles d'évaluation :
 
-- une annotation produite correspond à une annotation attendue si leurs citations se chevauchent ;
+- une annotation produite correspond à une annotation attendue si leurs citations se chevauchent (même règle que le dédoublonnage du moteur, `quotesOverlap`) ;
 - **rappel** : part des annotations `required` retrouvées avec un label de `accept` ;
 - **précision** : une annotation qui ne correspond à aucune annotation attendue, `required` ou non, est un faux positif probable, à relire ;
 - **statut factuel** : si `fact_status` est donné, le statut produit doit en faire partie. `unverified` y figure dès que l'évaluation peut tourner sans recherche web ;
-- **neutralité** : les articles d'une même `pair` doivent obtenir des résultats comparables.
+- **éléments globaux** : `clickbait_gap` et `blind_spot` doivent être produits (`present`) ou vides (`absent`) ;
+- **citations trouvées** : part des citations produites présentes dans le texte, à la normalisation de la localisation près ;
+- **témoins** : nombre moyen d'annotations rhétoriques sur les articles `control`, et dépassement de `limits.max_rhetorical` ;
+- **stabilité** (`--runs` ≥ 2) : part des annotations requises retrouvées à toutes les exécutions ou à aucune ;
+- **neutralité** : les articles d'une même `pair` doivent obtenir des résultats comparables (nombre d'annotations rhétoriques, rappel).
 
 ## Contenu actuel
 
