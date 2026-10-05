@@ -1,10 +1,12 @@
 // Orchestration d'une analyse : cartographie (B1), découpage (D6), appels au
 // provider, validation, politique des sources (D3), fusion, consolidation des
-// éléments globaux (B2) et relecture (Q2). Cartographie et relecture ne sont faites
-// qu'en mode approfondi (D10).
+// éléments globaux (B2), relecture (Q2) et notice Crossref des études citées (D16).
+// Cartographie et relecture ne sont faites qu'en mode approfondi (D10) ; la notice
+// Crossref, que si la recherche web est utilisée.
 
 import { chunkParagraphs, mapSettled, mergeAnalyses, outlineSource, renumber } from "./chunking";
 import { resolveLanguage, type Config, type ProviderId } from "./config";
+import { attachStudyRecords } from "./crossref";
 import { webSearchEnabled } from "./engine-settings";
 import type { Extracted } from "./messages";
 import { consolidatePrompt, mapPrompt, reviewPrompt, type ArticleMeta, type ReviewItem } from "./prompt";
@@ -36,7 +38,7 @@ function outlineBudget(provider: ProviderId, maxChunkTokens: number): number {
 /** Longueur maximale du contexte d'une annotation transmis à la relecture (Q2). */
 const REVIEW_CONTEXT_CHARS = 800;
 
-export type AnalysisPhase = "mapping" | "analyzing" | "consolidating" | "reviewing";
+export type AnalysisPhase = "mapping" | "analyzing" | "consolidating" | "reviewing" | "studies";
 
 export interface Progress {
   phase?: AnalysisPhase;
@@ -222,6 +224,13 @@ export async function analyzeArticle(
       const kept = renumber({ ...merged, annotations: merged.annotations.filter((a) => !rejected.has(a.id)) });
       merged.annotations = kept.annotations;
     }
+  }
+
+  // D16 : notice Crossref des études citées par leur DOI.
+  if (webSearch && merged.annotations.some((a) => a.fact_check.evidence?.doi)) {
+    cb.onProgress?.({ phase: "studies", done: parts.length, total: parts.length });
+    const withRecords = await optional(signal, () => attachStudyRecords(merged.annotations, signal));
+    if (withRecords) merged.annotations = withRecords;
   }
   return merged;
 

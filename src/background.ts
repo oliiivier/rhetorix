@@ -4,6 +4,7 @@
 // directement l'analyse et le résultat s'affiche en bulles dans la page.
 
 import { DEFAULT_CONFIG, isConfigured, loadConfig, providerOrigin, resolveLanguage, type Config } from "./config";
+import { CROSSREF_ORIGIN } from "./crossref";
 import { ext } from "./ext";
 import { getUiStrings } from "./i18n";
 import type { BackgroundToPanel, PanelToBackground, RunSnapshot } from "./messages";
@@ -187,8 +188,9 @@ function setupMobile(): void {
   ext.action.onClicked.addListener((tab) => {
     const tabId = tab.id;
     if (tabId === undefined) return;
-    const origin = config ? providerOrigin(config) : null;
-    const permission = origin ? ext.permissions.request({ origins: [origin] }) : Promise.resolve(true);
+    // Notice Crossref des études citées (D16) : seul hôte appelé en dehors du provider.
+    const origins = [config ? providerOrigin(config) : null, CROSSREF_ORIGIN].filter((o): o is string => Boolean(o));
+    const permission = ext.permissions.request({ origins });
     void (async () => {
       const current = config ?? (await loadConfig());
       const t = getUiStrings(current);
@@ -226,6 +228,7 @@ function mobileNotifier(tabId: number): (s: RunSnapshot) => void {
       else if (s.phase === "consolidating") text = t.consolidatingStatus;
       else if (s.phase === "mapping") text = t.mappingStatus;
       else if (s.phase === "reviewing") text = t.reviewingStatus;
+      else if (s.phase === "studies") text = t.studiesStatus;
       else text = s.total > 1 ? t.analyzingPartStatus(s.done, s.total) : t.analyzingStatus;
     } else if (s.status === "done") {
       durationMs = 5000;

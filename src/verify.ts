@@ -3,6 +3,7 @@
 
 import { resolveLanguage, type Config } from "./config";
 import { verifyPrompt, type ArticleMeta } from "./prompt";
+import { attachStudyRecords } from "./crossref";
 import { PROVIDERS } from "./providers";
 import { ProviderError } from "./providers/types";
 import { enforceFactCheckSourcePolicy, normalizeSourceUrl, validateFactCheck, type Annotation, type FactCheck } from "./schema";
@@ -23,7 +24,8 @@ export interface VerifyContext {
 
 /**
  * Vérifie l'allégation et renvoie le nouveau `fact_check`. Une réponse illisible lève
- * une erreur ; les sources qui ne viennent pas de la recherche sont retirées (D3).
+ * une erreur ; les sources qui ne viennent pas de la recherche sont retirées (D3) et
+ * l'étude citée par un DOI reçoit sa notice Crossref (D16).
  */
 export async function verifyAnnotation(
   annotation: Annotation,
@@ -50,5 +52,13 @@ export async function verifyAnnotation(
   });
   const out = parseJsonObject(text);
   if (!out) throw new ProviderError("La réponse n'est pas un JSON valide.", "invalid_json");
-  return enforceFactCheckSourcePolicy(validateFactCheck(out), searched);
+  const factCheck = enforceFactCheckSourcePolicy(validateFactCheck(out), searched);
+  if (!factCheck.evidence?.doi) return factCheck;
+  // D16 : notice Crossref de l'étude citée ; un échec n'empêche pas la vérification.
+  try {
+    const [checked] = await attachStudyRecords([{ ...annotation, fact_check: factCheck }], signal);
+    return checked!.fact_check;
+  } catch {
+    return factCheck;
+  }
 }

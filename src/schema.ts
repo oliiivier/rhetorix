@@ -6,21 +6,51 @@ import { CATEGORIES, LABELS, isLabelOf, type Category } from "./taxonomy";
 export const SEVERITIES = ["high", "medium", "low"] as const;
 export const FACT_STATUSES = ["refuted", "supported", "misleading", "unverified"] as const;
 export const CONFIDENCES = ["high", "medium", "low"] as const;
+/**
+ * Niveau de preuve d'une allégation scientifique (D16). Le schéma envoyé au LLM y ajoute
+ * "none" (allégation non scientifique), retiré à la validation.
+ */
+export const EVIDENCE_KINDS = ["meta_analysis", "rct", "observational", "animal_in_vitro", "preprint", "unknown"] as const;
 
 export type Severity = (typeof SEVERITIES)[number];
 export type FactStatus = (typeof FACT_STATUSES)[number];
 /** Confiance du modèle dans l'annotation : le procédé est-il bien présent et l'étiquette juste ? (Q3) */
 export type Confidence = (typeof CONFIDENCES)[number];
+export type EvidenceKind = (typeof EVIDENCE_KINDS)[number];
 
 export interface Source {
   title: string;
   url: string;
 }
 
+/** Notice Crossref d'une étude dont le DOI a été confirmé (D16). Ajoutée par le client, hors contrat du LLM. */
+export interface StudyRecord {
+  doi: string;
+  title?: string;
+  journal?: string;
+  year?: number;
+  /** Type Crossref (journal-article, posted-content…). */
+  type?: string;
+  preprint: boolean;
+  retracted: boolean;
+  /** Avis de réserve (expression of concern) publié par l'éditeur. */
+  concern: boolean;
+}
+
+/** Étude sur laquelle repose une allégation scientifique (D16). */
+export interface Evidence {
+  kind: EvidenceKind;
+  /** DOI donné par le modèle ; retiré sans recherche web ou s'il est inconnu de Crossref. */
+  doi?: string;
+  record?: StudyRecord;
+}
+
 export interface FactCheck {
   status: FactStatus;
   context: string;
   sources: Source[];
+  /** Absente pour une allégation non scientifique et dans les analyses antérieures à D16. */
+  evidence?: Evidence;
 }
 
 export interface Annotation {
@@ -84,10 +114,19 @@ export const ANALYSIS_JSON_SCHEMA = {
           fact_check: {
             type: "object",
             additionalProperties: false,
-            required: ["status", "context", "sources"],
+            required: ["status", "context", "sources", "evidence"],
             properties: {
               status: { type: "string", enum: [...FACT_STATUSES] },
               context: { type: "string" },
+              evidence: {
+                type: "object",
+                additionalProperties: false,
+                required: ["kind", "doi"],
+                properties: {
+                  kind: { type: "string", enum: [...EVIDENCE_KINDS, "none"] },
+                  doi: { type: "string" },
+                },
+              },
               sources: {
                 type: "array",
                 items: {
@@ -163,6 +202,7 @@ export function validateAnnotation(a: unknown, path = "$.annotation"): Annotatio
 
 export function validateFactCheck(v: unknown, path = "$.fact_check"): FactCheck {
   const fc = obj(v, path);
+  const evidence = validateEvidence(fc.evidence);
   return {
     status: oneOf(fc.status, FACT_STATUSES, `${path}.status`),
     context: str(fc.context, `${path}.context`),
@@ -172,7 +212,30 @@ export function validateFactCheck(v: unknown, path = "$.fact_check"): FactCheck 
         return { title: str(so.title, `${path}.sources[${j}].title`), url: str(so.url, `${path}.sources[${j}].url`) };
       })
       .filter((s) => isHttpUrl(s.url)),
+    ...(evidence ? { evidence } : {}),
   };
+}
+
+/** DOI nu (10.xxxx/…), débarrassé d'un préfixe doi: ou https://doi.org/ ; undefined s'il est mal formé. */
+export function normalizeDoi(raw: string): string | undefined {
+  const doi = raw
+    .trim()
+    .replace(/^(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)/i, "")
+    .replace(/[.,;]+$/, "");
+  return /^10\.\d{4,9}\/\S+$/.test(doi) ? doi : undefined;
+}
+
+/**
+ * Niveau de preuve (D16), toléré : absent, "none" ou hors énumération → pas de
+ * niveau de preuve ; DOI mal formé retiré.
+ */
+function validateEvidence(v: unknown): Evidence | undefined {
+  if (typeof v !== "object" || v === null) return undefined;
+  const o = v as Record<string, unknown>;
+  const kind = EVIDENCE_KINDS.find((k) => k === o.kind);
+  if (!kind) return undefined;
+  const doi = typeof o.doi === "string" ? normalizeDoi(o.doi) : undefined;
+  return doi ? { kind, doi } : { kind };
 }
 
 /**
@@ -200,7 +263,11 @@ export function enforceAnnotationSourcePolicy(
 
 /** Politique des sources (D3) appliquée à une vérification seule. */
 export function enforceFactCheckSourcePolicy(fc: FactCheck, searchedUrls: ReadonlySet<string> | undefined): FactCheck {
-  if (!searchedUrls) return { ...fc, status: "unverified", sources: [] };
+  if (!searchedUrls) {
+    // Sans recherche, un DOI viendrait de la mémoire du modèle : il est retiré (D3, D16).
+    const evidence = fc.evidence ? { kind: fc.evidence.kind } : undefined;
+    return { ...fc, status: "unverified", sources: [], ...(evidence ? { evidence } : {}) };
+  }
   const sources = fc.sources.filter((s) => searchedUrls.has(normalizeSourceUrl(s.url)));
   const status = sources.length === 0 && fc.status !== "unverified" ? "unverified" : fc.status;
   return { ...fc, status, sources };

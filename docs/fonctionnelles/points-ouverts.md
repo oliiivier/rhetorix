@@ -18,7 +18,7 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 
 ## Décisions prises (2026-10-05)
 
-Orientations pour l'évolution du moteur d'analyse, détaillées dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). D10 à D15 sont mises en œuvre.
+Orientations pour l'évolution du moteur d'analyse, détaillées dans [evolutions-analyse.md](../techniques/evolutions-analyse.md). D10 à D16 sont mises en œuvre.
 
 | # | Sujet | Décision | Conséquences |
 |---|---|---|---|
@@ -28,6 +28,7 @@ Orientations pour l'évolution du moteur d'analyse, détaillées dans [evolution
 | D13 | Corpus d'évaluation | **Stockage selon la licence** (précisé le 2026-10-05) | Corpus de préférence libre : textes rédigés pour l'occasion, domaine public, licences ouvertes, versionnés dans `eval/corpus/texts/`. Les textes non libres, utiles pour la représentativité (presse d'opinion), restent dans `eval/corpus/.local/`, ignoré par git, et se récupèrent par `npm run corpus:fetch`. Les fiches (références, licence, annotations attendues) sont toujours versionnées. Voir [eval/corpus](../../eval/corpus/README.md) |
 | D14 | Vérification factuelle séparée (C2) | **À la demande, allégation par allégation** (2026-10-05) | Une allégation « non vérifiée » propose « Vérifier en ligne » dans sa carte et dans sa bulle. L'appel active la recherche web pour lui seul, même si le réglage de recherche web est désactivé (quota gratuit Gemini), et applique la politique des sources (D3). Le résultat remplace la vérification dans l'affichage et complète l'entrée du cache. Proposé avec Anthropic et Gemini, et avec un endpoint compatible OpenAI si la recherche web y est activée ; pas avec Chrome Built-in AI |
 | D15 | Signalement d'une annotation (Q4) | **Contestation locale, signalement par ticket GitHub prérempli** (2026-10-05) | « Contester » replie l'annotation (carte repliée, surlignage atténué, bulle réduite) et l'enregistre dans `storage.local` avec les réglages du moteur. Les options listent les annotations contestées : « Signaler sur GitHub… » affiche un avertissement (vérifier l'absence d'information personnelle dans le texte cité), une case pour inclure ou non l'adresse de la page (page privée ou interne) et un commentaire facultatif, puis ouvre l'URL de création du ticket dans un onglet. Aucun appel d'API : l'utilisateur publie lui-même le ticket |
+| D16 | Citations scientifiques | **Niveau de preuve et notice Crossref** (2026-10-05) | Pour une allégation qui repose sur une étude, le modèle identifie l'étude, juge la fidélité de l'article (conclusion amplifiée, corrélation présentée comme causalité, résultat animal ou in vitro appliqué à l'humain, petit échantillon, étude isolée contre le consensus) et renseigne `fact_check.evidence` : type d'étude et DOI (spec §3). Si l'étude a un DOI, sa notice est demandée à Crossref (API publique sans clé ; OpenAlex écarté, faute de clé prévue) : revue, année, prépublication, rétractation, avis de réserve. Automatique quand la recherche web est utilisée ; sinon lors d'une vérification à la demande (D14). Pas de note de qualité des revues : seulement des signalements factuels. Exception à D3 : le lien `doi.org` est affiché pour un DOI confirmé par Crossref. Sans recherche web, aucun DOI n'est gardé |
 
 ## Reste à préciser
 

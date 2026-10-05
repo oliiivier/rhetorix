@@ -223,6 +223,43 @@ describe("analyzeArticle", () => {
     expect(input.analysisDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
+  describe("études citées (D16)", () => {
+    const scientific = {
+      id: "ann-1",
+      exact_quote: "Une étude montre X.",
+      category: "factual_claim",
+      label: "fait_scientifique",
+      severity: "high",
+      rhetoric_critique: "c",
+      fact_check: { status: "unverified", context: "", sources: [], evidence: { kind: "rct", doi: "10.1000/abc" } },
+    };
+
+    it("joint la notice Crossref si la recherche web est utilisée", async () => {
+      mockSupportsWebSearch.mockReturnValue(true);
+      const fetchMock = vi.fn(async () => new Response(JSON.stringify({ message: { type: "posted-content", title: ["X"] } }), { status: 200 }));
+      vi.stubGlobal("fetch", fetchMock);
+      mockAnalyze.mockResolvedValueOnce({ raw: { summary: "S", annotations: [scientific] }, searchedUrls: new Set<string>() });
+      const phases: (string | undefined)[] = [];
+      const result = await analyzeArticle({ title: "T", lang: "fr", paragraphs: ["Une étude montre X."] }, { ...baseConfig, webSearch: true }, new AbortController().signal, {
+        onProgress: (p) => phases.push(p.phase),
+      });
+      vi.unstubAllGlobals();
+      expect(fetchMock).toHaveBeenCalledWith("https://api.crossref.org/works/10.1000%2Fabc", expect.anything());
+      expect(result.annotations[0]!.fact_check.evidence).toMatchObject({ kind: "rct", record: { preprint: true, title: "X" } });
+      expect(phases).toContain("studies");
+    });
+
+    it("n'interroge pas Crossref sans recherche web, et retire le DOI", async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      mockAnalyze.mockResolvedValueOnce({ raw: { summary: "S", annotations: [scientific] } });
+      const result = await analyzeArticle({ title: "T", lang: "fr", paragraphs: ["Une étude montre X."] }, baseConfig, new AbortController().signal);
+      vi.unstubAllGlobals();
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(result.annotations[0]!.fact_check.evidence).toEqual({ kind: "rct" });
+    });
+  });
+
   describe("mode approfondi (D10)", () => {
     const deepConfig: Config = { ...baseConfig, analysisDepth: "deep" };
     const claim = (quote: string) => ({

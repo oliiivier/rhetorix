@@ -1,5 +1,5 @@
 import type { DisplayMode } from "./config";
-import type { Annotation, Confidence, FactStatus, Severity, Source } from "./schema";
+import type { Annotation, Confidence, FactCheck, Severity } from "./schema";
 import type { Category } from "./taxonomy";
 import type { TimeRange, YouTubePlayerOptions } from "./youtube/youtube-player";
 import type { VideoAnnotation, VideoTranscript, VideoTranscriptSlice } from "./youtube/types";
@@ -13,11 +13,7 @@ export interface HighlightItem {
   severity?: Severity;
   confidence?: Confidence;
   rhetoric_critique?: string;
-  fact_check?: {
-    status: FactStatus;
-    context: string;
-    sources: Source[];
-  };
+  fact_check?: FactCheck;
 }
 
 export type PanelToContent =
@@ -89,7 +85,7 @@ export interface HighlightResult {
 // Le script de fond pilote l'analyse (D9) ; le panneau n'en est qu'une vue.
 
 export type RunStatus = "running" | "done" | "error" | "cancelled";
-export type RunPhase = "extracting" | "mapping" | "analyzing" | "consolidating" | "reviewing";
+export type RunPhase = "extracting" | "mapping" | "analyzing" | "consolidating" | "reviewing" | "studies";
 
 /** État d'une analyse pour un onglet, tel que le panneau l'affiche. */
 export interface RunSnapshot {

@@ -277,6 +277,22 @@ button.filter-btn.badge.active {
 .fact-context { margin: 6px 0; }
 .sources { margin: 0; padding-left: 18px; overflow-wrap: anywhere; }
 
+/* Niveau de preuve d'une allégation scientifique (D16). */
+.study-flag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--border);
+  color: var(--muted);
+}
+.study-flag.retracted, .study-flag.concern { background: rgb(201 42 42 / 0.15); color: var(--danger); }
+.evidence { margin: 0 0 6px; font-size: 12px; }
+.evidence-kind { display: block; color: var(--muted); }
+.evidence-record { color: var(--accent); overflow-wrap: anywhere; }
+
 .privacy { padding: 8px 12px 12px; font-size: 11px; color: var(--muted); }
 
 /* ---------- Options ---------- */

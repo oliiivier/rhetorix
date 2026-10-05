@@ -8,6 +8,7 @@ import { ext } from "../ext";
 import { getUiStrings } from "../i18n";
 import type { BackgroundToPanel, ContentToPanel, PanelToBackground, PanelToContent, RunSnapshot } from "../messages";
 import { isDocumentLevel, isVerifiable, type Analysis, type Annotation } from "../schema";
+import { renderEvidence, renderStudyFlags } from "../evidence-view";
 import { labelDef, type Category } from "../taxonomy";
 import { isYouTubeWatchUrl } from "../youtube/youtube-detector";
 import { formatTimestamp } from "../youtube/youtube-transcript";
@@ -257,13 +258,17 @@ function renderCard(a: Annotation, ctx: CardContext): HTMLLIElement {
 
   const fc = a.fact_check;
   const details = q<HTMLDetailsElement>(".fact-check");
-  if (a.category !== "factual_claim" && !fc.context && fc.sources.length === 0) {
+  if (a.category !== "factual_claim" && !fc.context && fc.sources.length === 0 && !fc.evidence) {
     details.remove();
   } else {
     const status = q<HTMLElement>(".fact-status");
     status.textContent = `${t.factCheckLabel} ${t.factStatuses[fc.status]}`;
     status.classList.add(`status-${fc.status}`);
+    // D16 : rétractation et prépublication visibles sans déplier la vérification.
+    status.after(...renderStudyFlags(fc.evidence, t));
     q<HTMLElement>(".fact-context").textContent = fc.context;
+    const evidence = renderEvidence(fc.evidence, t);
+    if (evidence) q<HTMLElement>(".fact-context").after(evidence);
     const list = q<HTMLUListElement>(".sources");
     for (const s of fc.sources) {
       const link = document.createElement("a");
@@ -560,6 +565,7 @@ function statusText(s: RunSnapshot): string {
   if (s.phase === "consolidating") return t.consolidatingStatus;
   if (s.phase === "mapping") return t.mappingStatus;
   if (s.phase === "reviewing") return t.reviewingStatus;
+  if (s.phase === "studies") return t.studiesStatus;
   return s.total > 1 ? t.analyzingPartStatus(s.done, s.total) : t.analyzingStatus;
 }
 

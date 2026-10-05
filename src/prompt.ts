@@ -16,6 +16,17 @@ function taxonomyText(language: string): string {
   }).join("\n\n");
 }
 
+/**
+ * Consigne commune à l'analyse et à la vérification à la demande pour les allégations
+ * qui reposent sur la recherche scientifique (D16).
+ */
+function scienceRule(webSearch: boolean): string {
+  const kinds = `"meta_analysis" (systematic review or meta-analysis), "rct" (randomised controlled trial), "observational" (cohort, case-control, cross-sectional, survey), "animal_in_vitro" (animal or laboratory study), "preprint" (not yet peer-reviewed) or "unknown"`;
+  return webSearch
+    ? `For a claim that relies on scientific research (a study, a trial, a meta-analysis, "researchers found…"): find the study itself in your searches; set fact_check.evidence.kind to its design, one of ${kinds}, and fact_check.evidence.doi to its DOI only if the DOI appeared in your search results or in the article, otherwise "". Check that the article reports the study faithfully: an overstated conclusion, correlation presented as causation, an animal or laboratory result applied to humans, a small sample, or a single study presented against the scientific consensus makes the claim "misleading". To place a finding against the consensus, prefer systematic reviews and the syntheses of scientific bodies or health agencies to press coverage.`
+    : `For a claim that relies on scientific research, set fact_check.evidence.kind to the study design as the text describes it, one of ${kinds}, and fact_check.evidence.doi to "".`;
+}
+
 export function systemPrompt(opts: { language: string; webSearch: boolean }): string {
   const factRule = opts.webSearch
     ? `For "factual_claim" annotations, use the web search tool to check the claim. Only cite URLs that appeared in your search results; never write a URL from memory. If the search is inconclusive, use status "unverified".`
@@ -42,6 +53,7 @@ Rules:
 - A "sophism" or "bias" that lies in the structure of the whole argument rather than in a passage (for example a conclusion that does not follow from the premises set out across the article, an internal contradiction between distant sections, a position stated early and misrepresented later) is a document-level annotation: set exact_quote to "" and explain in rhetoric_critique which parts of the article are involved. Use it only when no short passage shows the problem; never for "factual_claim". When the text is one part of a longer article, report a document-level annotation only if the defect is visible within this part or between this part and the outline.
 - For "sophism" and "bias" annotations, fact_check.status is "unverified" with empty sources unless the passage also makes a checkable claim.
 - ${factRule}
+- ${scienceRule(opts.webSearch)} For every other annotation, set fact_check.evidence.kind to "none" and fact_check.evidence.doi to "".
 - Judge factual claims as of the article's publication date when it is given: a claim that was accurate when published is not "refuted" because of later events. If something relevant has changed since, say so in fact_check.context.
 - When an article outline is given, the text is one section of a longer article. Use the outline to recognise devices that span sections (for example a position stated in one section and misrepresented in this one), but quote only from this section.
 - Write summary, clickbait_gap, blind_spot, rhetoric_critique and fact_check.context in this language: ${opts.language}. ids are "ann-1", "ann-2", …
@@ -210,16 +222,17 @@ export interface VerifyClaim {
 
 /**
  * Vérification d'une allégation à la demande (C2), avec la recherche web activée pour
- * ce seul appel. Réponse JSON : { status, context, sources: [{ title, url }] }.
+ * ce seul appel. Réponse JSON : { status, context, sources: [{ title, url }], evidence: { kind, doi } }.
  */
 export function verifyPrompt(claim: VerifyClaim, language: string): Prompt {
   return {
     system: `You fact-check one claim taken from a news article. Use the web search tool to check it against reliable sources.
-Answer with a single JSON object and nothing else: {"status": "...", "context": "...", "sources": [{"title": "...", "url": "..."}]}
+Answer with a single JSON object and nothing else: {"status": "...", "context": "...", "sources": [{"title": "...", "url": "..."}], "evidence": {"kind": "...", "doi": "..."}}
 - status: "supported" if reliable sources confirm the claim, "refuted" if they contradict it, "misleading" if it is partly true but distorted, exaggerated or stripped of context, "unverified" if the search is inconclusive.
 - context: 1 to 3 sentences giving the relevant facts and figures, in this language: ${language}.
 - sources: the pages that support your verdict. Only cite URLs that appeared in your search results; never write a URL from memory. Use [] when you found none.
-- Judge the claim as of the article's publication date when it is given: a claim that was accurate when published is not "refuted" because of later events. If something relevant has changed since, say so in context.`,
+- Judge the claim as of the article's publication date when it is given: a claim that was accurate when published is not "refuted" because of later events. If something relevant has changed since, say so in context.
+- ${scienceRule(true)} If the claim does not rely on scientific research, set evidence to {"kind": "none", "doi": ""}.`,
     user: `${articleHeader(claim.title, claim.meta, claim.analysisDate)}
 
 Claim: ${claim.quote}${claim.context ? `

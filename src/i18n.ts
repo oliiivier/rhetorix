@@ -4,7 +4,7 @@
 import type { AnalysisDepth, Config, DisplayMode } from "./config";
 import { ext } from "./ext";
 import type { ProviderErrorCode } from "./providers/types";
-import type { Confidence, FactStatus, Severity } from "./schema";
+import type { Confidence, EvidenceKind, FactStatus, Severity } from "./schema";
 import type { Category } from "./taxonomy";
 
 export type Language = "fr" | "en" | "es" | "de" | "it";
@@ -69,6 +69,14 @@ export interface UiStrings {
   uncontestBtn: string;
   uncontestBtnTitle: string;
   contestedNote: string;
+  /** Niveau de preuve d'une allégation scientifique (D16). */
+  evidenceLabel: string;
+  evidenceKinds: Record<EvidenceKind, string>;
+  studyPreprint: string;
+  studyRetracted: string;
+  studyConcern: string;
+  studyLinkTitle: string;
+  studiesStatus: string;
 
   // Popover (icône d'extension)
   brandSubtitle: string;
@@ -316,6 +324,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     uncontestBtn: "Rétablir",
     uncontestBtnTitle: "Retirer la contestation et réafficher l'annotation.",
     contestedNote: "Annotation contestée. Retrouvez-la dans les options pour la signaler sur GitHub.",
+    evidenceLabel: "Niveau de preuve :",
+    evidenceKinds: { meta_analysis: "méta-analyse ou revue systématique", rct: "essai contrôlé randomisé", observational: "étude observationnelle", animal_in_vitro: "étude animale ou in vitro", preprint: "prépublication", unknown: "type d'étude non déterminé" },
+    studyPreprint: "Prépublication (non relue par les pairs)",
+    studyRetracted: "Article rétracté",
+    studyConcern: "Avis de réserve de l'éditeur",
+    studyLinkTitle: "Notice de l'étude (DOI confirmé par Crossref)",
+    studiesStatus: "Vérification des études citées…",
 
     brandSubtitle: "Esprit critique & rhétorique",
     activePageLabel: "Page active",
@@ -370,7 +385,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Annuler",
     privacySectionTitle: "Vie privée",
     privacyText:
-      "Le texte des articles analysés est envoyé uniquement au fournisseur que vous avez configuré. Rhetorix ne dispose d'aucun serveur central.",
+      "Le texte des articles analysés est envoyé uniquement au fournisseur que vous avez configuré. Pour vérifier une étude citée, son seul DOI est envoyé à Crossref (api.crossref.org). Rhetorix ne dispose d'aucun serveur central.",
     getGeminiKeyBtn: "✨ Obtenir une clé Gemini gratuite (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Obtenir une clé Anthropic ↗",
     presetOllamaBtn: "🦙 Configurer pour Ollama local (zéro clé)",
@@ -591,6 +606,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     uncontestBtn: "Restore",
     uncontestBtnTitle: "Withdraw the dispute and show the annotation again.",
     contestedNote: "Disputed annotation. Find it in the options to report it on GitHub.",
+    evidenceLabel: "Level of evidence:",
+    evidenceKinds: { meta_analysis: "meta-analysis or systematic review", rct: "randomised controlled trial", observational: "observational study", animal_in_vitro: "animal or in vitro study", preprint: "preprint", unknown: "study design not determined" },
+    studyPreprint: "Preprint (not peer-reviewed)",
+    studyRetracted: "Retracted article",
+    studyConcern: "Publisher's expression of concern",
+    studyLinkTitle: "Study record (DOI confirmed by Crossref)",
+    studiesStatus: "Checking cited studies…",
 
     brandSubtitle: "Critical thinking & rhetoric",
     activePageLabel: "Active page",
@@ -645,7 +667,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Cancel",
     privacySectionTitle: "Privacy",
     privacyText:
-      "The text of analyzed articles is sent exclusively to the provider you configured. Rhetorix does not run any central server.",
+      "The text of analyzed articles is sent exclusively to the provider you configured. To check a cited study, only its DOI is sent to Crossref (api.crossref.org). Rhetorix does not run any central server.",
     getGeminiKeyBtn: "✨ Get a free Gemini API key (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Get an Anthropic API key ↗",
     presetOllamaBtn: "🦙 Configure for local Ollama (no key)",
@@ -866,6 +888,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     uncontestBtn: "Restablecer",
     uncontestBtnTitle: "Retirar la impugnación y volver a mostrar la anotación.",
     contestedNote: "Anotación impugnada. Encuéntrela en las opciones para notificarla en GitHub.",
+    evidenceLabel: "Nivel de evidencia:",
+    evidenceKinds: { meta_analysis: "metaanálisis o revisión sistemática", rct: "ensayo controlado aleatorizado", observational: "estudio observacional", animal_in_vitro: "estudio en animales o in vitro", preprint: "preprint", unknown: "tipo de estudio no determinado" },
+    studyPreprint: "Preprint (sin revisión por pares)",
+    studyRetracted: "Artículo retractado",
+    studyConcern: "Expresión de preocupación del editor",
+    studyLinkTitle: "Ficha del estudio (DOI confirmado por Crossref)",
+    studiesStatus: "Verificando los estudios citados…",
 
     brandSubtitle: "Pensamiento crítico y retórica",
     activePageLabel: "Página activa",
@@ -920,7 +949,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Cancelar",
     privacySectionTitle: "Privacidad",
     privacyText:
-      "El texto de los artículos analizados se envía únicamente al proveedor que haya configurado. Rhetorix no dispone de ningún servidor central.",
+      "El texto de los artículos analizados se envía únicamente al proveedor que haya configurado. Para verificar un estudio citado, solo se envía su DOI a Crossref (api.crossref.org). Rhetorix no dispone de ningún servidor central.",
     getGeminiKeyBtn: "✨ Obtener una clave Gemini gratuita (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Obtener una clave Anthropic ↗",
     presetOllamaBtn: "🦙 Configurar para Ollama local (sin clave)",
@@ -1141,6 +1170,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     uncontestBtn: "Wiederherstellen",
     uncontestBtnTitle: "Anfechtung zurücknehmen und die Annotation wieder anzeigen.",
     contestedNote: "Angefochtene Annotation. In den Optionen können Sie sie auf GitHub melden.",
+    evidenceLabel: "Evidenzgrad:",
+    evidenceKinds: { meta_analysis: "Metaanalyse oder systematische Übersicht", rct: "randomisierte kontrollierte Studie", observational: "Beobachtungsstudie", animal_in_vitro: "Tier- oder In-vitro-Studie", preprint: "Preprint", unknown: "Studientyp nicht bestimmt" },
+    studyPreprint: "Preprint (nicht begutachtet)",
+    studyRetracted: "Zurückgezogener Artikel",
+    studyConcern: "Bedenkenhinweis des Verlags",
+    studyLinkTitle: "Eintrag der Studie (DOI von Crossref bestätigt)",
+    studiesStatus: "Zitierte Studien werden geprüft…",
 
     brandSubtitle: "Kritisches Denken & Rhetorik",
     activePageLabel: "Aktive Seite",
@@ -1195,7 +1231,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Abbrechen",
     privacySectionTitle: "Datenschutz",
     privacyText:
-      "Der Text analysierter Artikel wird ausschließlich an den von Ihnen konfigurierten Anbieter gesendet. Rhetorix betreibt keinen zentralen Server.",
+      "Der Text analysierter Artikel wird ausschließlich an den von Ihnen konfigurierten Anbieter gesendet. Zur Prüfung einer zitierten Studie wird nur deren DOI an Crossref (api.crossref.org) gesendet. Rhetorix betreibt keinen zentralen Server.",
     getGeminiKeyBtn: "✨ Kostenlosen Gemini-API-Schlüssel holen (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Anthropic-API-Schlüssel holen ↗",
     presetOllamaBtn: "🦙 Für lokales Ollama vorkonfigurieren (kein Schlüssel)",
@@ -1416,6 +1452,13 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     uncontestBtn: "Ripristina",
     uncontestBtnTitle: "Ritira la contestazione e mostra di nuovo l'annotazione.",
     contestedNote: "Annotazione contestata. La trovi nelle opzioni per segnalarla su GitHub.",
+    evidenceLabel: "Livello di prova:",
+    evidenceKinds: { meta_analysis: "meta-analisi o revisione sistematica", rct: "studio controllato randomizzato", observational: "studio osservazionale", animal_in_vitro: "studio su animali o in vitro", preprint: "preprint", unknown: "tipo di studio non determinato" },
+    studyPreprint: "Preprint (non sottoposto a revisione paritaria)",
+    studyRetracted: "Articolo ritrattato",
+    studyConcern: "Espressione di preoccupazione dell'editore",
+    studyLinkTitle: "Scheda dello studio (DOI confermato da Crossref)",
+    studiesStatus: "Verifica degli studi citati…",
 
     brandSubtitle: "Pensiero critico e retorica",
     activePageLabel: "Pagina attiva",
@@ -1470,7 +1513,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     reportCancelBtn: "Annulla",
     privacySectionTitle: "Privacy",
     privacyText:
-      "Il testo degli articoli analizzati viene inviato esclusivamente al fornitore configurato. Rhetorix non dispone di alcun server centrale.",
+      "Il testo degli articoli analizzati viene inviato esclusivamente al fornitore configurato. Per verificare uno studio citato, solo il suo DOI viene inviato a Crossref (api.crossref.org). Rhetorix non dispone di alcun server centrale.",
     getGeminiKeyBtn: "✨ Ottieni una chiave Gemini gratuita (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Ottieni una chiave Anthropic ↗",
     presetOllamaBtn: "🦙 Configura per Ollama locale (senza chiave)",

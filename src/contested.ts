@@ -110,6 +110,11 @@ function issueBody(e: ContestedAnnotation, opts: IssueOptions, maxText: number):
   if (a.category === "factual_claim" || fc.context) {
     lines.push("", `**Vérification** : ${fc.status}`);
     if (fc.context) lines.push("", quoteBlock(clip(fc.context, maxText)));
+    const ev = fc.evidence;
+    if (ev) {
+      const flags = [ev.record?.retracted && "rétracté", ev.record?.concern && "avis de réserve", ev.record?.preprint && "prépublication"].filter(Boolean);
+      lines.push("", `**Niveau de preuve** : ${ev.kind}${ev.doi ? `, DOI ${ev.doi}` : ""}${flags.length ? ` (${flags.join(", ")})` : ""}`);
+    }
     for (const s of fc.sources) lines.push(`- ${s.url}`);
   }
   if (opts.comment?.trim()) lines.push("", `**Commentaire**\n\n${clip(opts.comment.trim(), maxText * 2)}`);

@@ -4,6 +4,7 @@
 // en ligne à la demande (C2) et la contestation (Q4). Tout contenu issu du LLM ou de
 // la page est inséré via textContent (jamais innerHTML).
 
+import { renderEvidence, renderStudyFlags } from "./evidence-view";
 import { getUiStrings, type UiStrings } from "./i18n";
 import type { HighlightItem } from "./messages";
 import { isVerifiable } from "./schema";
@@ -198,6 +199,27 @@ const STYLE = `
   }
   @media (prefers-color-scheme: dark) {
     .sources a { color: #74c0fc; }
+  }
+
+  .study-flag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #e9ecef;
+    color: #495057;
+  }
+  .study-flag.retracted, .study-flag.concern { background: #ffe3e3; color: #c92a2a; }
+  .evidence { margin: 4px 0 6px 0; font-size: 12px; }
+  .evidence-kind { display: block; color: #5f6670; }
+  .evidence-record { color: #1c64d1; text-decoration: underline; overflow-wrap: anywhere; }
+  @media (prefers-color-scheme: dark) {
+    .study-flag { background: #2b3038; color: #adb5bd; }
+    .study-flag.retracted, .study-flag.concern { background: #4a1515; color: #ff8787; }
+    .evidence-kind { color: #9aa1ab; }
+    .evidence-record { color: #74c0fc; }
   }
 
   .actions {
@@ -426,10 +448,12 @@ export class AnnotationPopover {
     if (item.rhetoric_critique) entry.append(el("p", "critique", item.rhetoric_critique));
 
     const fc = item.fact_check;
-    if (fc && (item.category === "factual_claim" || fc.context || fc.sources.length > 0)) {
+    if (fc && (item.category === "factual_claim" || fc.context || fc.sources.length > 0 || fc.evidence)) {
       const box = el("div", "fact-check");
-      box.append(el("span", `fact-status status-${fc.status}`, `${t.factCheckLabel} ${t.factStatuses[fc.status]}`));
+      box.append(el("span", `fact-status status-${fc.status}`, `${t.factCheckLabel} ${t.factStatuses[fc.status]}`), ...renderStudyFlags(fc.evidence, t));
       if (fc.context) box.append(el("p", "fact-context", fc.context));
+      const evidence = renderEvidence(fc.evidence, t);
+      if (evidence) box.append(evidence);
       if (fc.sources.length > 0) {
         const list = el("ul", "sources");
         for (const s of fc.sources) {

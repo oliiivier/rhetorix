@@ -5,6 +5,7 @@ import {
   enforceSourcePolicy,
   isDocumentLevel,
   isVerifiable,
+  normalizeDoi,
   validateAnalysis,
   validateFactCheck,
 } from "../src/schema";
@@ -117,5 +118,31 @@ describe("vérification à la demande (C2)", () => {
       sources: [{ title: "a", url: "https://a.test/x#y" }],
     });
     expect(enforceFactCheckSourcePolicy(fc, new Set()).status).toBe("unverified");
+  });
+});
+
+describe("niveau de preuve (D16)", () => {
+  const fc = (evidence: unknown) => validateFactCheck({ status: "supported", context: "", sources: [], evidence });
+
+  it("garde le type d'étude et normalise le DOI", () => {
+    expect(fc({ kind: "rct", doi: "https://doi.org/10.1056/NEJMoa2034577." })).toMatchObject({ evidence: { kind: "rct", doi: "10.1056/NEJMoa2034577" } });
+    expect(fc({ kind: "observational", doi: "pas un doi" }).evidence).toEqual({ kind: "observational" });
+  });
+
+  it("omet un niveau de preuve absent, « none » ou inconnu", () => {
+    expect("evidence" in fc({ kind: "none", doi: "" })).toBe(false);
+    expect("evidence" in fc(undefined)).toBe(false);
+    expect("evidence" in fc({ kind: "anecdote" })).toBe(false);
+  });
+
+  it("retire le DOI sans recherche web, garde le type d'étude", () => {
+    const checked = enforceFactCheckSourcePolicy(fc({ kind: "meta_analysis", doi: "10.1000/x" }), undefined);
+    expect(checked.evidence).toEqual({ kind: "meta_analysis" });
+    expect(enforceFactCheckSourcePolicy(fc({ kind: "meta_analysis", doi: "10.1000/x" }), new Set()).evidence).toEqual({ kind: "meta_analysis", doi: "10.1000/x" });
+  });
+
+  it("normalizeDoi rejette ce qui n'est pas un DOI", () => {
+    expect(normalizeDoi("doi: 10.1000/xyz123")).toBe("10.1000/xyz123");
+    expect(normalizeDoi("10.10/x")).toBeUndefined();
   });
 });

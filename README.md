@@ -23,6 +23,7 @@ Extension de navigateur (Manifest V3) pour **Chromium** (Chrome, Brave, Edge) et
 - Avec la recherche web activée, chaque allégation est confrontée à des sources et reçoit un statut : **confirmée**, **réfutée**, **trompeuse** ou **non vérifiée**.
 - **Sources fiables uniquement** : seules les URL issues de l'outil de recherche web du fournisseur sont affichées. Une URL citée de mémoire par le modèle est écartée.
 - **Vérification à la demande** : une allégation restée non vérifiée peut être vérifiée en ligne depuis sa carte ou sa bulle, en un appel avec la recherche web activée pour lui seul, même si la recherche web est désactivée dans les options. Le résultat est gardé en cache.
+- **Études scientifiques** : pour une allégation qui repose sur une étude, le modèle vérifie qu'elle est rapportée fidèlement et indique son **niveau de preuve** (méta-analyse, essai contrôlé, étude observationnelle, animale ou in vitro, prépublication). Si l'étude a un DOI, sa notice est vérifiée auprès de Crossref : revue, année, et signalement d'une **prépublication** ou d'un **article rétracté**.
 
 ### Vidéos YouTube
 
@@ -127,6 +128,8 @@ src/
   providers/              # adaptateurs anthropic, gemini, openai-compatible, chrome-ai
   analyze.ts              # orchestration : découpage, appels, validation, fusion
   verify.ts               # vérification en ligne d'une allégation à la demande
+  crossref.ts             # notice Crossref des études citées (DOI, rétractation)
+  evidence-view.ts        # affichage du niveau de preuve
   contested.ts            # annotations contestées et ticket GitHub prérempli
   streaming-json.ts       # parseur de flux JSON progressif
   schema.ts               # contrat JSON du LLM, validation, politique des sources
@@ -155,7 +158,7 @@ docs/
 
 ## Confidentialité
 
-Rhetorix n'a pas de serveur. Le texte analysé est envoyé uniquement au fournisseur LLM que vous avez configuré, ou reste sur votre appareil avec un modèle local. La clé API est stockée localement dans le navigateur, sans synchronisation. Aucune télémétrie. Détails dans la [politique de confidentialité](PRIVACY.md).
+Rhetorix n'a pas de serveur. Le texte analysé est envoyé uniquement au fournisseur LLM que vous avez configuré, ou reste sur votre appareil avec un modèle local. Pour vérifier une étude citée, seul son DOI est envoyé à Crossref. La clé API est stockée localement dans le navigateur, sans synchronisation. Aucune télémétrie. Détails dans la [politique de confidentialité](PRIVACY.md).
 
 ## Contribuer
 

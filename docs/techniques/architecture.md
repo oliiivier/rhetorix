@@ -66,6 +66,7 @@ Points à noter :
 - **`host_permissions` vers l'endpoint LLM.** Une page d'extension ne contourne CORS que pour les hôtes déclarés. Comme l'endpoint est configurable, utiliser `optional_host_permissions` et demander la permission depuis la page d'options (`permissions.request`) au moment de l'enregistrement.
 - **Script de fond** : `service_worker` sous Chromium, `scripts` sous Firefox (voir §9).
 - **Aucun code distant.** Readability.js doit être embarqué dans le paquet.
+- **Crossref (D16)** : `api.crossref.org` est couvert par les permissions d'hôte demandées par le panneau (`https://*/*`). Sur Firefox Android, le clic sur l'icône demande l'origine du provider et `https://api.crossref.org/*`.
 
 ## 3. Flux d'analyse
 
@@ -166,7 +167,8 @@ L'orchestration (`src/analyze.ts`) enchaîne les passes suivantes. Celles marqu�
 | Analyse | toujours | `analyze` par morceau, deux à la fois, puis `validateAnalysis`, `enforceSourcePolicy` et fusion |
 | Consolidation (B2) | article découpé | `complete` en JSON : `summary`, `clickbait_gap` et `blind_spot` jugés sur l'ensemble à partir des constats de chaque morceau ; repli sur la fusion |
 | Relecture (Q2) | approfondi, au moins une annotation | `complete` en JSON : chaque annotation avec la définition de son étiquette et le paragraphe qui contient sa citation (ou la mention d'une annotation d'ensemble) ; les annotations écartées sont retirées |
-| Vérification (C2, D14) | à la demande, après l'analyse | `complete` avec `webSearch` sur une allégation : citation, paragraphe, titre et métadonnées de publication ([verify.ts](../../src/verify.ts)). Réponse `{status, context, sources}` soumise à D3 avec les URL reçues par `onSource`. Anthropic : outil `web_search`, reprise de `pause_turn` ; Gemini : `googleSearch`, sans mode JSON ; compatible OpenAI : `citations`. Pas avec Chrome Built-in AI |
+| Études (C3, D16) | recherche web utilisée, au moins un DOI | `attachStudyRecords` ([crossref.ts](../../src/crossref.ts)) : `GET https://api.crossref.org/works/{doi}`, sans clé, deux à la fois, 8 s au plus ; notice jointe à `fact_check.evidence.record`, DOI inconnu retiré, erreur ignorée |
+| Vérification (C2, D14) | à la demande, après l'analyse | `complete` avec `webSearch` sur une allégation : citation, paragraphe, titre et métadonnées de publication ([verify.ts](../../src/verify.ts)). Réponse `{status, context, sources, evidence}` soumise à D3 avec les URL reçues par `onSource`, puis notice Crossref de l'étude citée (D16). Anthropic : outil `web_search`, reprise de `pause_turn` ; Gemini : `googleSearch`, sans mode JSON ; compatible OpenAI : `citations`. Pas avec Chrome Built-in AI |
 
 | Adaptateur | Sortie structurée | Recherche web (D3) |
 |---|---|---|
@@ -177,7 +179,7 @@ L'orchestration (`src/analyze.ts`) enchaîne les passes suivantes. Celles marqu�
 
 Modèle Anthropic par défaut : `claude-opus-5-5`, avec `effort: high` et `fallbacks: "default"` (reprise côté serveur après un refus) sur les modèles qui l'acceptent.
 
-Quand `supportsWebSearch` est faux, le client force `fact_check.status = "unverified"` et `sources = []`, quoi que le modèle ait renvoyé.
+Quand `supportsWebSearch` est faux, le client force `fact_check.status = "unverified"` et `sources = []`, quoi que le modèle ait renvoyé, et retire le DOI de `fact_check.evidence`. Seule URL affichée hors de la recherche web : le lien `doi.org` d'une étude dont Crossref a confirmé le DOI (D16).
 
 - **Streaming et affichage progressif.** Les adaptateurs fonctionnent en streaming (SSE pour OpenAI et Gemini via `parseSseJson`, `streamEvent` pour Anthropic, `promptStreaming` pour Chrome AI). Le panneau affiche les cartes d'annotations et le résumé au fur et à mesure sans attendre la fin du flux complet grâce à `ProgressiveJsonParser` (`src/streaming-json.ts`).
 - **Internationalisation (`src/i18n.ts`).** L'interface et les messages d'erreurs (extraction et providers) sont traduits dans les 5 langues supportées (fr, en, es, de, it).
