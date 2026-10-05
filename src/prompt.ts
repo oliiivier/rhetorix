@@ -2,7 +2,7 @@
 // y sont injectées ; chaque adaptateur ajoute ses consignes propres.
 // Toute modification d'un prompt impose d'incrémenter ENGINE_VERSION (engine-settings.ts).
 
-import { CATEGORIES, LABELS, labelDef } from "./taxonomy";
+import { CATEGORIES, LABELS, labelDef, type Category } from "./taxonomy";
 
 function taxonomyText(language: string): string {
   return CATEGORIES.map((c) => {
@@ -150,11 +150,17 @@ export interface ReviewItem {
  * Relecture des annotations (Q2, mode approfondi) : écarte celles que le texte ne
  * justifie pas. Réponse JSON : { rejected: [{ id, reason }] }.
  */
+/** Définition de l'étiquette, pour que la relecture juge sur le même critère que l'analyse. */
+function labelLine(it: ReviewItem): string {
+  const def = CATEGORIES.includes(it.category as Category) ? labelDef(it.category as Category, it.label, "en") : undefined;
+  return def ? ` (${def.name}: ${def.definition})` : "";
+}
+
 export function reviewPrompt(title: string, items: ReviewItem[], outline?: string): Prompt {
   const list = items
     .map((it) =>
       [
-        `[${it.id}] ${it.category}/${it.label}`,
+        `[${it.id}] ${it.category}/${it.label}${labelLine(it)}`,
         `Quote: ${it.quote}`,
         `Critique: ${it.critique}`,
         it.context ? `Paragraph: ${it.context}` : "Paragraph: (quote not found verbatim in the article)",
@@ -163,11 +169,14 @@ export function reviewPrompt(title: string, items: ReviewItem[], outline?: strin
     .join("\n\n");
   return {
     system: `You review annotations produced by another analyst on a news article: rhetorical fallacies ("sophism"), framing or selection bias ("bias") and checkable factual claims ("factual_claim"). Reject an annotation only if the text does not support it:
-- the quoted passage, read in its paragraph and in the article as a whole, does not contain the device named (for example a position presented fairly, a concession, a quotation the author distances themselves from, or a reasonable inference);
-- for "factual_claim", the passage makes no checkable claim;
+- the quoted passage, read in its paragraph and in the article as a whole, does not meet the definition of the label (for example a position presented fairly, a concession, a quotation the author distances themselves from, or a reasonable inference);
+- the passage reports what a source said, in a news report that also gives other views, without the article endorsing it: the device, if any, is the source's, not the article's;
+- the passage is cautious or balanced (contrasting results, acknowledged uncertainty, sourced attribution) and the critique faults it for vagueness or framing;
+- the critique only works through a strained reading: an ordinary descriptive word treated as loaded, a transition treated as a diversion, a plain fact treated as a fallacy;
+- for "factual_claim", the passage makes no checkable claim, or it is uncontroversial background or routine reporting that the argument does not rely on;
 - the annotation duplicates another one on the same passage;
 - the quote is absent from the article and the critique cannot be tied to any passage.
-Do not reject an annotation because you disagree with the article's thesis or with the critique's wording, nor because of the truth of a claim. Apply the same standard whatever the article's political orientation. When in doubt, keep the annotation.
+Do not reject an annotation because you disagree with the article's thesis or with the critique's wording, nor because of the truth of a claim, nor because the article's thesis is sound: vehement rhetoric serving a correct conclusion is still rhetoric. Apply the same standard whatever the article's political orientation. Keep an annotation when the device is clearly present, even if minor; reject it when it requires one of the readings above.
 Answer with a single JSON object and nothing else: {"rejected": [{"id": "...", "reason": "..."}]}. Use an empty array when every annotation is justified.`,
     user: `Article title: ${title}${outline ? `\n\n<article_outline>\n${outline}\n</article_outline>` : ""}
 
