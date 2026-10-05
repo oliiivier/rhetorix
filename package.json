@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint:firefox": "web-ext lint -s dist/firefox",
     "package:chrome": "npm run build && web-ext build -s dist/chrome -a artifacts -n rhetorix-chrome-{version}.zip --overwrite-dest",
-    "package:firefox": "npm run build && web-ext build -s dist/firefox -a artifacts -n rhetorix-firefox-{version}.zip --overwrite-dest && git archive --format=zip --output=artifacts/rhetorix-sources.zip HEAD",
+    "package:firefox": "npm run build && web-ext build -s dist/firefox -a artifacts -n rhetorix-firefox-{version}.zip --overwrite-dest && git archive --format=zip --output=artifacts/rhetorix-sources-$npm_package_version.zip HEAD",
     "package": "npm run package:chrome && npm run package:firefox",
     "test": "vitest run",
     "test:live": "node scripts/test-live-provider.mjs",
