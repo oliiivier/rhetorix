@@ -3,3 +3,4 @@ dist/
 artifacts/
 eval/corpus/.local/
 .env
+.claude/settings.local.json
