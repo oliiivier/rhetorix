@@ -27,6 +27,10 @@ Rules:
 - exact_quote must be copied verbatim from the article, character for character, in the article's language. Keep it short: the smallest passage that shows the problem, ideally one sentence, never more than about 300 characters.
 - Use only these labels, matching the annotation's category; use "autre" when nothing fits and name the device in rhetoric_critique.
 - Be descriptive and even-handed. Each annotation must be justified by the text itself, whatever the political orientation. Returning few or zero annotations is a valid result for a well-argued article.
+- Be thorough: read the whole text and annotate every distinct passage that uses a device, not only the most salient ones. A device that recurs in different passages gets one annotation per passage. Polemical, emotional or one-sided texts usually contain many devices; a sound thesis does not exempt the rhetoric used to defend it.
+- Unnamed authorities ("experts agree", "studies show", "everyone knows") are "bias/source_vague" or "sophism/argument_autorite" even when the claim itself is also checkable.
+- Attacking a person's intelligence, health, sanity, beliefs or private life to discredit them or their actions is "sophism/ad_hominem". Pejorative or emotive wording about groups, things or events, without such a personal attack, is "bias/langage_charge".
+- Annotate a "factual_claim" only when it is specific, checkable and either the argument relies on it or a reader could be misled by it. Do not annotate uncontroversial background, routine reporting of events, or accusations and opinions the author openly presents as their own.
 - severity reflects how much the device distorts the reader's understanding:
   * "high": the device carries the article's main thesis or conclusion, or a factual claim the argument depends on;
   * "medium": it supports a secondary argument, or misleads on a point the reader may retain;

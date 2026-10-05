@@ -2,3 +2,4 @@ node_modules/
 dist/
 artifacts/
 eval/corpus/.local/
+.env
