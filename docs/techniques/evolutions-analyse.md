@@ -94,7 +94,7 @@ Reste à préciser : le comportement de D12 sur les vidéos YouTube, qui n'ont p
 
 ## 5. État de mise en œuvre (2026-10-05)
 
-`ENGINE_VERSION` vaut 3 : les analyses en cache antérieures sont réaffichées avec l'avertissement « peut-être obsolète » (D11) et refaites à la demande.
+`ENGINE_VERSION` vaut 5 : les analyses en cache antérieures sont réaffichées avec l'avertissement « peut-être obsolète » (D11) et refaites à la demande.
 
 | Piste | État | Écarts et remarques |
 |---|---|---|
@@ -108,11 +108,33 @@ Reste à préciser : le comportement de D12 sur les vidéos YouTube, qui n'ont p
 | B3 | À faire | Modifie le contrat et l'interface (panneau, bulles, message bref). Le comportement sur YouTube reste à préciser |
 | C1 | Fait | Date, auteur et site transmis avec la date de l'analyse. Rien pour YouTube, dont l'extraction ne fournit pas ces métadonnées |
 | C2 | À faire | Modifie le contrat (motif « non vérifié faute de budget »). En attendant, le mode approfondi ajoute au plus 2 appels et non 3, ce que dit l'aide |
-| Q1 | Fait | `npm run corpus:eval`. Aucune mesure n'a encore été faite ; les annotations attendues restent à relire |
-| Q2 | Fait | Une relecture en échec garde toutes les annotations. Effet à mesurer avec Q1 |
+| Q1 | Fait | `npm run corpus:eval`. Premières mesures en §6 ; les annotations attendues restent à relire |
+| Q2 | Fait | Une relecture en échec garde toutes les annotations. Elle reçoit la définition de chaque étiquette ; effet mesuré en §6 |
 | Q3 | Fait en partie | Grille de sévérité dans le prompt ; pas de champ `confidence` |
 | Q4 | À faire | |
 
 Non traités : le dimensionnement (§1.2 : estimation des tokens, concurrence par provider, fenêtre de Gemini Nano) et le traitement particulier des intertitres (§1.6).
 
-Prochaine étape : mesurer avec le corpus les modes rapide et approfondi (`npm run corpus:eval -- --depth fast|deep --runs 3`), pour décider du défaut de D10 et de la suite (C2, B3).
+Prochaine étape : relire les fiches du corpus signalées en §6, puis confirmer les mesures sur 3 passes et sur un autre provider avant de trancher le défaut de D10 et la suite (C2, B3).
+
+## 6. Mesures sur le corpus (2026-10-05)
+
+Moteur en version 5, Gemini 3.8 Flash, recherche web activée, 13 articles (dont les 2 textes non libres), deux passes par mode : les écarts de quelques points restent dans le bruit. Instantané à remplacer à la prochaine mesure.
+
+| Indicateur | Rapide | Approfondi |
+|---|---|---|
+| Rappel `sophism` | 88 % | 94 % |
+| Rappel `bias` | 72 % | 78 % |
+| Rappel `factual_claim` | 88 % | 88 % |
+| Précision | 75 % | 79 % |
+| Annotations rhétoriques sur les témoins | 0,3 | 0,3 |
+| *J'accuse* (rappel) | 3/6 | 5/6 |
+| Coût d'une passe complète | ~0,06 $ | ~0,08 $ |
+
+Dans les deux modes, citations localisées, statuts factuels et éléments globaux sont à 100 %, et les articles symétriques sur le nucléaire reçoivent le même nombre d'annotations à une près. Les coûts sont estimés aux tarifs de Gemini Flash, hors tokens de raisonnement, que le provider ne compte pas.
+
+Fiches à relire, car plusieurs « faux positifs » semblent tenir au corpus plutôt qu'au moteur :
+
+- `pd-fr-zola-jaccuse` : « l'esprit le plus fumeux, le plus compliqué » et « quel coup de balai » sont des procédés défendables absents des attentes ;
+- `cr-fr-reporterre-soignants-pesticides` : « permis de tuer » figure deux fois dans le texte, et l'attente ne couvre qu'une occurrence ;
+- `cr-fr-contrepoints-secheresse` : la limite de 2 annotations rhétoriques est souvent dépassée de peu.

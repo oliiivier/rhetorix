@@ -153,7 +153,7 @@ L'orchestration (`src/analyze.ts`) enchaîne les passes suivantes. Celles marqu�
 | Cartographie (B1) | approfondi, article découpé | `complete` sur l'article entier, ou son début et sa fin s'il dépasse le budget (100 000 tokens pour Anthropic et Gemini, la taille de morceau sinon) : thèse, arguments, positions attribuées, engagements. Le plan est joint à chaque morceau |
 | Analyse | toujours | `analyze` par morceau, deux à la fois, puis `validateAnalysis`, `enforceSourcePolicy` et fusion |
 | Consolidation (B2) | article découpé | `complete` en JSON : `summary`, `clickbait_gap` et `blind_spot` jugés sur l'ensemble à partir des constats de chaque morceau ; repli sur la fusion |
-| Relecture (Q2) | approfondi, au moins une annotation | `complete` en JSON : chaque annotation avec le paragraphe qui contient sa citation ; les annotations écartées sont retirées |
+| Relecture (Q2) | approfondi, au moins une annotation | `complete` en JSON : chaque annotation avec la définition de son étiquette et le paragraphe qui contient sa citation ; les annotations écartées sont retirées |
 
 | Adaptateur | Sortie structurée | Recherche web (D3) |
 |---|---|---|
