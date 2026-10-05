@@ -1,0 +1,57 @@
+{
+  "id": "cr-fr-contrepoints-secheresse",
+  "title": "La sécheresse n'est pas nouvelle",
+  "lang": "fr",
+  "kind": "copyrighted",
+  "genre": "tribune",
+  "orientation": "libérale",
+  "purpose": "Presse d'opinion réelle, ton mesuré : liste de sécheresses historiques vérifiables. Peu de procédés attendus ; l'omission des tendances récentes peut être relevée.",
+  "source": {
+    "url": "https://contrepoints.org/la-secheresse-nest-pas-nouvelle/",
+    "publisher": "Contrepoints"
+  },
+  "license": {
+    "name": "Tous droits réservés",
+    "redistributable": false
+  },
+  "document": {
+    "clickbait_gap": "any",
+    "blind_spot": "any"
+  },
+  "limits": {
+    "max_rhetorical": 2
+  },
+  "expected": [
+    {
+      "quote": "L’été 1949 a culminé avec le dramatique incendie des Landes de Gascogne qui a détruit 52 000 hectares et coûté la vie à 82 personnes.",
+      "accept": [
+        "factual_claim/fait_historique",
+        "factual_claim/statistique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "misleading",
+        "unverified"
+      ]
+    },
+    {
+      "quote": "Les Landes ont subi 132 incendies ravageant plus de 35 000 hectares",
+      "accept": [
+        "factual_claim/fait_historique",
+        "factual_claim/statistique"
+      ],
+      "required": false
+    },
+    {
+      "quote": "Ces sécheresses antérieures s’expliqueraient par la position durable de hautes pressions",
+      "accept": [
+        "bias/selection_des_faits",
+        "bias/omission_contexte"
+      ],
+      "required": false,
+      "note": "La fréquence et l'intensité récentes ne sont pas comparées."
+    }
+  ],
+  "text_sha256": "5591e62982029e298aff6ad2763632993e9218544258411da0bfdcfabe70fe43"
+}

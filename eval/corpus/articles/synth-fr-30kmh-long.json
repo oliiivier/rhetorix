@@ -1,0 +1,38 @@
+{
+  "id": "synth-fr-30kmh-long",
+  "title": "Le 30 km/h va ruiner les commerces du centre-ville",
+  "lang": "fr",
+  "kind": "synthetic",
+  "genre": "actualité",
+  "purpose": "Contexte global (piste B1) : l'homme de paille de l'avant-dernier paragraphe ne se voit qu'en le rapprochant de la proposition exposée au premier. Titre alarmiste non soutenu par le contenu (clickbait_gap). À évaluer avec un découpage forcé.",
+  "license": {
+    "name": "MIT (texte rédigé pour le corpus)",
+    "redistributable": true
+  },
+  "eval": {
+    "max_chunk_tokens": 400
+  },
+  "document": {
+    "clickbait_gap": "present",
+    "blind_spot": "any"
+  },
+  "expected": [
+    {
+      "quote": "Ceux qui veulent chasser toutes les voitures du centre-ville devraient avoir l'honnêteté de le dire clairement aux habitants.",
+      "accept": [
+        "sophism/homme_de_paille"
+      ],
+      "required": true,
+      "note": "La proposition exclut explicitement piétonnisation et fermeture de rues (premier paragraphe)."
+    },
+    {
+      "quote": "Fermer les rues aux automobilistes, c'est condamner les commerçants qui vivent de leurs clients motorisés.",
+      "accept": [
+        "sophism/homme_de_paille",
+        "sophism/pente_glissante"
+      ],
+      "required": false
+    }
+  ],
+  "text_sha256": "113e7d03824a1e4cdba8cb39ba7a28d7af27f81b35a0e9825e1bbb44d39312eb"
+}

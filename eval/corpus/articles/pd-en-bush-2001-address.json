@@ -1,0 +1,108 @@
+{
+  "id": "pd-en-bush-2001-address",
+  "title": "Address to a Joint Session of Congress and the American People",
+  "lang": "en",
+  "kind": "public_domain",
+  "genre": "discours",
+  "purpose": "Discours politique : faux dilemme célèbre, motivations de l'adversaire simplifiées. Chiffres de victimes étrangères annoncés à chaud et largement surestimés : teste la vérification factuelle et la prise en compte de la date (2001).",
+  "source": {
+    "url": "https://en.wikisource.org/wiki/George_W._Bush%27s_address_to_joint_session_of_Congress,_2001",
+    "author": "George W. Bush",
+    "publisher": "Maison-Blanche",
+    "published": "2001-09-20"
+  },
+  "license": {
+    "name": "Domaine public (œuvre du gouvernement fédéral américain)",
+    "redistributable": true
+  },
+  "document": {
+    "clickbait_gap": "absent",
+    "blind_spot": "present"
+  },
+  "expected": [
+    {
+      "quote": "Either you are with us, or you are with the terrorists.",
+      "accept": [
+        "sophism/faux_dilemme"
+      ],
+      "required": true
+    },
+    {
+      "quote": "They hate our freedoms — our freedom of religion, our freedom of speech, our freedom to vote and assemble and disagree with each other.",
+      "accept": [
+        "bias/omission_contexte",
+        "bias/cadrage",
+        "sophism/autre"
+      ],
+      "required": true,
+      "note": "Motivations réduites à la haine des libertés ; les griefs revendiqués par al-Qaïda sont omis."
+    },
+    {
+      "quote": "more than 130 Israelis; more than 250 citizens of India",
+      "accept": [
+        "factual_claim/statistique"
+      ],
+      "required": true,
+      "fact_status": [
+        "refuted",
+        "misleading",
+        "unverified"
+      ],
+      "note": "Estimations initiales très supérieures au bilan établi ensuite (5 Israéliens, une quarantaine d'Indiens)."
+    },
+    {
+      "quote": "hundreds of British citizens",
+      "accept": [
+        "factual_claim/statistique"
+      ],
+      "required": false,
+      "fact_status": [
+        "refuted",
+        "misleading",
+        "unverified"
+      ],
+      "note": "67 Britanniques selon le bilan établi."
+    },
+    {
+      "quote": "they follow in the path of fascism, Nazism, and totalitarianism",
+      "accept": [
+        "bias/langage_charge",
+        "sophism/autre"
+      ],
+      "required": false
+    },
+    {
+      "quote": "we know that God is not neutral between them",
+      "accept": [
+        "sophism/argument_autorite",
+        "sophism/infalsifiabilite",
+        "sophism/autre"
+      ],
+      "required": false
+    },
+    {
+      "quote": "for the past 136 years, they have been wars on foreign soil, except for one Sunday in 1941",
+      "accept": [
+        "factual_claim/fait_historique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "misleading",
+        "unverified"
+      ]
+    },
+    {
+      "quote": "delivering $40 billion to rebuild our communities and meet the needs of our military",
+      "accept": [
+        "factual_claim/statistique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "unverified"
+      ]
+    }
+  ],
+  "text_sha256": "5ce8c9af67bb360fbc09ec282d060186c1473b50b65444cb249097efd01bf319"
+}

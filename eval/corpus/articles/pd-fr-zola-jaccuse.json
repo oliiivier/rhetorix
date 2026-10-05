@@ -1,0 +1,117 @@
+{
+  "id": "pd-fr-zola-jaccuse",
+  "title": "J'accuse…! Lettre au Président de la République",
+  "lang": "fr",
+  "kind": "public_domain",
+  "genre": "lettre ouverte",
+  "orientation": "dreyfusard",
+  "purpose": "Rhétorique véhémente au service d'une thèse historiquement confirmée (innocence de Dreyfus). Le moteur doit relever les procédés sans contester le fond. Texte long (environ 7 000 tokens), proche de la limite de découpage. Teste aussi l'évaluation à la date de publication (1898).",
+  "source": {
+    "url": "https://fr.wikisource.org/wiki/J%E2%80%99accuse%E2%80%A6!",
+    "author": "Émile Zola",
+    "publisher": "L'Aurore",
+    "published": "1898-01-13"
+  },
+  "license": {
+    "name": "Domaine public",
+    "redistributable": true
+  },
+  "document": {
+    "clickbait_gap": "absent",
+    "blind_spot": "any"
+  },
+  "expected": [
+    {
+      "quote": "le ministre de la guerre, le général Mercier, dont l’intelligence semble médiocre",
+      "accept": [
+        "sophism/ad_hominem",
+        "bias/langage_charge"
+      ],
+      "required": true
+    },
+    {
+      "quote": "car il s’occupe aussi de spiritisme, d’occultisme, il converse avec les esprits",
+      "accept": [
+        "sophism/ad_hominem"
+      ],
+      "required": true
+    },
+    {
+      "quote": "à moins qu’un examen médical ne les déclare atteints d’une maladie de la vue et du jugement",
+      "accept": [
+        "sophism/ad_hominem"
+      ],
+      "required": true
+    },
+    {
+      "quote": "c’est un crime encore que de s’être appuyé sur la presse immonde, que de s’être laissé défendre par toute la fripouille de Paris",
+      "accept": [
+        "bias/langage_charge"
+      ],
+      "required": true
+    },
+    {
+      "quote": "d’une part, les coupables qui ne veulent pas que la lumière se fasse ; de l’autre, les justiciers qui donneront leur vie pour qu’elle soit faite",
+      "accept": [
+        "sophism/faux_dilemme",
+        "bias/cadrage"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Et ces gens-là dorment, et ils ont des femmes et des enfants qu’ils aiment !",
+      "accept": [
+        "sophism/appel_emotion"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Et je ne puis m’empêcher de retrouver là le lieutenant-colonel du Paty de Clam, en reconnaissant les expédients de son imagination fertile.",
+      "accept": [
+        "sophism/autre",
+        "bias/autre",
+        "sophism/generalisation_hative"
+      ],
+      "required": false,
+      "note": "Attribution par conjecture, sans preuve."
+    },
+    {
+      "quote": "On nous avait parlé de quatorze chefs d’accusation : nous n’en trouvons qu’une seule en fin de compte, celle du bordereau",
+      "accept": [
+        "factual_claim/fait_historique",
+        "factual_claim/statistique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "misleading",
+        "unverified"
+      ]
+    },
+    {
+      "quote": "un crime qu’il n’a pas commis",
+      "accept": [
+        "factual_claim/fait_historique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "unverified"
+      ],
+      "note": "Innocence de Dreyfus, établie par la Cour de cassation en 1906 : ne doit pas être contestée."
+    },
+    {
+      "quote": "je me mets sous le coup des articles 30 et 31 de la loi sur la presse du 29 juillet 1881",
+      "accept": [
+        "factual_claim/fait_historique",
+        "factual_claim/autre"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "unverified"
+      ]
+    }
+  ],
+  "text_sha256": "d216316e4078f77e9ff28a0472efb1e89893b7350527c0785279135f88d0f2d1"
+}

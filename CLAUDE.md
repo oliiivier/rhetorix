@@ -10,6 +10,7 @@ npm run watch
 npm test            # vitest, modules purs (test/)
 npm run typecheck   # tsc --noEmit
 npx web-ext lint -s dist/firefox
+npm run corpus:fetch  # textes du corpus d'évaluation (eval/corpus)
 ```
 
 Après une modification, lancer `typecheck`, `test` et `build`.

@@ -1,0 +1,69 @@
+{
+  "id": "cr-fr-reporterre-soignants-pesticides",
+  "title": "« Nous n'acceptons plus de réparer les dégâts causés par les politiques » : des soignants rejoignent la lutte contre les pesticides",
+  "lang": "fr",
+  "kind": "copyrighted",
+  "genre": "tribune",
+  "orientation": "écologiste",
+  "purpose": "Presse d'opinion réelle, ton militant : langage chargé et généralisations.",
+  "source": {
+    "url": "https://reporterre.net/Soignant-es-scientifiques-denoncons-ceux-qui-detruisent-la-sante",
+    "publisher": "Reporterre"
+  },
+  "license": {
+    "name": "Tous droits réservés",
+    "redistributable": false
+  },
+  "document": {
+    "clickbait_gap": "any",
+    "blind_spot": "any"
+  },
+  "expected": [
+    {
+      "quote": "exiger la fin de ce permis de tuer que se sont arrogé une poignée d’industriels",
+      "accept": [
+        "bias/langage_charge",
+        "sophism/appel_emotion"
+      ],
+      "required": true
+    },
+    {
+      "quote": "l’agriculture telle qu’elle est modélisée aujourd’hui tue. Et l’État qui la soutient tue.",
+      "accept": [
+        "bias/langage_charge",
+        "sophism/generalisation_hative",
+        "sophism/appel_emotion"
+      ],
+      "required": true
+    },
+    {
+      "quote": "qui incarne parfaitement ces sociétés qui n’ont aucun compte à rendre à la santé publique et vont à l’encontre du consensus scientifique",
+      "accept": [
+        "bias/essentialisation",
+        "bias/langage_charge",
+        "bias/source_vague"
+      ],
+      "required": false
+    },
+    {
+      "quote": "malgré l’abondance des travaux scientifiques reliant exposition chimique et santé",
+      "accept": [
+        "bias/source_vague"
+      ],
+      "required": false
+    },
+    {
+      "quote": "selon l’Institut national du cancer, les cancers d’origine professionnelle restent massivement sous-reconnus",
+      "accept": [
+        "factual_claim/citation_attribuee"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "misleading",
+        "unverified"
+      ]
+    }
+  ],
+  "text_sha256": "3139b9d66e330818cec70a2f0385583ef1ffb2e6cb0d0f619067ea4ac01cd915"
+}

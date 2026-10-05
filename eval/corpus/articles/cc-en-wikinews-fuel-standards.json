@@ -1,0 +1,50 @@
+{
+  "id": "cc-en-wikinews-fuel-standards",
+  "title": "Australian Minister for Energy lowers fuel standards for 60 days amid rising oil prices, panic buying",
+  "lang": "en",
+  "kind": "open_license",
+  "genre": "actualité",
+  "control": true,
+  "purpose": "Témoin : dépêche factuelle, avec le bandeau et les mentions d'archives de Wikinews que l'extraction conserve. Pas de procédé rhétorique attendu ; le bandeau ne doit pas être annoté.",
+  "source": {
+    "url": "https://en.wikinews.org/wiki/Australian_Minister_for_Energy_lowers_fuel_standards_for_60_days_amid_rising_oil_prices,_panic_buying",
+    "publisher": "Wikinews",
+    "published": "2026-03-13"
+  },
+  "license": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "redistributable": true,
+    "attribution": "Wikinews, contributeurs"
+  },
+  "document": {
+    "clickbait_gap": "absent",
+    "blind_spot": "any"
+  },
+  "limits": {
+    "max_rhetorical": 1
+  },
+  "expected": [
+    {
+      "quote": "In reserve, Australia had 36 days worth of petrol, 32 days worth of diesel, and 29 days worth of jet fuel, respectively.",
+      "accept": [
+        "factual_claim/statistique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "misleading",
+        "unverified"
+      ]
+    },
+    {
+      "quote": "As people stockpiled fuel, and the demand has doubled",
+      "accept": [
+        "factual_claim/statistique",
+        "bias/source_vague"
+      ],
+      "required": false
+    }
+  ],
+  "text_sha256": "d9a25542df8ded1620e38c67f6fdd88497e19128651456b2cbe0c9c5b61a2c21"
+}

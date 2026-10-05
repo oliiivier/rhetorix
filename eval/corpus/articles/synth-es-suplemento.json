@@ -1,0 +1,85 @@
+{
+  "id": "synth-es-suplemento",
+  "title": "La Verdalina, el suplemento que arrasa en las farmacias",
+  "lang": "es",
+  "kind": "synthetic",
+  "genre": "actualité",
+  "purpose": "Biais de la presse santé : étude préliminaire, chiffre sans échelle, appel à la nature, attaque personnelle.",
+  "license": {
+    "name": "MIT (texte rédigé pour le corpus)",
+    "redistributable": true
+  },
+  "document": {
+    "clickbait_gap": "any",
+    "blind_spot": "present"
+  },
+  "expected": [
+    {
+      "quote": "un estudio realizado con doce ratones demostró que la Verdalina protege contra las infecciones respiratorias",
+      "accept": [
+        "bias/etude_preliminaire"
+      ],
+      "required": true
+    },
+    {
+      "quote": "reduce a la mitad el riesgo de resfriado",
+      "accept": [
+        "factual_claim/chiffre_sans_echelle",
+        "factual_claim/statistique"
+      ],
+      "required": true,
+      "fact_status": [
+        "unverified",
+        "misleading"
+      ]
+    },
+    {
+      "quote": "al ser completamente natural, no tiene ningún efecto secundario",
+      "accept": [
+        "sophism/appel_nature"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Desde que los vecinos del pueblo empezaron a tomarla, las bajas laborales han disminuido, lo que prueba su eficacia.",
+      "accept": [
+        "sophism/correlation_causalite"
+      ],
+      "required": true
+    },
+    {
+      "quote": "nunca ha tenido éxito en su propia carrera, así que sus críticas no deberían preocupar a nadie",
+      "accept": [
+        "sophism/ad_hominem"
+      ],
+      "required": true
+    },
+    {
+      "quote": "la Organización Mundial de la Salud recomienda a todos los adultos tomar suplementos de vitamina C a diario",
+      "accept": [
+        "factual_claim/citation_attribuee",
+        "factual_claim/autre"
+      ],
+      "required": true,
+      "fact_status": [
+        "refuted",
+        "misleading",
+        "unverified"
+      ],
+      "note": "Faux : l'OMS ne recommande pas de supplémentation systématique en vitamine C."
+    },
+    {
+      "quote": "fue aislada por primera vez en 1928 por el científico húngaro Albert Szent-Györgyi",
+      "accept": [
+        "factual_claim/fait_historique",
+        "factual_claim/fait_scientifique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "unverified"
+      ]
+    }
+  ],
+  "text_sha256": "885474e60760be0bc9fea886137a215f6ef896df8e66d527aa9b5170f3c02446"
+}

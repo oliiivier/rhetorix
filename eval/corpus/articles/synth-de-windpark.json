@@ -1,0 +1,72 @@
+{
+  "id": "synth-de-windpark",
+  "title": "Windpark am Waldrand: Der Widerstand wächst",
+  "lang": "de",
+  "kind": "synthetic",
+  "genre": "tribune",
+  "purpose": "Langage chargé, pente glissante, appel à la tradition, tu quoque ; une allégation fausse et une exacte.",
+  "license": {
+    "name": "MIT (texte rédigé pour le corpus)",
+    "redistributable": true
+  },
+  "document": {
+    "clickbait_gap": "any",
+    "blind_spot": "any"
+  },
+  "expected": [
+    {
+      "quote": "Die Windkraft-Fanatiker aus der Kreisstadt wollen unsere Heimat mit Stahlmonstern zupflastern.",
+      "accept": [
+        "bias/langage_charge"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Heute ein Windpark am Waldrand, morgen wird der ganze Wald abgeholzt, und in zehn Jahren erkennt niemand mehr unser Dorf wieder.",
+      "accept": [
+        "sophism/pente_glissante"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Unsere Landschaft ist seit Jahrhunderten unverändert geblieben, und so soll es auch bleiben.",
+      "accept": [
+        "sophism/appel_tradition"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Dabei fahren sie selbst alle mit dem Auto zur Arbeit. Wer so lebt, hat kein Recht, anderen Vorschriften zu machen.",
+      "accept": [
+        "sophism/tu_quoque",
+        "sophism/ad_hominem"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Ein einziges Windrad tötet jedes Jahr Tausende von Vögeln.",
+      "accept": [
+        "factual_claim/statistique"
+      ],
+      "required": true,
+      "fact_status": [
+        "refuted",
+        "misleading",
+        "unverified"
+      ],
+      "note": "Faux : les estimations publiées sont de l'ordre de quelques oiseaux par éolienne et par an."
+    },
+    {
+      "quote": "im Jahr 2023 mehr als die Hälfte des in Deutschland erzeugten Stroms aus erneuerbaren Energien stammte",
+      "accept": [
+        "factual_claim/statistique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "unverified"
+      ]
+    }
+  ],
+  "text_sha256": "9d35592c72f6281af71c6e4e38e2863d634372d9819550d8916eb345ad539694"
+}

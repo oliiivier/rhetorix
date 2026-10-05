@@ -1,0 +1,34 @@
+{
+  "id": "synth-fr-controle-trains",
+  "title": "La fréquentation des trains régionaux en hausse",
+  "lang": "fr",
+  "kind": "synthetic",
+  "genre": "actualité",
+  "control": true,
+  "purpose": "Témoin : article nuancé, sources nommées, points de vue contradictoires. Peu ou pas d'annotations rhétoriques attendues.",
+  "license": {
+    "name": "MIT (texte rédigé pour le corpus)",
+    "redistributable": true
+  },
+  "document": {
+    "clickbait_gap": "absent",
+    "blind_spot": "any"
+  },
+  "limits": {
+    "max_rhetorical": 1
+  },
+  "expected": [
+    {
+      "quote": "Les trains régionaux sont exploités par la SNCF, entreprise publique créée en 1938",
+      "accept": [
+        "factual_claim/fait_historique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "unverified"
+      ]
+    }
+  ],
+  "text_sha256": "b86a32e84e4d4908a13545d4b12b9c6ebaf73a071bb2248c23863f58ab3ffbd2"
+}

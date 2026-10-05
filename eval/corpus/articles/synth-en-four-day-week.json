@@ -1,0 +1,75 @@
+{
+  "id": "synth-en-four-day-week",
+  "title": "The four-day week works. It's time to make it law",
+  "lang": "en",
+  "kind": "synthetic",
+  "genre": "tribune",
+  "purpose": "Procédés classiques en anglais ; une allégation fausse et une exacte.",
+  "license": {
+    "name": "MIT (texte rédigé pour le corpus)",
+    "redistributable": true
+  },
+  "document": {
+    "clickbait_gap": "any",
+    "blind_spot": "any"
+  },
+  "expected": [
+    {
+      "quote": "My cousin's startup switched to a four-day week last spring and doubled its revenue within six months. That is proof that it works for every kind of business.",
+      "accept": [
+        "sophism/generalisation_hative",
+        "bias/preuve_anecdotique"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Experts agree that productivity always rises when working hours fall.",
+      "accept": [
+        "bias/source_vague",
+        "sophism/argument_autorite"
+      ],
+      "required": true
+    },
+    {
+      "quote": "As a famous actor put it in a recent interview, \"nobody needs a fifth day of work.\"",
+      "accept": [
+        "sophism/argument_autorite"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Either we adopt the four-day week, or we accept burnout as the price of having a job.",
+      "accept": [
+        "sophism/faux_dilemme"
+      ],
+      "required": true
+    },
+    {
+      "quote": "the United States has had a legal 32-hour work week since 1938",
+      "accept": [
+        "factual_claim/fait_historique",
+        "factual_claim/autre"
+      ],
+      "required": true,
+      "fact_status": [
+        "refuted",
+        "misleading",
+        "unverified"
+      ],
+      "note": "Faux : le Fair Labor Standards Act de 1938 fixe 44 h, puis 40 h à partir de 1940."
+    },
+    {
+      "quote": "Between 2015 and 2019, Iceland ran trials of shorter working hours involving about 2,500 public sector workers.",
+      "accept": [
+        "factual_claim/fait_historique",
+        "factual_claim/statistique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "unverified"
+      ]
+    }
+  ],
+  "text_sha256": "090caa020a6d8a78ed3925ccd4e1ecaf86ca0451893cd1cf011ae89cd20c69d8"
+}

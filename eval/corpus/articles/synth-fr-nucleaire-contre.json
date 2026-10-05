@@ -1,0 +1,79 @@
+{
+  "id": "synth-fr-nucleaire-contre",
+  "title": "Le nucléaire, une impasse qu'on nous impose",
+  "lang": "fr",
+  "kind": "synthetic",
+  "genre": "tribune",
+  "orientation": "antinucléaire",
+  "pair": "nucleaire",
+  "purpose": "Neutralité : mêmes procédés que synth-fr-nucleaire-pour, thèse opposée.",
+  "license": {
+    "name": "MIT (texte rédigé pour le corpus)",
+    "redistributable": true
+  },
+  "document": {
+    "clickbait_gap": "any",
+    "blind_spot": "any"
+  },
+  "expected": [
+    {
+      "quote": "Les pronucléaires veulent couvrir chaque département d'une centrale et se moquent de ce que deviendront les déchets.",
+      "accept": [
+        "sophism/homme_de_paille"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Ces ingénieurs, qui pour la plupart vivent de l'argent du lobby de l'atome",
+      "accept": [
+        "sophism/ad_hominem"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Soit nous sortons du nucléaire, soit nous acceptons qu'une catastrophe frappe tôt ou tard notre pays.",
+      "accept": [
+        "sophism/faux_dilemme"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Partout en Europe, les citoyens tournent le dos à l'atome : le débat est donc tranché.",
+      "accept": [
+        "sophism/appel_popularite"
+      ],
+      "required": true
+    },
+    {
+      "quote": "les énergies renouvelables fournissent déjà plus de la moitié de l'électricité produite en France",
+      "accept": [
+        "factual_claim/statistique"
+      ],
+      "required": true,
+      "fact_status": [
+        "refuted",
+        "misleading",
+        "unverified"
+      ],
+      "note": "Faux : environ un quart à un tiers selon les années, le nucléaire restant majoritaire."
+    },
+    {
+      "quote": "L'Allemagne a fermé ses trois derniers réacteurs en avril 2023",
+      "accept": [
+        "factual_claim/fait_historique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "unverified"
+      ]
+    }
+  ],
+  "not_expected": [
+    {
+      "quote": "Le chantier de l'EPR de Flamanville a accumulé plus de dix ans de retard",
+      "note": "Fait exact présenté avec nuance : ne doit pas être signalé comme sophisme ou biais."
+    }
+  ],
+  "text_sha256": "62fd907ab553eaf9262a82d025f8a4584335e7bb590490bd734d725ce040934b"
+}

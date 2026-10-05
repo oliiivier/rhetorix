@@ -1,0 +1,73 @@
+{
+  "id": "synth-it-mercato",
+  "title": "Giù le mani dal mercato della domenica",
+  "lang": "it",
+  "kind": "synthetic",
+  "genre": "tribune",
+  "purpose": "Appel à la tradition, inversion de la charge de la preuve, essentialisation, rumeur ; une allégation fausse et une exacte.",
+  "license": {
+    "name": "MIT (texte rédigé pour le corpus)",
+    "redistributable": true
+  },
+  "document": {
+    "clickbait_gap": "any",
+    "blind_spot": "any"
+  },
+  "expected": [
+    {
+      "quote": "Il mercato si è sempre tenuto la domenica, fin dai tempi dei nostri nonni: cambiarlo sarebbe un errore.",
+      "accept": [
+        "sophism/appel_tradition"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Nessuno ha dimostrato che spostarlo al sabato porterebbe dei benefici, quindi è evidente che porterà solo danni.",
+      "accept": [
+        "sophism/inversion_charge",
+        "sophism/autre"
+      ],
+      "required": true
+    },
+    {
+      "quote": "I giovani di oggi non sanno cosa sia la fatica",
+      "accept": [
+        "bias/essentialisation",
+        "sophism/generalisation_hative"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Si dice in giro che la giunta abbia già promesso la piazza a un'altra iniziativa.",
+      "accept": [
+        "bias/source_vague"
+      ],
+      "required": true
+    },
+    {
+      "quote": "Roma, la capitale, conta oltre dieci milioni di abitanti",
+      "accept": [
+        "factual_claim/statistique"
+      ],
+      "required": true,
+      "fact_status": [
+        "refuted",
+        "misleading",
+        "unverified"
+      ],
+      "note": "Faux : environ 2,8 millions d'habitants pour la commune."
+    },
+    {
+      "quote": "inaugurato nell'80 d.C. sotto l'imperatore Tito",
+      "accept": [
+        "factual_claim/fait_historique"
+      ],
+      "required": false,
+      "fact_status": [
+        "supported",
+        "unverified"
+      ]
+    }
+  ],
+  "text_sha256": "b30809f42702019a08f75a79f62b699ab99b36586a5483c28f66f1e0689fe4a8"
+}
