@@ -2,6 +2,13 @@
 
 Les changements notables de Rhetorix, par version. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et la numérotation, [Semantic Versioning](https://semver.org/lang/fr/). Les références entre parenthèses (D10, B3…) renvoient aux [décisions](docs/fonctionnelles/points-ouverts.md) et aux [pistes d'évolution du moteur](docs/techniques/evolutions-analyse.md).
 
+## [Non publié]
+
+### Sécurité
+
+- La clé API Anthropic n'est plus envoyée qu'à `api.anthropic.com`. Un endpoint saisi pour un fournisseur compatible OpenAI restait enregistré après un passage à Anthropic, et la clé partait alors vers ce serveur, pour l'analyse comme pour la liste des modèles.
+- L'accès aux sites web n'est plus accordé à l'installation : il passe en permission facultative (`optional_host_permissions`), demandée à la première analyse ou à l'enregistrement des options.
+
 ## [0.1.2] — 2026-10-05
 
 ### Ajouté

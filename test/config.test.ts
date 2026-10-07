@@ -70,6 +70,11 @@ describe("config module", () => {
     expect(providerOrigin({ ...DEFAULT_CONFIG, provider: "openai-compatible", endpoint: "not-a-url" })).toBeNull();
   });
 
+  it("ignore pour Anthropic l'endpoint resté d'un provider compatible OpenAI", () => {
+    const leftover: Config = { ...DEFAULT_CONFIG, provider: "anthropic", endpoint: "https://openrouter.ai/api/v1" };
+    expect(providerOrigin(leftover)).toBe("https://api.anthropic.com/*");
+  });
+
   it("résout la langue avec fallback getUILanguage quand language === 'auto'", () => {
     expect(resolveLanguage({ ...DEFAULT_CONFIG, language: "auto" })).toBe("fr-FR");
     expect(resolveLanguage({ ...DEFAULT_CONFIG, language: "en" })).toBe("en");

@@ -49,7 +49,7 @@ Vous pouvez vider le cache des analyses et remettre à zéro le décompte des to
 ## Autorisations demandées
 
 - **Accès à l'onglet actif et injection de scripts** : extraire le texte de la page et surligner les passages relevés.
-- **Accès aux sites web** : joindre l'API du fournisseur LLM, les sous-titres YouTube, Crossref et PubMed.
+- **Accès aux sites web** (facultatif, demandé à la première analyse et non à l'installation) : injecter le surlignage dans la page analysée, joindre l'API du fournisseur LLM, les sous-titres YouTube, Crossref et PubMed.
 - **Stockage** : conserver vos réglages et le cache décrit ci-dessus.
 
 ## Contact
@@ -109,7 +109,7 @@ You can clear the analysis cache and reset the token count from the options page
 ## Permissions
 
 - **Active tab and script injection**: extract the page text and highlight flagged passages.
-- **Website access**: reach the LLM provider's API, YouTube captions, Crossref and PubMed.
+- **Website access** (optional, requested on the first analysis rather than at install time): inject the highlights into the analyzed page, reach the LLM provider's API, YouTube captions, Crossref and PubMed.
 - **Storage**: keep your settings and the cache described above.
 
 ## Contact

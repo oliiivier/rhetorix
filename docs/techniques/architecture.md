@@ -59,11 +59,11 @@ Le PRD ne mentionne pas de script de fond. Il en faut un (`src/background.ts`) p
 
 ## 2. Manifest
 
-Le manifest est généré par `build.mjs` pour chaque cible (§9). Permissions communes : `activeTab`, `scripting`, `storage`, plus `sidePanel` sous Chromium.
+Le manifest est généré par `build.mjs` pour chaque cible (§9). Permissions communes : `activeTab`, `scripting`, `storage`, plus `sidePanel` sous Chromium. Aucune permission d'hôte n'est accordée à l'installation : `https://*/*` et `http://*/*` sont déclarées en `optional_host_permissions` et demandées par le panneau (ou le popup) au lancement d'une analyse, par les options à l'enregistrement pour l'origine du provider.
 
 Points à noter :
 
-- **`host_permissions` vers l'endpoint LLM.** Une page d'extension ne contourne CORS que pour les hôtes déclarés. Comme l'endpoint est configurable, utiliser `optional_host_permissions` et demander la permission depuis la page d'options (`permissions.request`) au moment de l'enregistrement.
+- **`host_permissions` vers l'endpoint LLM.** Une page d'extension ne contourne CORS que pour les hôtes déclarés. Comme l'endpoint est configurable, utiliser `optional_host_permissions` et demander la permission depuis la page d'options (`permissions.request`) au moment de l'enregistrement. L'endpoint ne sert qu'au provider compatible OpenAI : Anthropic et Gemini appellent toujours leur hôte officiel, pour qu'une saisie restée d'un autre provider ne reçoive pas leur clé.
 - **Script de fond** : `service_worker` sous Chromium, `scripts` sous Firefox (voir §9).
 - **Aucun code distant.** Readability.js doit être embarqué dans le paquet.
 - **Crossref et PubMed (D16, D17)** : `api.crossref.org` et `eutils.ncbi.nlm.nih.gov` sont couverts par les permissions d'hôte demandées par le panneau (`https://*/*`). Sur Firefox Android, le clic sur l'icône demande l'origine du provider, `https://api.crossref.org/*` et `https://eutils.ncbi.nlm.nih.gov/*`.

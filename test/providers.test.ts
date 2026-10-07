@@ -160,8 +160,24 @@ describe("anthropicProvider", () => {
     expect(anthropicProvider.supportsWebSearch({} as Config)).toBe(true);
   });
 
+  it("appelle api.anthropic.com même si un endpoint compatible OpenAI est resté enregistré", async () => {
+    const mockFetch = vi.fn().mockRejectedValue(new Error("réseau coupé"));
+    vi.stubGlobal("fetch", mockFetch);
+    const config: Config = { ...DEFAULT_CONFIG, provider: "anthropic", apiKey: "sk-ant-api03-test", endpoint: "https://openrouter.ai/api/v1" };
+
+    await anthropicProvider
+      .analyze({ title: "T", text: "Texte", language: "fr", part: { index: 0, total: 1 }, webSearch: false }, config, new AbortController().signal)
+      .catch(() => {});
+
+    expect(mockFetch).toHaveBeenCalled();
+    for (const [url] of mockFetch.mock.calls) {
+      expect(String(url)).toMatch(/^https:\/\/api\.anthropic\.com\//);
+    }
+  });
+
   it("configure une clé standard avec apiKey", () => {
     const client = createAnthropicClient("sk-ant-api03-test-key");
+    expect(client.baseURL).toBe("https://api.anthropic.com");
     expect(client.apiKey).toBe("sk-ant-api03-test-key");
     expect(client.authToken).toBeNull();
   });
