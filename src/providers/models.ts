@@ -110,8 +110,8 @@ export async function fetchAvailableModels(
   if (provider === "anthropic") {
     if (!apiKey) return fallback;
     try {
-      const baseUrl = endpoint ? endpoint.trim().replace(/\/+$/, "") : "https://api.anthropic.com";
-      const url = `${baseUrl}/v1/models`;
+      // Jamais l'endpoint saisi pour le provider compatible OpenAI : la clé Anthropic n'en sort pas.
+      const url = "https://api.anthropic.com/v1/models";
       const clean = apiKey.trim();
       const isOAuth = clean.startsWith("sk-ant-oat") || clean.startsWith("Bearer ");
       const token = clean.replace(/^Bearer\s+/i, "");

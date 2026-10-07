@@ -15,15 +15,17 @@ const MAX_TURNS = 5;
 /** Modèles qui acceptent `fallbacks: "default"` (reprise côté serveur après un refus). */
 const FALLBACK_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
 
-export function createAnthropicClient(apiKey: string, endpoint?: string): Anthropic {
+/**
+ * Client toujours dirigé vers api.anthropic.com : `config.endpoint` est propre au
+ * provider compatible OpenAI et peut rester enregistré après un changement de provider.
+ */
+export function createAnthropicClient(apiKey: string): Anthropic {
   const clean = apiKey.trim();
   const isOAuth = clean.startsWith("sk-ant-oat") || clean.startsWith("Bearer ");
   const token = clean.replace(/^Bearer\s+/i, "");
-  const baseUrl = endpoint?.trim().replace(/\/+$/, "");
   return new Anthropic({
     apiKey: isOAuth ? undefined : token,
     authToken: isOAuth ? token : undefined,
-    baseURL: baseUrl || undefined,
     dangerouslyAllowBrowser: true,
     // Le SDK retente lui-même 429, 5xx et 529 en respectant Retry-After (A4).
     maxRetries: MAX_ATTEMPTS - 1,
@@ -42,7 +44,7 @@ export const anthropicProvider: LlmProvider = {
   async analyze(input, config: Config, signal) {
     const cleanKey = config.apiKey.trim();
     const isOAuth = cleanKey.startsWith("sk-ant-oat") || cleanKey.startsWith("Bearer ");
-    const client = createAnthropicClient(config.apiKey, config.endpoint);
+    const client = createAnthropicClient(config.apiKey);
     const tools: Anthropic.Beta.Messages.BetaToolUnion[] = [
       ...(input.webSearch ? [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 8 }] : []),
       {
@@ -179,7 +181,7 @@ export const anthropicProvider: LlmProvider = {
   async complete(request, config, signal, callbacks) {
     const cleanKey = config.apiKey.trim();
     const isOAuth = cleanKey.startsWith("sk-ant-oat") || cleanKey.startsWith("Bearer ");
-    const client = createAnthropicClient(config.apiKey, config.endpoint);
+    const client = createAnthropicClient(config.apiKey);
     const system = isOAuth ? `You are Claude Code, Anthropic's official CLI for Claude.\n\n${request.system}` : request.system;
     if (request.webSearch) return completeWithSearch(client, config, system, request, signal, callbacks);
     const stream = client.messages.stream(

@@ -67,4 +67,14 @@ describe("models module", () => {
     const models = await fetchAvailableModels("gemini", "test-key", "");
     expect(models).toEqual(FALLBACK_MODELS.gemini);
   });
+
+  it("n'envoie jamais la clé Anthropic vers l'endpoint du provider compatible OpenAI", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [{ id: "claude-opus-5-5" }] }), { status: 200 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    await fetchAvailableModels("anthropic", "sk-ant-api03-test", "https://openrouter.ai/api/v1");
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch.mock.calls[0]![0]).toBe("https://api.anthropic.com/v1/models");
+  });
 });

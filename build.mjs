@@ -43,8 +43,10 @@ const baseManifest = {
   description: "Surligne sophismes, biais et allégations factuelles d'un article et les détaille dans un panneau latéral.",
   icons: iconPaths,
   permissions: ["activeTab", "scripting", "storage"],
-  // Permissions d'hôte pour l'analyse des articles et l'accès aux API LLM et endpoints locaux
-  host_permissions: ["https://*/*", "http://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  // Accès aux sites demandé à l'exécution (permissions.request), jamais accordé à
+  // l'installation : injection dans l'onglet analysé quand activeTab ne suffit pas, API
+  // du provider (endpoints locaux compris), Crossref et PubMed. Moindre privilège.
+  optional_host_permissions: ["https://*/*", "http://*/*"],
   action: {
     default_title: "Rhetorix",
     default_icon: {

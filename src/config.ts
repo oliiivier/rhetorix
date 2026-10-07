@@ -85,13 +85,8 @@ export function isConfigured(c: Config): boolean {
 export function providerOrigin(c: Config): string | null {
   switch (c.provider) {
     case "anthropic":
-      if (c.endpoint) {
-        try {
-          return `${new URL(c.endpoint).origin}/*`;
-        } catch {
-          return "https://api.anthropic.com/*";
-        }
-      }
+      // L'endpoint ne vaut que pour le provider compatible OpenAI : un reste de saisie
+      // ne doit pas détourner la clé Anthropic vers un autre serveur.
       return "https://api.anthropic.com/*";
     case "gemini":
       return "https://generativelanguage.googleapis.com/*";
