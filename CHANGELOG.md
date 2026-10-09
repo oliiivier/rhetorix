@@ -2,12 +2,16 @@
 
 Les changements notables de Rhetorix, par version. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et la numérotation, [Semantic Versioning](https://semver.org/lang/fr/). Les références entre parenthèses (D10, B3…) renvoient aux [décisions](docs/fonctionnelles/points-ouverts.md) et aux [pistes d'évolution du moteur](docs/techniques/evolutions-analyse.md).
 
-## [Non publié]
+## [0.1.4] — 2026-10-09
 
 ### Sécurité
 
 - La clé API Anthropic n'est plus envoyée qu'à `api.anthropic.com`. Un endpoint saisi pour un fournisseur compatible OpenAI restait enregistré après un passage à Anthropic, et la clé partait alors vers ce serveur, pour l'analyse comme pour la liste des modèles.
 - L'accès aux sites web n'est plus accordé à l'installation : il passe en permission facultative (`optional_host_permissions`), demandée à la première analyse ou à l'enregistrement des options.
+
+### Corrigé
+
+- Chrome : le bouton « Analyser la page » du panneau latéral restait désactivé tant que l'accès aux sites n'avait pas été accordé. Sans cette permission, le navigateur ne communique pas l'adresse de l'onglet et le panneau la prenait pour une page interne.
 
 ## [0.1.2] — 2026-10-05
 
@@ -64,6 +68,7 @@ Première version publiée.
 - Interface et analyses en cinq langues : français, anglais, espagnol, allemand, italien.
 - Politique de confidentialité, licence MIT, paquets Chrome et Firefox.
 
+[0.1.4]: https://github.com/oliiivier/rhetorix/compare/v0.1.2...v0.1.4
 [0.1.2]: https://github.com/oliiivier/rhetorix/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/oliiivier/rhetorix/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/oliiivier/rhetorix/releases/tag/v0.1.0
