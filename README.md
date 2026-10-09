@@ -111,7 +111,7 @@ npm run package        # paquets Chrome et Firefox, et archive des sources, dans
 
 Chaque paquet contient `LICENSE` et `THIRD_PARTY_LICENSES.txt`, la liste des licences des bibliothèques embarquées.
 
-Pousser un tag `v*` publie la version sur le Chrome Web Store, après approbation : voir [docs/techniques/publication.md](docs/techniques/publication.md).
+Pousser un tag `v*` publie la version sur le Chrome Web Store et addons.mozilla.org, après approbation : voir [docs/techniques/publication.md](docs/techniques/publication.md).
 
 ### Structure
 

@@ -23,7 +23,7 @@ Après une modification, lancer `typecheck`, `test` et `build`.
 - [docs/techniques/architecture.md](docs/techniques/architecture.md) : composants, messages, providers, cache, compatibilité des navigateurs ;
 - [docs/techniques/architecture-youtube.md](docs/techniques/architecture-youtube.md) : architecture technique du module YouTube et synchronisation vidéo ;
 - [docs/techniques/evolutions-analyse.md](docs/techniques/evolutions-analyse.md) : limites actuelles du moteur d'analyse, pistes d'évolution et orientations retenues (D10 à D17) ;
-- [docs/techniques/publication.md](docs/techniques/publication.md) : publication automatique sur le Chrome Web Store (workflow, Terraform `infra/`, sécurité) ;
+- [docs/techniques/publication.md](docs/techniques/publication.md) : publication automatique sur le Chrome Web Store et AMO (workflow, Terraform `infra/`, sécurité) ;
 - [docs/implementation/youtube.md](docs/implementation/youtube.md) : plan d'implémentation par jalons du module YouTube ;
 - [docs/fonctionnelles/points-ouverts.md](docs/fonctionnelles/points-ouverts.md) : les décisions prises (D1 à D17) et les points restant à préciser. Ne pas trancher implicitement un point ouvert : demander, ou documenter le choix fait.
 

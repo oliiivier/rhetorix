@@ -1,6 +1,7 @@
-# Publication d'une version sur le Chrome Web Store, au push d'un tag v* (voir
-# docs/techniques/publication.md). Aucun secret : le jeton du compte de service est
-# obtenu par Workload Identity Federation (infra/), réservée aux tags v* de ce dépôt.
+# Publication d'une version sur le Chrome Web Store et sur addons.mozilla.org, au push
+# d'un tag v* (voir docs/techniques/publication.md). Chrome : aucun secret, le jeton du
+# compte de service est obtenu par Workload Identity Federation (infra/), réservée aux
+# tags v* de ce dépôt. AMO : clés d'API en secrets de l'environnement protégé amo.
 name: Publication
 
 on:
@@ -64,3 +65,27 @@ jobs:
           CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
           CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
         run: node scripts/publish-chrome.mjs artifacts/rhetorix-chrome-*.zip
+
+  amo:
+    needs: build
+    runs-on: ubuntu-latest
+    # Environnement protégé : relecture obligatoire, seul détenteur des clés d'API AMO.
+    environment: amo
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Paquet Firefox et archive des sources (git archive), exigée par la revue : le code est assemblé par esbuild.
+      - run: npm run package:firefox
+      - run: npm run lint:firefox
+      # Sans attendre l'approbation : la revue manuelle d'AMO dépasse souvent la durée d'un job.
+      - name: Soumission à la revue AMO
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_EMETTEUR_JWT }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_SECRET_JWT }}
+        run: |
+          npx web-ext sign -s dist/firefox --channel listed --approval-timeout 0 \
+            --upload-source-code "artifacts/rhetorix-sources-$(node -p 'require("./package.json").version').zip"
