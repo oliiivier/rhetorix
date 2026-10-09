@@ -134,6 +134,15 @@ function isAnalyzableUrl(url?: string): boolean {
   return Boolean(url && /^https?:\/\//i.test(url));
 }
 
+/**
+ * Page interne connue comme telle. Sans permission d'hôte (facultative) ni activeTab,
+ * le navigateur ne communique pas l'URL de l'onglet : une URL inconnue ne permet pas de
+ * conclure, le bouton reste actif et l'URL est relue une fois la permission accordée.
+ */
+function isKnownInternalUrl(url?: string): boolean {
+  return url !== undefined && !isAnalyzableUrl(url);
+}
+
 function showIdle(isWebPage = true): void {
   resultEl.hidden = true;
   cardsEl.replaceChildren();
@@ -496,18 +505,20 @@ function analyze(force: boolean): void {
   const permission = ext.permissions.request({ origins }).catch(() => false);
 
   void (async () => {
+    const granted = await permission;
+    // Relue après la demande : l'URL n'est connue qu'avec la permission d'hôte.
     const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
     if (tab?.id === undefined) return;
     currentTabId = tab.id;
     currentTabUrl = tab.url;
 
-    if (!isAnalyzableUrl(tab.url)) {
+    if (isKnownInternalUrl(tab.url) || (granted && !isAnalyzableUrl(tab.url))) {
       setStatus(t.internalPageNotice, true);
       analyzeBtn.disabled = true;
       return;
     }
 
-    if (!(await permission)) {
+    if (!granted) {
       setStatus(t.apiPermissionError, true);
       return;
     }
@@ -531,12 +542,13 @@ function analyzeYouTube(isFull: boolean): void {
   const permission = ext.permissions.request({ origins }).catch(() => false);
 
   void (async () => {
+    const granted = await permission;
     const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
     if (tab?.id === undefined) return;
     currentTabId = tab.id;
     currentTabUrl = tab.url;
 
-    if (!(await permission)) {
+    if (!granted) {
       setStatus(t.apiPermissionError, true);
       return;
     }
@@ -691,7 +703,7 @@ async function showTab(tabId: number): Promise<void> {
   const tab = await ext.tabs.get(tabId).catch(() => null);
   currentTabUrl = tab?.url;
   applyI18n();
-  const isWebPage = isAnalyzableUrl(currentTabUrl);
+  const isWebPage = !isKnownInternalUrl(currentTabUrl);
 
   const state = states.get(tabId);
   if (state && !runningTabs.has(tabId)) {
@@ -811,7 +823,7 @@ ext.tabs.onUpdated.addListener((tabId, info, tab) => {
   runningTabs.delete(tabId);
   if (tabId === currentTabId) {
     setRunningUi(false);
-    showIdle(isAnalyzableUrl(currentTabUrl));
+    showIdle(!isKnownInternalUrl(currentTabUrl));
   }
 });
 
