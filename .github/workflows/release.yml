@@ -1,0 +1,66 @@
+# Publication d'une version sur le Chrome Web Store, au push d'un tag v* (voir
+# docs/techniques/publication.md). Aucun secret : le jeton du compte de service est
+# obtenu par Workload Identity Federation (infra/), réservée aux tags v* de ce dépôt.
+name: Publication
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Tag et version du paquet concordent
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Le tag $GITHUB_REF_NAME ne correspond pas à la version $version de package.json"
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run package:chrome
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rhetorix-chrome
+          path: artifacts/rhetorix-chrome-*.zip
+          if-no-files-found: error
+
+  chrome-web-store:
+    needs: build
+    runs-on: ubuntu-latest
+    # Environnement protégé : relecture obligatoire avant chaque publication.
+    environment: chrome-web-store
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: rhetorix-chrome
+          path: artifacts
+      - uses: google-github-actions/auth@v3
+        id: auth
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.CWS_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+          create_credentials_file: false
+      - name: Envoi et soumission à la revue
+        env:
+          CWS_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+        run: node scripts/publish-chrome.mjs artifacts/rhetorix-chrome-*.zip

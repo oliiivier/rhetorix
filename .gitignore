@@ -4,3 +4,7 @@ artifacts/
 eval/corpus/.local/
 .env
 .claude/settings.local.json
+infra/.terraform/
+infra/*.tfstate*
+infra/*.tfvars
+infra/*.tfplan

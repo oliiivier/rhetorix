@@ -1,0 +1,2 @@
+# Copier en terraform.tfvars (non versionné).
+project_id = "mon-projet-gcp"
