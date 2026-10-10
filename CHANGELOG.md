@@ -2,6 +2,12 @@
 
 Les changements notables de Rhetorix, par version. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et la numérotation, [Semantic Versioning](https://semver.org/lang/fr/). Les références entre parenthèses (D10, B3…) renvoient aux [décisions](docs/fonctionnelles/points-ouverts.md) et aux [pistes d'évolution du moteur](docs/techniques/evolutions-analyse.md).
 
+## [Non publié]
+
+### Ajouté
+
+- **Mistral** devient un fournisseur à part entière : plus d'endpoint à saisir, la clé n'est envoyée qu'à `api.mistral.ai`, et la liste des modèles est récupérée auprès de Mistral. Il n'a pas de recherche web : les allégations restent « non vérifiées ». Une configuration Mistral saisie en « Compatible OpenAI » (endpoint `api.mistral.ai`) bascule d'elle-même vers ce fournisseur, sans ressaisir la clé.
+
 ## [0.1.4] — 2026-10-09
 
 ### Sécurité

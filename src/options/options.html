@@ -29,8 +29,9 @@
           <span id="lbl-provider">Fournisseur</span>
           <select name="provider">
             <option value="anthropic">Anthropic</option>
-            <option value="openai-compatible">Compatible OpenAI (OpenAI, Mistral, OpenRouter, Ollama…)</option>
             <option value="gemini">Google Gemini</option>
+            <option value="mistral">Mistral AI</option>
+            <option value="openai-compatible" id="opt-openai-compatible">Compatible OpenAI (OpenAI, OpenRouter, Ollama…)</option>
             <option value="chrome-ai" id="opt-chrome-ai">Chrome Built-in AI (Gemini Nano local, sans clé)</option>
           </select>
         </label>
@@ -59,6 +60,9 @@
             </a>
             <a id="btn-get-anthropic-key" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" class="link-btn" hidden>
               Obtenir une clé Anthropic ↗
+            </a>
+            <a id="btn-get-mistral-key" href="https://console.mistral.ai/api-keys" target="_blank" rel="noopener noreferrer" class="link-btn" hidden>
+              Obtenir une clé Mistral ↗
             </a>
           </div>
         </label>

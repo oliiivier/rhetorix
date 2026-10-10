@@ -38,6 +38,7 @@ function applyOptionsI18n(lang: string): void {
   setTxt("title", t.optionsTitle);
   setTxt("lbl-provider", t.providerLabel);
   setTxt("opt-chrome-ai", t.chromeAiOption);
+  setTxt("opt-openai-compatible", t.openAiCompatibleOption);
   setTxt("chrome-ai-hint", t.chromeAiHint);
   setTxt("lbl-endpoint", t.endpointLabel);
   setTxt("btn-preset-ollama", t.presetOllamaBtn);
@@ -47,6 +48,7 @@ function applyOptionsI18n(lang: string): void {
   setTxt("api-key-hint", t.apiKeyHint);
   setTxt("btn-get-gemini-key", t.getGeminiKeyBtn);
   setTxt("btn-get-anthropic-key", t.getAnthropicKeyBtn);
+  setTxt("btn-get-mistral-key", t.getMistralKeyBtn);
   setTxt("lbl-model", t.modelLabel);
   setTxt("btn-toggle-custom-model", isCustomModelMode ? t.toggleSelectModelBtn : t.toggleCustomModelBtn);
   setTxt("btn-refresh-models", t.refreshModelsBtn);
@@ -376,6 +378,7 @@ function syncProvider(): void {
   const isChromeAi = provider === "chrome-ai";
   const isOpenAi = provider === "openai-compatible";
   const isAnthropic = provider === "anthropic";
+  const isMistral = provider === "mistral";
 
   document.getElementById("chrome-ai-info")!.hidden = !isChromeAi;
   document.getElementById("endpoint-field")!.hidden = !isOpenAi;
@@ -384,11 +387,12 @@ function syncProvider(): void {
   document.getElementById("websearch-field")!.hidden = isChromeAi;
 
   field<HTMLInputElement>("endpoint").required = isOpenAi;
-  field<HTMLInputElement>("apiKey").required = isAnthropic || provider === "gemini";
+  field<HTMLInputElement>("apiKey").required = isAnthropic || provider === "gemini" || isMistral;
   setCustomModelMode(isCustomModelMode, lang);
 
   document.getElementById("btn-get-anthropic-key")!.hidden = !isAnthropic;
   document.getElementById("btn-get-gemini-key")!.hidden = provider !== "gemini";
+  document.getElementById("btn-get-mistral-key")!.hidden = !isMistral;
   setTxt("lbl-api-key", t.apiKeyLabel);
   setTxt("api-key-hint", t.apiKeyHint);
   if (isAnthropic) {
@@ -402,8 +406,11 @@ function syncProvider(): void {
   // Suggestions de modèles
   populateModelSelect(FALLBACK_MODELS[provider] || []);
 
-  field<HTMLInputElement>("webSearch").disabled = false;
-  if (provider === "anthropic") {
+  // Pas de recherche web dans l'API Mistral : le réglage est conservé pour les autres providers.
+  field<HTMLInputElement>("webSearch").disabled = isMistral;
+  if (isMistral) {
+    document.getElementById("websearch-hint")!.textContent = t.webSearchHintUnavailable;
+  } else if (provider === "anthropic") {
     document.getElementById("websearch-hint")!.textContent = t.webSearchHintAnthropic;
   } else if (provider === "gemini") {
     document.getElementById("websearch-hint")!.textContent = t.webSearchHintGemini;

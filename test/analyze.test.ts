@@ -8,6 +8,8 @@ const mockConsolidate = vi.fn();
 const mockSupportsWebSearch = vi.fn();
 
 vi.mock("../src/providers/openai-compatible", () => ({
+  // Fabrique employée par le provider Mistral, chargé avec le registre.
+  chatCompletionsProvider: () => ({}),
   openAiCompatibleProvider: {
     supportsWebSearch: (config: Config) => mockSupportsWebSearch(config),
     analyze: (...args: unknown[]) => mockAnalyze(...args),

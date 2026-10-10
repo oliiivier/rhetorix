@@ -65,7 +65,8 @@ Rhetorix fonctionne avec votre propre clé, ou sans clé avec un modèle local :
 |---|---|---|
 | **Chrome Built-in AI** (Gemini Nano) | Aucune : exécution 100 % locale, Chromium 128+ | Non |
 | **Google Gemini** | Gratuite via Google AI Studio (lien direct dans les options) | Grounding Google Search, avec un compte de facturation |
-| **Compatible OpenAI** : Ollama local (configuration en un clic), LM Studio, Mistral, OpenRouter, Perplexity… | Facultative en local | Selon le service (Perplexity, OpenRouter `:online`…) |
+| **Mistral** | Payante (lien direct dans les options), sans endpoint à saisir | Non |
+| **Compatible OpenAI** : Ollama local (configuration en un clic), LM Studio, OpenRouter, Perplexity… | Facultative en local | Selon le service (Perplexity, OpenRouter `:online`…) |
 | **Anthropic** (Claude) | Payante | Outil de recherche web d'Anthropic |
 
 La liste des modèles disponibles est récupérée auprès du fournisseur ; une saisie libre reste possible.
@@ -127,7 +128,7 @@ src/
   sidepanel/              # panneau : déclenchement, cartes, streaming, filtres
   popup/                  # fenêtre de l'icône en mode bulles seules
   options/                # options : fournisseur, modèle, YouTube, tokens, guide
-  providers/              # adaptateurs anthropic, gemini, openai-compatible, chrome-ai
+  providers/              # adaptateurs anthropic, gemini, mistral, openai-compatible, chrome-ai
   analyze.ts              # orchestration : découpage, appels, validation, fusion
   verify.ts               # vérification en ligne d'une allégation à la demande
   studies.ts              # notice des études citées : Crossref, puis PubMed

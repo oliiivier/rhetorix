@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_CONFIG, DEFAULT_MODELS, isConfigured, loadConfig, providerOrigin, resolveLanguage, saveConfig, type Config } from "../src/config";
+import { DEFAULT_CONFIG, DEFAULT_MODELS, isConfigured, loadConfig, migrateConfig, providerOrigin, resolveLanguage, saveConfig, type Config } from "../src/config";
 
 const store: Record<string, unknown> = {};
 
@@ -73,6 +73,45 @@ describe("config module", () => {
   it("ignore pour Anthropic l'endpoint resté d'un provider compatible OpenAI", () => {
     const leftover: Config = { ...DEFAULT_CONFIG, provider: "anthropic", endpoint: "https://openrouter.ai/api/v1" };
     expect(providerOrigin(leftover)).toBe("https://api.anthropic.com/*");
+  });
+
+  it("migre une configuration Mistral saisie en compatible OpenAI", () => {
+    const legacy: Config = {
+      ...DEFAULT_CONFIG,
+      provider: "openai-compatible",
+      apiKey: "test-mistral-key",
+      endpoint: "https://api.mistral.ai/v1/",
+      model: "mistral-small-latest",
+    };
+    expect(migrateConfig(legacy)).toEqual({ ...legacy, provider: "mistral", endpoint: "" });
+    expect(migrateConfig({ ...legacy, model: "" }).model).toBe(DEFAULT_MODELS.mistral);
+  });
+
+  it("ne migre ni un autre endpoint ni un hôte qui imite api.mistral.ai", () => {
+    for (const endpoint of ["https://openrouter.ai/api/v1", "https://api.mistral.ai.example.com/v1", "not-a-url", ""]) {
+      const c: Config = { ...DEFAULT_CONFIG, provider: "openai-compatible", endpoint };
+      expect(migrateConfig(c)).toBe(c);
+    }
+    const anthropic: Config = { ...DEFAULT_CONFIG, endpoint: "https://api.mistral.ai/v1" };
+    expect(migrateConfig(anthropic)).toBe(anthropic);
+  });
+
+  it("enregistre la migration au chargement", async () => {
+    store.config = { provider: "openai-compatible", apiKey: "test-mistral-key", endpoint: "https://api.mistral.ai/v1", model: "mistral-large-latest" };
+    const loaded = await loadConfig();
+    expect(loaded.provider).toBe("mistral");
+    expect(loaded.endpoint).toBe("");
+    expect((store.config as Config).provider).toBe("mistral");
+    delete store.config;
+  });
+
+  it("limite Mistral à api.mistral.ai, sans endpoint à saisir", () => {
+    const leftover: Config = { ...DEFAULT_CONFIG, provider: "mistral", endpoint: "https://openrouter.ai/api/v1" };
+    expect(providerOrigin(leftover)).toBe("https://api.mistral.ai/*");
+    expect(DEFAULT_MODELS.mistral).toBe("mistral-small-latest");
+    const config: Config = { ...DEFAULT_CONFIG, provider: "mistral", model: DEFAULT_MODELS.mistral, endpoint: "" };
+    expect(isConfigured({ ...config, apiKey: "" })).toBe(false);
+    expect(isConfigured({ ...config, apiKey: "test-mistral-key" })).toBe(true);
   });
 
   it("résout la langue avec fallback getUILanguage quand language === 'auto'", () => {

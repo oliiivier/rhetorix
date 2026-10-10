@@ -7,6 +7,7 @@ describe("models module", () => {
     expect(FALLBACK_MODELS.anthropic.some((m) => m.id.includes("claude"))).toBe(true);
     expect(FALLBACK_MODELS["openai-compatible"].some((m) => m.id === "mistral")).toBe(true);
     expect(FALLBACK_MODELS["chrome-ai"].some((m) => m.id === "gemini-nano")).toBe(true);
+    expect(FALLBACK_MODELS.mistral.some((m) => m.id === "mistral-small-latest")).toBe(true);
   });
 
   it("récupère et filtre dynamiquement les modèles Gemini", async () => {
@@ -76,5 +77,24 @@ describe("models module", () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(mockFetch.mock.calls[0]![0]).toBe("https://api.anthropic.com/v1/models");
+  });
+
+  it("récupère les modèles de conversation Mistral sur api.mistral.ai uniquement", async () => {
+    const mockApiResponse = {
+      data: [
+        { id: "mistral-small-latest", capabilities: { completion_chat: true } },
+        { id: "mistral-embed", capabilities: { completion_chat: false } },
+        { id: "mistral-large-latest", capabilities: { completion_chat: true } },
+      ],
+    };
+    const mockFetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(mockApiResponse), { status: 200 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const models = await fetchAvailableModels("mistral", "test-mistral-key", "https://openrouter.ai/api/v1");
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch.mock.calls[0]![0]).toBe("https://api.mistral.ai/v1/models");
+    expect(mockFetch.mock.calls[0]![1].headers).toEqual({ Authorization: "Bearer test-mistral-key" });
+    expect(models.map((m) => m.id)).toEqual(["mistral-large-latest", "mistral-small-latest"]);
   });
 });

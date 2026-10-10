@@ -28,11 +28,11 @@ const CONCURRENCY = 2;
 
 /**
  * Taille maximale du texte soumis à la cartographie (B1). Les modèles hébergés par
- * Anthropic et Google ont une large fenêtre ; pour un modèle local ou un endpoint
+ * Anthropic, Google et Mistral ont une large fenêtre ; pour un modèle local ou un endpoint
  * quelconque, la seule indication est la taille de morceau choisie par l'utilisateur.
  */
 function outlineBudget(provider: ProviderId, maxChunkTokens: number): number {
-  return provider === "anthropic" || provider === "gemini" ? 100_000 : maxChunkTokens;
+  return provider === "anthropic" || provider === "gemini" || provider === "mistral" ? 100_000 : maxChunkTokens;
 }
 
 /** Longueur maximale du contexte d'une annotation transmis à la relecture (Q2). */

@@ -20,9 +20,9 @@ const HELP = `Évaluation du moteur sur le corpus (eval/corpus)
 
   npm run corpus:eval -- [options]
 
-  -p, --provider <id>    anthropic, gemini ou openai-compatible (défaut : selon les variables d'environnement)
+  -p, --provider <id>    anthropic, gemini, mistral ou openai-compatible (défaut : selon les variables d'environnement)
   -m, --model <nom>      modèle (défaut : celui de l'extension)
-  -k, --key <clé>        clé API (sinon ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY)
+  -k, --key <clé>        clé API (sinon ANTHROPIC_API_KEY, GEMINI_API_KEY, MISTRAL_API_KEY, OPENAI_API_KEY)
   -e, --endpoint <url>   endpoint compatible OpenAI (sinon OPENAI_ENDPOINT ou OLLAMA_ENDPOINT)
   -l, --lang <code>      langue des explications (défaut : fr)
   --depth <mode>         fast ou deep (réglage « Analyse : rapide / approfondie », D10)
@@ -93,11 +93,11 @@ function resolveProvider(o) {
   const env = process.env;
   const provider =
     o.provider ??
-    (env.ANTHROPIC_API_KEY ? "anthropic" : env.GEMINI_API_KEY ? "gemini" : env.OPENAI_API_KEY || env.OPENAI_ENDPOINT || env.OLLAMA_ENDPOINT ? "openai-compatible" : null);
+    (env.ANTHROPIC_API_KEY ? "anthropic" : env.GEMINI_API_KEY ? "gemini" : env.MISTRAL_API_KEY ? "mistral" : env.OPENAI_API_KEY || env.OPENAI_ENDPOINT || env.OLLAMA_ENDPOINT ? "openai-compatible" : null);
   if (!provider) throw new Error("Aucun provider : préciser -p ou définir une clé API dans l'environnement.");
   if (provider === "chrome-ai") throw new Error("Gemini Nano (chrome-ai) n'est disponible que dans le navigateur.");
   const key =
-    o.key ?? (provider === "anthropic" ? env.ANTHROPIC_API_KEY : provider === "gemini" ? env.GEMINI_API_KEY : env.OPENAI_API_KEY) ?? "";
+    o.key ?? (provider === "anthropic" ? env.ANTHROPIC_API_KEY : provider === "gemini" ? env.GEMINI_API_KEY : provider === "mistral" ? env.MISTRAL_API_KEY : env.OPENAI_API_KEY) ?? "";
   const endpoint = o.endpoint ?? (provider === "openai-compatible" ? env.OPENAI_ENDPOINT ?? env.OLLAMA_ENDPOINT ?? "" : "");
   return { provider, key, endpoint };
 }

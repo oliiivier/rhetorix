@@ -2,7 +2,7 @@
 
 import { ext } from "./ext";
 
-export type ProviderId = "anthropic" | "openai-compatible" | "gemini" | "chrome-ai";
+export type ProviderId = "anthropic" | "openai-compatible" | "gemini" | "mistral" | "chrome-ai";
 export type DisplayMode = "sidepanel" | "inline" | "both";
 export type YouTubePauseMode = "none" | "pause_start" | "pause_after";
 /** D10 : « rapide » = une passe par morceau ; « approfondie » = cartographie et relecture en plus. */
@@ -42,6 +42,7 @@ export const DEFAULT_MODELS: Record<ProviderId, string> = {
   anthropic: "claude-opus-5-5",
   "openai-compatible": "",
   gemini: "gemini-3.8-flash",
+  mistral: "mistral-small-latest",
   "chrome-ai": "gemini-nano",
 };
 
@@ -67,7 +68,25 @@ const KEY = "config";
 
 export async function loadConfig(): Promise<Config> {
   const stored = (await ext.storage.local.get(KEY))[KEY] as Partial<Config> | undefined;
-  return { ...DEFAULT_CONFIG, ...stored };
+  const config = { ...DEFAULT_CONFIG, ...stored };
+  const migrated = migrateConfig(config);
+  if (migrated !== config) await saveConfig(migrated);
+  return migrated;
+}
+
+/**
+ * Bascule une configuration Mistral saisie en « compatible OpenAI » vers le provider
+ * Mistral dédié. La clé, le modèle et la permission d'hôte (api.mistral.ai) restent valables.
+ * Renvoie l'objet reçu, inchangé, s'il n'y a rien à migrer.
+ */
+export function migrateConfig(c: Config): Config {
+  if (c.provider !== "openai-compatible") return c;
+  try {
+    if (new URL(c.endpoint).hostname !== "api.mistral.ai") return c;
+  } catch {
+    return c;
+  }
+  return { ...c, provider: "mistral", endpoint: "", model: c.model || DEFAULT_MODELS.mistral };
 }
 
 export async function saveConfig(config: Config): Promise<void> {
@@ -90,6 +109,8 @@ export function providerOrigin(c: Config): string | null {
       return "https://api.anthropic.com/*";
     case "gemini":
       return "https://generativelanguage.googleapis.com/*";
+    case "mistral":
+      return "https://api.mistral.ai/*";
     case "chrome-ai":
       return null;
     case "openai-compatible":

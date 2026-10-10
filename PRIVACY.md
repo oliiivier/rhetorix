@@ -18,6 +18,7 @@ Le fournisseur dépend de votre configuration :
 
 - **Anthropic** (`api.anthropic.com`) ;
 - **Google Gemini** (Google AI Studio) ;
+- **Mistral** (`api.mistral.ai`) ;
 - **un service compatible OpenAI** dont vous indiquez l'adresse, qui peut être un serveur tiers ou un modèle exécuté sur votre propre ordinateur ;
 - **le modèle intégré à Chrome** (Gemini Nano) : l'analyse se fait alors entièrement sur votre appareil et rien n'est transmis.
 
@@ -78,6 +79,7 @@ The provider depends on your settings:
 
 - **Anthropic** (`api.anthropic.com`);
 - **Google Gemini** (Google AI Studio);
+- **Mistral** (`api.mistral.ai`);
 - **an OpenAI-compatible service** at an address you specify, which may be a third-party server or a model running on your own computer;
 - **Chrome's built-in model** (Gemini Nano): the analysis then runs entirely on your device and nothing is sent.
 

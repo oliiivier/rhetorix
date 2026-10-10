@@ -1,6 +1,7 @@
 // Récupération dynamique et suggestions de modèles pour chaque fournisseur LLM.
 
 import type { ProviderId } from "../config";
+import { MISTRAL_API } from "./mistral";
 
 export interface ModelOption {
   id: string;
@@ -27,6 +28,11 @@ export const FALLBACK_MODELS: Record<ProviderId, ModelOption[]> = {
     { id: "mistral", name: "Mistral (Ollama local)", description: "Modèle local recommandé" },
     { id: "llama3.2", name: "Llama 3.2 (Ollama local)", description: "Modèle local compact" },
     { id: "sonar", name: "Perplexity Sonar", description: "Recherche web intégrée" },
+  ],
+  mistral: [
+    { id: "mistral-small-latest", name: "Mistral Small (Recommandé)", description: "Rapide et économique" },
+    { id: "mistral-large-latest", name: "Mistral Large", description: "Haute précision" },
+    { id: "mistral-medium-latest", name: "Mistral Medium", description: "Plus coûteux que Large" },
   ],
   "chrome-ai": [
     { id: "gemini-nano", name: "Gemini Nano (Local / On-device)", description: "Exécution locale sans clé" },
@@ -101,6 +107,25 @@ export async function fetchAvailableModels(
       const data = (await res.json()) as { data?: Array<{ id: string }> };
       if (!data.data || !Array.isArray(data.data)) return fallback;
       const models = data.data.map((m) => ({ id: m.id, name: m.id })).filter((m) => Boolean(m.id));
+      return models.length > 0 ? models : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  if (provider === "mistral") {
+    if (!apiKey) return fallback;
+    try {
+      // Jamais l'endpoint saisi pour le provider compatible OpenAI : la clé Mistral n'en sort pas.
+      const res = await fetch(`${MISTRAL_API}/models`, { headers: { Authorization: `Bearer ${apiKey}` }, signal });
+      if (!res.ok) return fallback;
+      const data = (await res.json()) as { data?: Array<{ id: string; capabilities?: { completion_chat?: boolean } }> };
+      if (!data.data || !Array.isArray(data.data)) return fallback;
+      // Modèles de conversation seulement (pas d'embeddings, d'OCR ni de modération).
+      const models = data.data
+        .filter((m) => Boolean(m.id) && m.capabilities?.completion_chat !== false)
+        .map((m) => ({ id: m.id, name: m.id }))
+        .sort((a, b) => a.id.localeCompare(b.id));
       return models.length > 0 ? models : fallback;
     } catch {
       return fallback;

@@ -7,7 +7,7 @@ Ambiguïtés, risques et décisions relevés à la lecture de la [spécification
 | # | Sujet | Décision | Conséquences |
 |---|---|---|---|
 | D1 | Stack | **TypeScript + esbuild** | Les sources sont dans `src/`, le build produit `dist/`, qui est le dossier chargé dans le navigateur. Le schéma JSON et les messages sont typés |
-| D2 | Providers LLM | **Compatible OpenAI, Anthropic, Google Gemini** | Trois adaptateurs derrière une interface commune (voir architecture §7). « Compatible OpenAI » couvre aussi Mistral, OpenRouter, Ollama, LM Studio… |
+| D2 | Providers LLM | **Compatible OpenAI, Anthropic, Google Gemini, Mistral** | Adaptateurs derrière une interface commune (voir architecture §7). « Compatible OpenAI » couvre OpenAI, OpenRouter, Ollama, LM Studio… avec un endpoint saisi. Mistral est un provider à part entière (2026-10-09) : même API, mais adresse fixe, ce qui épargne la saisie de l'endpoint et garantit que la clé ne part que vers `api.mistral.ai` |
 | D3 | Vérification factuelle | **Outil de recherche web du provider quand il existe. Sinon, `status: "unverified"` et aucune URL** | Seules les URL renvoyées par la recherche web sont affichées. Si le provider ou le modèle n'a pas cet outil, `sources` est vidé côté client |
 | D4 | Labels | **Liste fermée par catégorie, plus `"autre"`** | 31 labels prédéfinis, documentés et traduits en 5 langues dans `src/taxonomy.ts` |
 | D5 | Langue | **Langue de l'interface** (navigateur par défaut, réglable dans les options) | `exact_quote` reste toujours dans la langue de l'article |

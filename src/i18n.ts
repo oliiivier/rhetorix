@@ -136,6 +136,8 @@ export interface UiStrings {
   privacyText: string;
   getGeminiKeyBtn: string;
   getAnthropicKeyBtn: string;
+  getMistralKeyBtn: string;
+  openAiCompatibleOption: string;
   presetOllamaBtn: string;
   presetOllamaSuccess: string;
   chromeAiOption: string;
@@ -363,7 +365,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchHintGemini:
       "Utilise le grounding Google Search. Attention : nécessite un compte de facturation (Pay-as-you-go). Décochez cette case pour utiliser le quota 100% gratuit de Google AI Studio.",
     webSearchHintOpenAi:
-      "Actif si l'endpoint supporte la recherche web (Perplexity, OpenRouter :online…). Avec Ollama ou Mistral sans recherche, les allégations restent en « non vérifié ».",
+      "Actif si l'endpoint supporte la recherche web (Perplexity, OpenRouter :online…). Avec Ollama sans recherche, les allégations restent en « non vérifié ».",
     maxChunkLabel: "Taille maximale d'un morceau (tokens)",
     maxChunkHint: "Au-delà de cette taille, l'article est découpé par paragraphes et analysé en plusieurs appels.",
     analysisDepthLabel: "Analyse",
@@ -395,6 +397,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "Le texte des articles analysés est envoyé uniquement au fournisseur que vous avez configuré. Pour vérifier une étude citée, son seul DOI est envoyé à Crossref (api.crossref.org) et, pour une étude biomédicale, à PubMed (eutils.ncbi.nlm.nih.gov). Rhetorix ne dispose d'aucun serveur central.",
     getGeminiKeyBtn: "✨ Obtenir une clé Gemini gratuite (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Obtenir une clé Anthropic ↗",
+    getMistralKeyBtn: "Obtenir une clé Mistral ↗",
+    openAiCompatibleOption: "Compatible OpenAI (OpenAI, OpenRouter, Ollama…)",
     presetOllamaBtn: "🦙 Configurer pour Ollama local (zéro clé)",
     presetOllamaSuccess: "Paramètres appliqués pour Ollama local (http://localhost:11434/v1, mistral).",
     chromeAiOption: "Chrome Built-in AI (Gemini Nano local, sans clé)",
@@ -648,7 +652,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchHintGemini:
       "Uses Google Search grounding. Note: requires a billing account (Pay-as-you-go). Uncheck this box to use Google AI Studio's 100% free quota.",
     webSearchHintOpenAi:
-      "Active if the endpoint supports web search (Perplexity, OpenRouter :online…). With Ollama or Mistral without search, claims remain 'unverified'.",
+      "Active if the endpoint supports web search (Perplexity, OpenRouter :online…). With Ollama without search, claims remain 'unverified'.",
     maxChunkLabel: "Max chunk size (tokens)",
     maxChunkHint: "Beyond this limit, the article is split by paragraphs and analyzed across multiple calls.",
     analysisDepthLabel: "Analysis",
@@ -680,6 +684,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "The text of analyzed articles is sent exclusively to the provider you configured. To check a cited study, only its DOI is sent to Crossref (api.crossref.org) and, for a biomedical study, to PubMed (eutils.ncbi.nlm.nih.gov). Rhetorix does not run any central server.",
     getGeminiKeyBtn: "✨ Get a free Gemini API key (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Get an Anthropic API key ↗",
+    getMistralKeyBtn: "Get a Mistral API key ↗",
+    openAiCompatibleOption: "OpenAI-compatible (OpenAI, OpenRouter, Ollama…)",
     presetOllamaBtn: "🦙 Configure for local Ollama (no key)",
     presetOllamaSuccess: "Settings applied for local Ollama (http://localhost:11434/v1, mistral).",
     chromeAiOption: "Chrome Built-in AI (local Gemini Nano, no key)",
@@ -933,7 +939,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchHintGemini:
       "Utiliza Google Search grounding. Nota: requiere una cuenta de facturación (Pay-as-you-go). Desmarque esta casilla para usar la cuota 100% gratuita de Google AI Studio.",
     webSearchHintOpenAi:
-      "Activo si el endpoint admite búsqueda web (Perplexity, OpenRouter :online…). Con Ollama o Mistral sin búsqueda, las afirmaciones permanecen como 'no verificado'.",
+      "Activo si el endpoint admite búsqueda web (Perplexity, OpenRouter :online…). Con Ollama sin búsqueda, las afirmaciones permanecen como 'no verificado'.",
     maxChunkLabel: "Tamaño máximo de fragmento (tokens)",
     maxChunkHint: "Más allá de este límite, el artículo se divide por párrafos y se analiza en varias llamadas.",
     analysisDepthLabel: "Análisis",
@@ -965,6 +971,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "El texto de los artículos analizados se envía únicamente al proveedor que haya configurado. Para verificar un estudio citado, solo se envía su DOI a Crossref (api.crossref.org) y, para un estudio biomédico, a PubMed (eutils.ncbi.nlm.nih.gov). Rhetorix no dispone de ningún servidor central.",
     getGeminiKeyBtn: "✨ Obtener una clave Gemini gratuita (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Obtener una clave Anthropic ↗",
+    getMistralKeyBtn: "Obtener una clave Mistral ↗",
+    openAiCompatibleOption: "Compatible con OpenAI (OpenAI, OpenRouter, Ollama…)",
     presetOllamaBtn: "🦙 Configurar para Ollama local (sin clave)",
     presetOllamaSuccess: "Ajustes aplicados para Ollama local (http://localhost:11434/v1, mistral).",
     chromeAiOption: "Chrome Built-in AI (Gemini Nano local, sin clave)",
@@ -1218,7 +1226,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchHintGemini:
       "Nutzt Google Search Grounding. Hinweis: Erfordert ein Pay-as-you-go-Abrechnungskonto. Deaktivieren Sie dieses Kontrollkästchen, um das 100% kostenlose Kontingent von Google AI Studio zu nutzen.",
     webSearchHintOpenAi:
-      "Aktiv, wenn der Endpunkt Websuche unterstützt (Perplexity, OpenRouter :online…). Bei Ollama oder Mistral ohne Suche bleiben Behauptungen 'nicht überprüft'.",
+      "Aktiv, wenn der Endpunkt Websuche unterstützt (Perplexity, OpenRouter :online…). Bei Ollama ohne Suche bleiben Behauptungen 'nicht überprüft'.",
     maxChunkLabel: "Maximale Blockgröße (Tokens)",
     maxChunkHint: "Jenseits dieser Grenze wird der Artikel in Absätze unterteilt und über mehrere Aufrufe analysiert.",
     analysisDepthLabel: "Analyse",
@@ -1250,6 +1258,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "Der Text analysierter Artikel wird ausschließlich an den von Ihnen konfigurierten Anbieter gesendet. Zur Prüfung einer zitierten Studie wird nur deren DOI an Crossref (api.crossref.org) und, bei einer biomedizinischen Studie, an PubMed (eutils.ncbi.nlm.nih.gov) gesendet. Rhetorix betreibt keinen zentralen Server.",
     getGeminiKeyBtn: "✨ Kostenlosen Gemini-API-Schlüssel holen (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Anthropic-API-Schlüssel holen ↗",
+    getMistralKeyBtn: "Mistral-API-Schlüssel holen ↗",
+    openAiCompatibleOption: "OpenAI-kompatibel (OpenAI, OpenRouter, Ollama…)",
     presetOllamaBtn: "🦙 Für lokales Ollama vorkonfigurieren (kein Schlüssel)",
     presetOllamaSuccess: "Einstellungen für lokales Ollama angewendet (http://localhost:11434/v1, mistral).",
     chromeAiOption: "Chrome Built-in AI (lokales Gemini Nano, ohne Schlüssel)",
@@ -1503,7 +1513,7 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
     webSearchHintGemini:
       "Utilizza Google Search grounding. Nota: richiede un account di fatturazione (Pay-as-you-go). Deseleziona questa casella per utilizzare la quota gratuita al 100% di Google AI Studio.",
     webSearchHintOpenAi:
-      "Attivo se l'endpoint supporta la ricerca web (Perplexity, OpenRouter :online…). Con Ollama o Mistral senza ricerca, le affermazioni rimangono «non verificato».",
+      "Attivo se l'endpoint supporta la ricerca web (Perplexity, OpenRouter :online…). Con Ollama senza ricerca, le affermazioni rimangono «non verificato».",
     maxChunkLabel: "Dimensione massima porzione (token)",
     maxChunkHint: "Oltre questo limite, l'articolo viene suddiviso in paragrafi e analizzato in più chiamate.",
     analysisDepthLabel: "Analisi",
@@ -1535,6 +1545,8 @@ export const UI_TRANSLATIONS: Record<Language, UiStrings> = {
       "Il testo degli articoli analizzati viene inviato esclusivamente al fornitore configurato. Per verificare uno studio citato, solo il suo DOI viene inviato a Crossref (api.crossref.org) e, per uno studio biomedico, a PubMed (eutils.ncbi.nlm.nih.gov). Rhetorix non dispone di alcun server centrale.",
     getGeminiKeyBtn: "✨ Ottieni una chiave Gemini gratuita (Google AI Studio) ↗",
     getAnthropicKeyBtn: "Ottieni una chiave Anthropic ↗",
+    getMistralKeyBtn: "Ottieni una chiave Mistral ↗",
+    openAiCompatibleOption: "Compatibile OpenAI (OpenAI, OpenRouter, Ollama…)",
     presetOllamaBtn: "🦙 Configura per Ollama locale (senza chiave)",
     presetOllamaSuccess: "Impostazioni applicate per Ollama locale (http://localhost:11434/v1, mistral).",
     chromeAiOption: "Chrome Built-in AI (Gemini Nano locale, senza chiave)",

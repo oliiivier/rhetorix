@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Test en direct d'un provider LLM (Anthropic, Gemini, OpenAI-compatible / Ollama / Perplexity)
+// Test en direct d'un provider LLM (Anthropic, Gemini, Mistral, OpenAI-compatible / Ollama / Perplexity)
 // depuis le terminal, avec streaming, recherche web et validation D3.
 
 import esbuild from "esbuild";
@@ -41,7 +41,7 @@ ${c.bold}USAGE :${c.reset}
   npm run test:live -- [options]
 
 ${c.bold}OPTIONS :${c.reset}
-  ${c.green}-p, --provider <id>${c.reset}      Provider à tester : ${c.yellow}anthropic${c.reset}, ${c.yellow}gemini${c.reset}, ${c.yellow}openai-compatible${c.reset}, ou ${c.yellow}chrome-ai${c.reset}
+  ${c.green}-p, --provider <id>${c.reset}      Provider à tester : ${c.yellow}anthropic${c.reset}, ${c.yellow}gemini${c.reset}, ${c.yellow}mistral${c.reset}, ${c.yellow}openai-compatible${c.reset}, ou ${c.yellow}chrome-ai${c.reset}
   ${c.green}-k, --key <cle>${c.reset}          Clé API (sinon variable d'env selon provider)
   ${c.green}-m, --model <nom>${c.reset}        Nom du modèle (défauts : claude-opus-5-5, gemini-2.5-flash, etc.)
   ${c.green}-e, --endpoint <url>${c.reset}     Endpoint URL (pour openai-compatible, ex: http://localhost:11434/v1)
@@ -56,6 +56,7 @@ ${c.bold}OPTIONS :${c.reset}
 ${c.bold}VARIABLES D'ENVIRONNEMENT :${c.reset}
   ANTHROPIC_API_KEY      Clé API pour Anthropic
   GEMINI_API_KEY         Clé API pour Google Gemini
+  MISTRAL_API_KEY        Clé API pour Mistral
   OPENAI_API_KEY         Clé API pour OpenAI-compatible
   OPENAI_ENDPOINT        URL de base pour OpenAI-compatible
   OLLAMA_ENDPOINT        URL alternative pour Ollama (ex: http://localhost:11434/v1)
@@ -150,6 +151,7 @@ async function main() {
   if (!provider) {
     if (process.env.GEMINI_API_KEY) provider = "gemini";
     else if (process.env.ANTHROPIC_API_KEY) provider = "anthropic";
+    else if (process.env.MISTRAL_API_KEY) provider = "mistral";
     else if (process.env.OPENAI_API_KEY || process.env.OPENAI_ENDPOINT || process.env.OLLAMA_ENDPOINT) {
       provider = "openai-compatible";
     } else {
@@ -157,8 +159,8 @@ async function main() {
     }
   }
 
-  if (!["anthropic", "gemini", "openai-compatible", "chrome-ai"].includes(provider)) {
-    console.error(`${c.red}Erreur : provider invalide '${provider}'. Choix : anthropic, gemini, openai-compatible, chrome-ai.${c.reset}`);
+  if (!["anthropic", "gemini", "mistral", "openai-compatible", "chrome-ai"].includes(provider)) {
+    console.error(`${c.red}Erreur : provider invalide '${provider}'. Choix : anthropic, gemini, mistral, openai-compatible, chrome-ai.${c.reset}`);
     printHelp();
     process.exit(1);
   }
@@ -168,6 +170,7 @@ async function main() {
   if (!apiKey) {
     if (provider === "anthropic") apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN || "";
     else if (provider === "gemini") apiKey = process.env.GEMINI_API_KEY || "";
+    else if (provider === "mistral") apiKey = process.env.MISTRAL_API_KEY || "";
     else if (provider === "openai-compatible") apiKey = process.env.OPENAI_API_KEY || "";
   }
 
@@ -182,6 +185,7 @@ async function main() {
   if (!model) {
     if (provider === "anthropic") model = "claude-opus-5-5";
     else if (provider === "gemini") model = "gemini-2.5-flash";
+    else if (provider === "mistral") model = "mistral-small-latest";
     else if (provider === "chrome-ai") model = "gemini-nano";
     else if (provider === "openai-compatible") {
       model = endpoint && endpoint.includes("11434") ? "mistral" : "gpt-4o";
@@ -191,7 +195,7 @@ async function main() {
   // Vérification de configuration
   if (provider !== "openai-compatible" && provider !== "chrome-ai" && !apiKey) {
     console.error(`${c.red}${c.bold}Erreur : Aucune clé API trouvée pour ${provider}.${c.reset}`);
-    console.error(`Spécifiez la clé avec ${c.yellow}--key <cle>${c.reset} ou la variable d'environnement ${c.yellow}${provider === "gemini" ? "GEMINI_API_KEY" : "ANTHROPIC_API_KEY"}${c.reset}.\n`);
+    console.error(`Spécifiez la clé avec ${c.yellow}--key <cle>${c.reset} ou la variable d'environnement ${c.yellow}${{ gemini: "GEMINI_API_KEY", mistral: "MISTRAL_API_KEY" }[provider] ?? "ANTHROPIC_API_KEY"}${c.reset}.\n`);
     printHelp();
     process.exit(1);
   }

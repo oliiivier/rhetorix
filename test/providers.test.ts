@@ -3,6 +3,7 @@ import { DEFAULT_CONFIG, type Config } from "../src/config";
 import { anthropicProvider, createAnthropicClient } from "../src/providers/anthropic";
 import { chromeAiProvider } from "../src/providers/chrome-ai";
 import { geminiProvider } from "../src/providers/gemini";
+import { mistralProvider } from "../src/providers/mistral";
 import { openAiCompatibleProvider } from "../src/providers/openai-compatible";
 
 describe("geminiProvider", () => {
@@ -82,6 +83,64 @@ describe("openAiCompatibleProvider", () => {
     expect(result.raw).toEqual({ summary: "Analyse", annotations: [] });
     expect(result.searchedUrls).toBeDefined();
     expect(result.searchedUrls?.has("https://en.wikipedia.org/wiki/Test")).toBe(true);
+
+    const [url, init] = mockFetch.mock.calls[0]!;
+    expect(url).toBe("https://api.perplexity.ai/chat/completions");
+    expect(JSON.parse(init.body).stream_options).toEqual({ include_usage: true });
+  });
+});
+
+describe("mistralProvider", () => {
+  const baseConfig: Config = {
+    ...DEFAULT_CONFIG,
+    provider: "mistral",
+    apiKey: "test-mistral-key",
+    model: "mistral-small-latest",
+    webSearch: true,
+  };
+  const sseResponse =
+    'data: {"choices":[{"delta":{"content":"{\\"summary\\":\\"Analyse\\",\\"annotations\\":[]}"}}],"usage":{"prompt_tokens":12,"completion_tokens":5}}\n\n';
+
+  it("n'a pas de recherche web, quel que soit le réglage", () => {
+    expect(mistralProvider.supportsWebSearch(baseConfig)).toBe(false);
+    expect(mistralProvider.searchesOnDemand(baseConfig)).toBe(false);
+  });
+
+  it("appelle api.mistral.ai même si un endpoint compatible OpenAI est resté enregistré", async () => {
+    const mockFetch = vi.fn().mockImplementation(async () => new Response(sseResponse, { status: 200 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const result = await mistralProvider.analyze(
+      { title: "Test", text: "Article de test", language: "fr", part: { index: 0, total: 1 }, webSearch: true },
+      { ...baseConfig, endpoint: "https://openrouter.ai/api/v1" },
+      new AbortController().signal,
+    );
+
+    expect(result.raw).toEqual({ summary: "Analyse", annotations: [] });
+    expect(result.searchedUrls).toBeUndefined();
+    expect(result.usage).toEqual({ inputTokens: 12, outputTokens: 5, totalTokens: 17 });
+    const [url, init] = mockFetch.mock.calls[0]!;
+    expect(url).toBe("https://api.mistral.ai/v1/chat/completions");
+    expect(init.headers.authorization).toBe("Bearer test-mistral-key");
+    const body = JSON.parse(init.body);
+    expect(body.response_format.type).toBe("json_schema");
+    // Paramètre absent de l'API Mistral.
+    expect(body.stream_options).toBeUndefined();
+  });
+
+  it("garde l'adresse fixe pour les appels textuels", async () => {
+    const sse = 'data: {"choices":[{"delta":{"content":"ok"}}]}\n\n';
+    const mockFetch = vi.fn().mockImplementation(async () => new Response(sse, { status: 200 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const text = await mistralProvider.complete(
+      { system: "s", user: "u" },
+      { ...baseConfig, endpoint: "https://openrouter.ai/api/v1" },
+      new AbortController().signal,
+    );
+
+    expect(text).toBe("ok");
+    expect(mockFetch.mock.calls[0]![0]).toBe("https://api.mistral.ai/v1/chat/completions");
   });
 });
 
