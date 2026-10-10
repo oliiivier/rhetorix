@@ -2,7 +2,7 @@
 
 Les changements notables de Rhetorix, par version. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et la numérotation, [Semantic Versioning](https://semver.org/lang/fr/). Les références entre parenthèses (D10, B3…) renvoient aux [décisions](docs/fonctionnelles/points-ouverts.md) et aux [pistes d'évolution du moteur](docs/techniques/evolutions-analyse.md).
 
-## [Non publié]
+## [0.2.0] — 2026-10-10
 
 ### Ajouté
 
@@ -74,6 +74,7 @@ Première version publiée.
 - Interface et analyses en cinq langues : français, anglais, espagnol, allemand, italien.
 - Politique de confidentialité, licence MIT, paquets Chrome et Firefox.
 
+[0.2.0]: https://github.com/oliiivier/rhetorix/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/oliiivier/rhetorix/compare/v0.1.2...v0.1.4
 [0.1.2]: https://github.com/oliiivier/rhetorix/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/oliiivier/rhetorix/compare/v0.1.0...v0.1.1
